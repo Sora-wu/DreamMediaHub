@@ -1,0 +1,3 @@
+[submodule "code/DreamMediaNative/third/src/ffmpeg"]
+	path = code/DreamMediaNative/third/src/ffmpeg
+	url = git@github.com:FFmpeg/FFmpeg.git
