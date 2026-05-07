@@ -1,5 +1,5 @@
 find_package(Qt6 COMPONENTS OpenGLWidgets Core Quick Gui REQUIRED)
-qt_standard_project_setup(REQUIRES 6.5)
+qt_standard_project_setup(REQUIRES 6.8)
 
 function(get_resource_paths out_var base_path)
     file(GLOB ABS_ASSETS ${base_path})
@@ -16,6 +16,8 @@ file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
 )
 get_resource_paths(QMLFILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/*.qml)
 get_resource_paths(IMAGE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/image/*)
+
+file(COPY resource/shader DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/shader)
 
 qt_add_executable(playerApp ${SRC})
 

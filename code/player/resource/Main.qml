@@ -22,15 +22,15 @@ Window {
         Column {
             id: columnLayout
             anchors.fill: parent
+            spacing: 5
 
             RowLayout {
                 id: controlLayout
                 height: 25
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.leftMargin: 10
+                anchors.leftMargin: 0
                 anchors.rightMargin: 0
-                uniformCellSizes: false
                 spacing: 15
 
                 RowLayout {
@@ -42,19 +42,19 @@ Window {
 
                     Button {
                         id: btnPlayPause
-                        icon.source: "image/pause.png"
+                        icon.source: "qrc:/Dream/play/resource/image/pause.png"
                         flat: true
                     }
 
                     Button {
                         id: btnPrevious
-                        icon.source: "image/previous.png"
+                        icon.source: "qrc:/Dream/play/resource/image/previous.png"
                         flat: true
                     }
 
                     Button {
                         id: btnNext
-                        icon.source: "image/next.png"
+                        icon.source: "qrc:/Dream/play/resource/image/next.png"
                         flat: true
                     }
 
@@ -74,7 +74,7 @@ Window {
 
                     Button {
                         id: btnVolume
-                        icon.source: "image/volume.png"
+                        icon.source: "qrc:/Dream/play/resource/image/volume.png"
                         flat: true
                     }
 
@@ -93,13 +93,12 @@ Window {
 
             RowLayout {
                 id: rowLayout
+                y: 25
                 height: 25
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.bottom: parent.bottom
                 anchors.leftMargin: 0
                 anchors.rightMargin: 0
-                anchors.bottomMargin: 0
 
                 Text {
                     id: txtFIlename

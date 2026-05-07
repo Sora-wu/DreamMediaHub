@@ -6,7 +6,7 @@
 #pragma once
 
 #include <QQuickFramebufferObject>
-#include <QOpenGLFunctions>
+#include <QOpenGLExtraFunctions>
 
 class RenderItem : public QQuickFramebufferObject {
     Q_OBJECT
@@ -15,11 +15,24 @@ public:
 };
 
 
-class OpenGLRender : public QQuickFramebufferObject::Renderer, protected QOpenGLFunctions {
+class OpenGLRender : public QQuickFramebufferObject::Renderer, protected QOpenGLExtraFunctions {
 public:
     OpenGLRender();
-    ~OpenGLRender();
+    ~OpenGLRender() override;
 
     void render() override;
     void synchronize(QQuickFramebufferObject *item) override;
+
+private:
+    bool complieShader();
+    void cleanup();
+    void initialize();
+
+private:
+    GLuint program_{};
+    GLuint vao_{};
+    GLuint vbo_{};
+    GLuint ebo_{};
+
+    bool initialized_ = false;
 };
