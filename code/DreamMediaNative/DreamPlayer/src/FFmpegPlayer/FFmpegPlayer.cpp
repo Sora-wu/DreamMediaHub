@@ -3,8 +3,5 @@
 // Mail: sora-wu@foxmail.com
 //
 
-#pragma once
+#include <FFmpegPlayer/FFmpegPlayer.h>
 
-class Clock {
-
-};

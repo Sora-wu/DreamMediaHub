@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(DreamMediaHub LANGUAGES C CXX)
+project(DreamMediaNative LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -18,9 +18,10 @@ endif()
 set(FFMPEG_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFORM_NAME})
 set(FFMPEG_LIBS avcodec avdevice avfilter avformat avutil postproc swresample swscale)
 
-file(GLOB_RECURSE SRC CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/* ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 
-add_library(DreamPlayer ${SRC})
-target_include_directories(DreamPlayer PRIVATE ${FFMPEG_ROOT}/include include)
-target_link_directories(DreamPlayer PRIVATE ${FFMPEG_ROOT}/lib)
-target_link_libraries(DreamPlayer PRIVATE ${FFMPEG_LIBS})
+set(Dream_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/)
+
+set(BUILD_SHARED_LIBS ON)
+add_subdirectory(DreamPlayer)
