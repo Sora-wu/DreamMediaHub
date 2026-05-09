@@ -125,4 +125,13 @@ Window {
             }
         }
     }
+
+    RenderItem {
+        id: renderer
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: buttomBar.top
+    }
+
 }
