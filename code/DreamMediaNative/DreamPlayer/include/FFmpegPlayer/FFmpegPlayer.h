@@ -7,8 +7,14 @@
 
 #include <DreamPlayer/DreamPlayer.h>
 
+#include <memory>
+
+class Demuxer;
+class Decodec;
+
 class FFmpegPlayer : public Dream::DreamPlayer {
 public:
+    FFmpegPlayer();
     ~FFmpegPlayer() override;
 
     bool open(const char* url) override;
@@ -17,10 +23,23 @@ public:
     void stop() override;
 
     void seek(double position) override;
-    double getDuration() const override;
+    [[nodiscard]] uint64_t getDuration() const override;
 
-    void setVolume(int volume) override;
-    int getVolume() const override;
+    void setVolume(uint32_t volume) override;
+    [[nodiscard]] uint32_t getVolume() const override;
 
     void setSpeed(double speed) override;
+
+private:
+    void cleanup();
+
+private:
+    uint32_t volume_ = 100;
+    double speed_ = 1.0;
+    bool pause_ = false;
+    double duration_ = 0.0;
+
+    std::unique_ptr<Demuxer> demuxer_;
+    std::unique_ptr<Decodec> videoDecodec_;
+    std::unique_ptr<Decodec> audioDecodec_;
 };

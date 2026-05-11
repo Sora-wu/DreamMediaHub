@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace Dream {
     class DreamPlayer {
     public:
@@ -15,10 +17,10 @@ namespace Dream {
         virtual void stop() = 0;
 
         virtual void seek(double position) = 0;
-        virtual double getDuration() const = 0;
+        [[nodiscard]] virtual uint64_t getDuration() const = 0;
 
-        virtual void setVolume(int volume) = 0;
-        virtual int getVolume() const = 0;
+        virtual void setVolume(uint32_t volume) = 0;
+        [[nodiscard]] virtual uint32_t getVolume() const = 0;
 
         virtual void setSpeed(double speed) = 0;
     };
