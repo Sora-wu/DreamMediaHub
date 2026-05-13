@@ -5,7 +5,7 @@
 
 #include <FFmpegPlayer/decodec.h>
 
-bool Decodec::openCodec(uint32_t streamIndex, AVStream* stream) {
+bool Decodec::openCodec(int streamIndex, AVStream* stream) {
     AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
     if (!codec) {
         av_log(nullptr, AV_LOG_FATAL, "avcodec_find_decoder fail!");
@@ -18,17 +18,25 @@ bool Decodec::openCodec(uint32_t streamIndex, AVStream* stream) {
         return false;
     }
 
-    avcodec_parameters_to_context(codecCtx_, stream->codecpar);
-    int res = avcodec_open2(codecCtx_, codec, nullptr);
+    int res = avcodec_parameters_to_context(codecCtx_, stream->codecpar);
+    if (res < 0) {
+        av_log(nullptr, AV_LOG_FATAL, "avcodec_parameters_to_context fail!");
+    }
+
+    res = avcodec_open2(codecCtx_, codec, nullptr);
     if (res < 0) {
         av_log(nullptr, AV_LOG_FATAL, "avcodec_open2 fail! codec_id: %d", stream->codecpar->codec_id);
         return false;
     }
 
+    stream_ =  stream;
     streamIndex_ = streamIndex;
-    timeBase_ = stream->time_base;
 
     return true;
+}
+
+void Decodec::handle(void* data) {
+    pktQue_.push(*(AVPacket*)data);
 }
 
 void Decodec::cleanup() {
@@ -36,4 +44,6 @@ void Decodec::cleanup() {
         avcodec_free_context(&codecCtx_);
         codecCtx_ = nullptr;
     }
+
+    streamIndex_ = -1;
 }

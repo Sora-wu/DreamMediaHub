@@ -9,9 +9,9 @@
 
 class AudioDecodec : public Decodec {
 public:
-    bool openCodec(uint32_t streamIndex, AVStream* stream) override;
+    explicit AudioDecodec(std::size_t frameQueueSize) : Decodec(frameQueueSize) {}
+    bool openCodec(int streamIndex, AVStream* stream) override;
 
-    void handle(void* data) override;
     void run() override;
 
 protected:

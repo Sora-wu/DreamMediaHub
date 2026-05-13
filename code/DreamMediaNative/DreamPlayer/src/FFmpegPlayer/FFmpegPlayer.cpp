@@ -10,7 +10,8 @@
 #include <FFmpegPlayer/audioDecodec.h>
 
 namespace {
-
+    constexpr std::size_t FRAME_VIDEO_SIZE = 3;
+    constexpr std::size_t FRAME_AUDIO_SIZE = 9;
 }
 
 FFmpegPlayer::FFmpegPlayer() {
@@ -18,8 +19,10 @@ FFmpegPlayer::FFmpegPlayer() {
     avformat_network_init();
 
     demuxer_ = std::make_unique<Demuxer>();
-    videoDecodec_ = std::make_unique<VideoDecodec>();
-    audioDecodec_ = std::make_unique<AudioDecodec>();
+    demuxer_->setNextHandler(this);
+
+    videoDecodec_ = std::make_unique<VideoDecodec>(FRAME_VIDEO_SIZE);
+    audioDecodec_ = std::make_unique<AudioDecodec>(FRAME_AUDIO_SIZE);
 }
 
 FFmpegPlayer::~FFmpegPlayer() {
@@ -36,11 +39,11 @@ bool FFmpegPlayer::open(const char* url) {
     std::vector<AVStream*> streams = demuxer_->getStreams();
     for (uint32_t i = 0; i < streams.size(); ++i) {
         AVStream* stream = streams[i];
-        if (stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+        if (stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && !videoDecodec_->isOpen()) {
             if (!videoDecodec_->openCodec(i, stream)) {
                 return false;
             }
-        } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+        } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO && !audioDecodec_->isOpen()) {
             if (!audioDecodec_->openCodec(i, stream)) {
                 return false;
             }
@@ -75,6 +78,18 @@ uint32_t FFmpegPlayer::getVolume() const {
 
 void FFmpegPlayer::setSpeed(double speed) {
 }
+
+void FFmpegPlayer::handle(void* data) {
+    AVPacket* pkt = (AVPacket*)data;
+
+    if (pkt->stream_index == videoDecodec_->getStreamIndex()) {
+        videoDecodec_->handle(pkt);
+    }
+    else if (pkt->stream_index == audioDecodec_->getStreamIndex()) {
+        audioDecodec_->handle(pkt);
+    }
+}
+
 
 void FFmpegPlayer::cleanup() {
 

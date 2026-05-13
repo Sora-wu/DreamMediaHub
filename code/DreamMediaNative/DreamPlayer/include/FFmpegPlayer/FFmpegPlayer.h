@@ -6,13 +6,14 @@
 #pragma once
 
 #include <DreamPlayer/DreamPlayer.h>
+#include <common/dataHandler.hpp>
 
 #include <memory>
 
 class Demuxer;
 class Decodec;
 
-class FFmpegPlayer : public Dream::DreamPlayer {
+class FFmpegPlayer : public Dream::DreamPlayer, public DataHandler {
 public:
     FFmpegPlayer();
     ~FFmpegPlayer() override;
@@ -30,6 +31,7 @@ public:
 
     void setSpeed(double speed) override;
 
+    void handle(void* data) override;
 private:
     void cleanup();
 
