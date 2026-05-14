@@ -36,7 +36,7 @@ bool Decodec::openCodec(int streamIndex, AVStream* stream) {
 }
 
 void Decodec::handle(void* data) {
-    pktQue_.push(*(AVPacket*)data);
+    pktQue_.push((AVPacket*)data);
 }
 
 void Decodec::cleanup() {

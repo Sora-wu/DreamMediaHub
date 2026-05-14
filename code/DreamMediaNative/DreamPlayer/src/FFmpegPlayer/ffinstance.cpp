@@ -14,3 +14,8 @@ FFInstance* FFInstance::instance() {
 
     return instance_;
 }
+
+FFInstance::FFInstance() {
+    av_init_packet(&flushPkt_);
+    flushPkt_.data = (uint8_t*)&flushPkt_;
+}

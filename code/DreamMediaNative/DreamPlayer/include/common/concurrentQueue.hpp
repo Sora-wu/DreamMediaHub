@@ -16,6 +16,16 @@ public:
     ConcurrentQueue() : maxSize_(std::numeric_limits<std::size_t>::max()) {}
     explicit  ConcurrentQueue(std::size_t maxSize) : maxSize_(maxSize) {}
 
+    [[nodiscard]] bool empty() {
+        std::unique_lock lock(mutex_);
+        return queue_.empty();
+    }
+
+    [[nodiscard]] std::size_t size() {
+        std::unique_lock lock(mutex_);
+        return queue_.size();
+    }
+
     // 推入数据，如果满，则阻塞
     void push(T value) {
         std::unique_lock lock(mutex_);

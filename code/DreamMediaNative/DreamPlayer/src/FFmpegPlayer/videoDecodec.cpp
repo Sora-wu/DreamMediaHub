@@ -8,6 +8,10 @@
 
 #include <cassert>
 
+namespace {
+    AVFormatContext* g_fmtCtx = nullptr;
+}
+
 bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
     if (!Decodec::openCodec(streamIndex, stream)) {
         return false;
@@ -25,10 +29,10 @@ void VideoDecodec::run() {
         return;
     }
 
-    AVFormatContext* fmtCtx = FFINSTANCE()->getFormatContext();
-    assert(fmtCtx);
+    g_fmtCtx = FFINSTANCE()->getFormatContext();
+    assert(g_fmtCtx);
 
-    AVRational frameRate = av_guess_frame_rate(fmtCtx, stream_, nullptr);
+    AVRational frameRate = av_guess_frame_rate(g_fmtCtx, stream_, nullptr);
 
     while  (!isExit_) {
 
@@ -39,4 +43,7 @@ void VideoDecodec::run() {
 
 void VideoDecodec::cleanup() {
     Decodec::cleanup();
+}
+
+bool VideoDecodec::decodeFrame(AVFrame* frame) {
 }

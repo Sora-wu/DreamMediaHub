@@ -19,10 +19,18 @@ public:
         return fmtCtx_;
     }
 
+    [[nodiscard]] AVPacket* getFlushPkt() {
+        return &flushPkt_;
+    }
+
+private:
+    FFInstance();
+
 private:
     static FFInstance* instance_;
 
     AVFormatContext* fmtCtx_ = nullptr;
+    AVPacket flushPkt_{};
 };
 
 #define FFINSTANCE FFInstance::instance

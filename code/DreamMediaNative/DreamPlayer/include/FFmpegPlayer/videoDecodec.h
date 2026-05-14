@@ -16,6 +16,7 @@ public:
 
 protected:
     void cleanup() override;
+    [[nodiscard]] bool decodeFrame(AVFrame* frame) override;
 
 private:
 };

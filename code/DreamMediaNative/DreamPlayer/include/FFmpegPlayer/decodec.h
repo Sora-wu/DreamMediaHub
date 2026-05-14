@@ -7,7 +7,7 @@
 
 #include <common/dataHandler.hpp>
 #include <common/dreamThread.hpp>
-#include <common/concurrentQueue.hpp>
+#include <FFmpegPlayer/packetQueue.h>
 #include <FFmpegPlayer/ffcore.h>
 
 class Decodec : public DataHandler, public DreamThraed {
@@ -31,9 +31,10 @@ public:
 
 protected:
     virtual void cleanup();
+    [[nodiscard]] virtual bool decodeFrame(AVFrame* frame) = 0;
 
 protected:
-    ConcurrentQueue<AVPacket> pktQue_;
+    PacketQueue pktQue_;
 
     AVCodecContext* codecCtx_ = nullptr;
     AVStream* stream_ = nullptr;
