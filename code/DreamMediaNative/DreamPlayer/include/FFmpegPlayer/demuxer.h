@@ -19,7 +19,7 @@ extern "C" {
 
 class Demuxer : public DataHandler, public DreamThraed {
 public:
-    ~Demuxer() override;
+    ~Demuxer() override {}
 
     [[nodiscard]] bool open(const char* url);
     [[nodiscard]] uint64_t getDuration() const {

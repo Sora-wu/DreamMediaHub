@@ -7,6 +7,8 @@
 #include <FFmpegPlayer/demuxer.h>
 #include <FFmpegPlayer/ffcore.h>
 
+#include <chrono>
+
 using namespace::std::literals;
 
 bool Demuxer::open(const char* url) {

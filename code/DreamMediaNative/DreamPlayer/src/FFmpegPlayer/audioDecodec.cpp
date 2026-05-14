@@ -20,3 +20,9 @@ void AudioDecodec::run() {
 void AudioDecodec::cleanup() {
     Decodec::cleanup();
 }
+
+bool AudioDecodec::decodeFrame(AVFrame* frame) {
+    Packet packet = pktQue_.pop();
+
+    return false;
+}

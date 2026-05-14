@@ -7,6 +7,8 @@
 
 #include <FFmpegPlayer/ffcore.h>
 
+#include <cassert>
+
 class FFInstance {
 public:
     static FFInstance* instance();
@@ -16,6 +18,7 @@ public:
     }
 
     [[nodiscard]] AVFormatContext* getFormatContext() const {
+        assert(fmtCtx_);
         return fmtCtx_;
     }
 

@@ -10,9 +10,16 @@
 #include <FFmpegPlayer/packetQueue.h>
 #include <FFmpegPlayer/ffcore.h>
 
+struct Frame {
+    AVFrame* frame{};
+    uint32_t serial{};
+    double pts{};
+    double duration{};
+};
+
 class Decodec : public DataHandler, public DreamThraed {
 public:
-    explicit Decodec(std::size_t frameQueueSize) : pktQue_(frameQueueSize) {}
+    explicit Decodec(std::size_t frameQueueSize) : frameQue_(frameQueueSize) {}
     ~Decodec() override {
         cleanup();
     }
@@ -35,8 +42,10 @@ protected:
 
 protected:
     PacketQueue pktQue_;
+    ConcurrentQueue<Frame> frameQue_;
 
     AVCodecContext* codecCtx_ = nullptr;
     AVStream* stream_ = nullptr;
     int streamIndex_ = -1;
+    uint32_t decodecSerial_ = -1;
 };

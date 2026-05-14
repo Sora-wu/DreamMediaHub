@@ -22,6 +22,10 @@ public:
     Packet pop();
     void clear();
 
+    void setSerial(uint32_t serial) {
+        serial_ = serial;
+    }
+
     [[nodiscard]] uint32_t getSerial() {
         std::lock_guard lk(mutex_);
         return serial_;
