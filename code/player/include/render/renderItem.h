@@ -8,6 +8,10 @@
 #include <QQuickFramebufferObject>
 #include <QOpenGLExtraFunctions>
 
+namespace Dream {
+    class DreamPlayer;
+}
+
 class RenderItem : public QQuickFramebufferObject {
     Q_OBJECT
 public:
@@ -49,4 +53,5 @@ private:
     // uint32_t lenU_{};
     // char* dataV_{};
     // uint32_t lenV_{};
+    Dream::DreamPlayer* player_ = nullptr;
 };

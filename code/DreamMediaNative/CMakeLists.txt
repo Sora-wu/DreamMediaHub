@@ -21,7 +21,7 @@ set(FFMPEG_LIBS avcodec avdevice avfilter avformat avutil postproc swresample sw
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-set(Dream_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/)
+set(Dream_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/Dream)
 
 set(BUILD_SHARED_LIBS ON)
 
@@ -30,7 +30,6 @@ configure_package_config_file(
     ${CMAKE_CURRENT_BINARY_DIR}/DreamConfig.cmake
     INSTALL_DESTINATION ${Dream_INSTALL_CMAKEDIR}
     NO_SET_AND_CHECK_MACRO
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
 
 write_basic_package_version_file(

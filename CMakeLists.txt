@@ -15,8 +15,6 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_compile_definitions(PLATFORM_WINDOWS)
 endif()
 
-message(${PLATFORM_NAME})
-
-set(CMAKE_MODULE_PATH code/third/build/${PLATFORM_NAME}/lib/cmake)
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/code/third/build/${PLATFORM_NAME})
 
 add_subdirectory(code/player)

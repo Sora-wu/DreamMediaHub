@@ -8,7 +8,7 @@
 #include <DreamPlayer/DreamPlayer.h>
 
 namespace Dream {
-    class DreamContext {
+    class DREAM_PLAYER_API DreamContext {
     public:
         static DreamPlayer* createDreamPlayer();
     };

@@ -5,6 +5,8 @@
 
 #include <render/renderItem.h>
 
+#include <DreamPlayer/DreamContext.h>
+
 #include <QFile>
 #include <QQuickOpenGLUtils>
 
@@ -26,6 +28,8 @@ namespace {
     }
 }
 
+using namespace Dream;
+
 //////////////////////////RenderItem/////////////////////////////////
 QQuickFramebufferObject::Renderer* RenderItem::createRenderer() const {
     return new OpenGLRender;
@@ -33,7 +37,7 @@ QQuickFramebufferObject::Renderer* RenderItem::createRenderer() const {
 
 //////////////////////////OpenGLRender/////////////////////////////////
 OpenGLRender::OpenGLRender() {
-
+    player_ = DreamContext::createDreamPlayer();
 }
 
 OpenGLRender::~OpenGLRender() {

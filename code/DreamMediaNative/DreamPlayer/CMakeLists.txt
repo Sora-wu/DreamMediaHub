@@ -2,6 +2,9 @@ file(GLOB_RECURSE SRC CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/* ${
 
 add_library(DreamPlayer ${SRC})
 add_library(Dream::Player ALIAS DreamPlayer)
+
+set_target_properties(DreamPlayer PROPERTIES EXPORT_NAME Player)
+
 target_include_directories(DreamPlayer 
 	PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -37,7 +40,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/DreamPlayer
 
 install(
     EXPORT DreamPlayerTargets
-    FILE DreamPlayerConfig.cmake
+    FILE DreamPlayerTargets.cmake
     NAMESPACE Dream::
     DESTINATION ${Dream_INSTALL_CMAKEDIR}
 )

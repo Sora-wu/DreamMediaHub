@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <DreamPlayer/define.h>
+
 #include <cstdint>
 #include <functional>
 
@@ -25,7 +27,7 @@ namespace Dream {
 
     // std::function<>
 
-    class DreamPlayer {
+    class DREAM_PLAYER_API DreamPlayer {
     public:
         virtual ~DreamPlayer() = default;
         virtual bool open(const char* url) = 0;

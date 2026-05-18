@@ -1,6 +1,7 @@
 find_package(Qt6 COMPONENTS OpenGLWidgets Core Quick Gui REQUIRED)
 qt_standard_project_setup(REQUIRES 6.8)
 
+message(STATUS ${CMAKE_PREFIX_PATH})
 find_package(Dream COMPONENTS Player REQUIRED)
 
 function(get_resource_paths out_var base_path)
@@ -33,7 +34,7 @@ qt_add_qml_module(playerApp
 )
 
 target_include_directories(playerApp
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include Dream::Player
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(playerApp
