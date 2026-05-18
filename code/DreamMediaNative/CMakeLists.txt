@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(DreamMediaNative LANGUAGES C CXX)
+project(DreamMediaNative LANGUAGES C CXX VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -11,7 +11,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_compile_definitions(PLATFORM_LINUX)
 elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(PLATFORM_NAME "win")
-    file(GLOB COPY_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFORM_NAME}/bin/*)
+    file(GLOB_RECURSE COPY_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFORM_NAME}/*.dll)
     add_compile_definitions(PLATFORM_WINDOWS)
 endif()
 
@@ -24,4 +24,26 @@ include(GNUInstallDirs)
 set(Dream_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/)
 
 set(BUILD_SHARED_LIBS ON)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DreamConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/DreamConfig.cmake
+    INSTALL_DESTINATION ${Dream_INSTALL_CMAKEDIR}
+    NO_SET_AND_CHECK_MACRO
+    NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/DreamConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/DreamConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/DreamConfigVersion.cmake
+    DESTINATION ${Dream_INSTALL_CMAKEDIR}
+)
+
 add_subdirectory(DreamPlayer)

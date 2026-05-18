@@ -6,8 +6,25 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 namespace Dream {
+    struct VideoFrame {
+        uint32_t frameWidth{};
+        uint32_t frameHeight{};
+
+        char* dataY{};
+        uint32_t lenY{};
+
+        char* dataU{};
+        uint32_t lenU{};
+
+        char* dataV{};
+        uint32_t lenV{};
+    };
+
+    // std::function<>
+
     class DreamPlayer {
     public:
         virtual ~DreamPlayer() = default;

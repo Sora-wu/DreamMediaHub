@@ -13,14 +13,13 @@ target_include_directories(DreamPlayer
 target_link_directories(DreamPlayer PRIVATE ${FFMPEG_ROOT}/lib)
 target_link_libraries(DreamPlayer PRIVATE ${FFMPEG_LIBS})
 
+# Windows 平台复制 DLL
 if (WIN32)
-    # 构建时复制 FFmpeg DLL 到输出目录
     add_custom_command(TARGET DreamPlayer POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${COPY_FILES}
         $<TARGET_FILE_DIR:DreamPlayer>
     )
-    # 安装时复制 DLL 到 bin 目录
     install(FILES ${COPY_FILES} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
@@ -32,8 +31,7 @@ install(
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# TODO: 后续改成PUBLIC_HEADER
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/DreamPlayer
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 

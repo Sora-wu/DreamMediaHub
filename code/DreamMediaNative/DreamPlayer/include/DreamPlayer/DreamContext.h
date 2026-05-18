@@ -5,9 +5,9 @@
 
 #pragma once
 
-namespace Dream {
-    class DreamPlayer;
+#include <DreamPlayer/DreamPlayer.h>
 
+namespace Dream {
     class DreamContext {
     public:
         static DreamPlayer* createDreamPlayer();

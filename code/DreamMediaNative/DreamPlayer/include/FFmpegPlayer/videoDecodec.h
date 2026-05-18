@@ -20,4 +20,7 @@ protected:
 
 private:
     void pushFrame(AVFrame* frame, uint32_t serial, double pts, double duration);
+
+private:
+    SwsContext* swsCtx_ = nullptr;
 };

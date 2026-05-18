@@ -1,0 +1,13 @@
+@PACKAGE_INIT@
+
+set(Dream_SUPPORTED_COMPONENTS Player)
+
+foreach(component ${Dream_FIND_COMPONENTS})
+    if(NOT ${component} IN_LIST Dream_SUPPORTED_COMPONENTS)
+        set(Dream_FOUND FALSE)
+        set(Dream_NOT_FOUND_MESSAGE "Unsupported component: ${component}")
+        return()
+    endif()
+
+    include("${CMAKE_CURRENT_LIST_DIR}/Dream${component}Config.cmake")
+endforeach()

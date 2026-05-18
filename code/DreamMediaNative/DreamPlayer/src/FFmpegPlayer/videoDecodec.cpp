@@ -16,8 +16,6 @@ bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
         return false;
     }
 
-
-
     return true;
 }
 
@@ -42,7 +40,6 @@ void VideoDecodec::run() {
         duration = av_q2d(frameRate) > 0 ? av_q2d(av_inv_q(frameRate)) : 0.0;
         pts = frame->pts == AV_NOPTS_VALUE ? NAN : frame->pts * av_q2d(timeBase);
         pushFrame(frame, decodecSerial_, pts, duration);
-        
     }
 
     av_frame_free(&frame);
@@ -50,6 +47,8 @@ void VideoDecodec::run() {
 
 void VideoDecodec::cleanup() {
     Decodec::cleanup();
+
+    sws_freeContext(swsCtx_);
 }
 
 bool VideoDecodec::decodeFrame(AVFrame* frame) {
@@ -66,7 +65,7 @@ bool VideoDecodec::decodeFrame(AVFrame* frame) {
                     frame->pts = frame->best_effort_timestamp;
                     return true;
                 }
-                else if (res == AVERROR_EOF) {
+                if (res == AVERROR_EOF) {
                     avcodec_flush_buffers(codecCtx_);
                     return false;
                 }
@@ -103,8 +102,6 @@ bool VideoDecodec::decodeFrame(AVFrame* frame) {
 
         av_packet_unref(prePkt);
     }
-
-    return false;
 }
 
 void VideoDecodec::pushFrame(AVFrame* frame, uint32_t serial, double pts, double duration) {
