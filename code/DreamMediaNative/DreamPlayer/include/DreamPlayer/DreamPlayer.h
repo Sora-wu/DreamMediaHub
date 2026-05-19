@@ -8,25 +8,8 @@
 #include <DreamPlayer/define.h>
 
 #include <cstdint>
-#include <functional>
 
 namespace Dream {
-    struct VideoFrame {
-        uint32_t frameWidth{};
-        uint32_t frameHeight{};
-
-        char* dataY{};
-        uint32_t lenY{};
-
-        char* dataU{};
-        uint32_t lenU{};
-
-        char* dataV{};
-        uint32_t lenV{};
-    };
-
-    // std::function<>
-
     class DREAM_PLAYER_API DreamPlayer {
     public:
         virtual ~DreamPlayer() = default;
@@ -42,5 +25,7 @@ namespace Dream {
         [[nodiscard]] virtual uint32_t getVolume() const = 0;
 
         virtual void setSpeed(double speed) = 0;
+
+        [[nodiscard]] virtual VideoFrame getVideoFrame() = 0;
     };
 }

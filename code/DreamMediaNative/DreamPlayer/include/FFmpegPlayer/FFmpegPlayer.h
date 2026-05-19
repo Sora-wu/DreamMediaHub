@@ -11,7 +11,8 @@
 #include <memory>
 
 class Demuxer;
-class Decodec;
+class VideoDecodec;
+class AudioDecodec;
 
 class FFmpegPlayer : public Dream::DreamPlayer, public DataHandler {
 public:
@@ -31,6 +32,8 @@ public:
 
     void setSpeed(double speed) override;
 
+    [[nodiscard]] Dream::VideoFrame getVideoFrame() override;
+
     void handle(void* data) override;
 private:
     void cleanup();
@@ -42,6 +45,6 @@ private:
     double duration_ = 0.0;
 
     std::unique_ptr<Demuxer> demuxer_;
-    std::unique_ptr<Decodec> videoDecodec_;
-    std::unique_ptr<Decodec> audioDecodec_;
+    std::unique_ptr<VideoDecodec> videoDecodec_;
+    std::unique_ptr<AudioDecodec> audioDecodec_;
 };

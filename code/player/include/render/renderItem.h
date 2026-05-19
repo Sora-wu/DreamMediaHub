@@ -10,6 +10,7 @@
 
 namespace Dream {
     class DreamPlayer;
+    struct VideoFrame;
 }
 
 class RenderItem : public QQuickFramebufferObject {
@@ -34,7 +35,7 @@ private:
     void initTexture(GLuint textureHandle);
     void updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, char* data, uint32_t len);
 
-    // void onVideoFrameRefresh();
+    void onVideoFrameRefresh(Dream::VideoFrame* videoFrame);
 
 private:
     GLuint program_{};
@@ -47,11 +48,5 @@ private:
 
     bool initialized_ = false;
 
-    // char* dataY_{};
-    // uint32_t lenY_{};
-    // char* dataU_{};
-    // uint32_t lenU_{};
-    // char* dataV_{};
-    // uint32_t lenV_{};
     Dream::DreamPlayer* player_ = nullptr;
 };

@@ -6,6 +6,11 @@
 #pragma once
 
 #include <FFmpegPlayer/decodec.h>
+#include <DreamPlayer/define.h>
+
+namespace Dream {
+    struct VideoFrame;
+}
 
 class VideoDecodec : public Decodec {
 public:
@@ -13,6 +18,8 @@ public:
     bool openCodec(int streamIndex, AVStream* stream) override;
 
     void run() override;
+
+    Dream::VideoFrame getVideoFrame();
 
 protected:
     void cleanup() override;

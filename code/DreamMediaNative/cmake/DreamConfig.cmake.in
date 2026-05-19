@@ -3,4 +3,11 @@
 set(Dream_SUPPORTED_COMPONENTS Player)
 
 include("${CMAKE_CURRENT_LIST_DIR}/DreamPlayerTargets.cmake")
+
+foreach(_comp ${Dream_SUPPORTED_COMPONENTS})
+    if(TARGET Dream::${_comp})
+        set(Dream_${_comp}_FOUND TRUE)
+    endif()
+endforeach()
+
 check_required_components(Dream)

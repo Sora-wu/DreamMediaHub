@@ -77,6 +77,11 @@ uint32_t FFmpegPlayer::getVolume() const {
 }
 
 void FFmpegPlayer::setSpeed(double speed) {
+    speed_ = speed;
+}
+
+Dream::VideoFrame FFmpegPlayer::getVideoFrame() {
+    return videoDecodec_->getVideoFrame();
 }
 
 void FFmpegPlayer::handle(void* data) {

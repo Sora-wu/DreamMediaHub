@@ -45,6 +45,58 @@ void VideoDecodec::run() {
     av_frame_free(&frame);
 }
 
+Dream::VideoFrame VideoDecodec::getVideoFrame() {
+    // TODO: 同步
+    Frame vp = frameQue_.pop();
+    AVFrame* frame = vp.frame;
+
+    uint8_t* data[3]{};
+    int len[3]{};
+
+    Dream::VideoFrame ret{};
+    ret.frameWidth = frame->width;
+    ret.frameHeight = frame->height;
+
+    uint8_t* frameData[3]{};
+    int frameDataLen[3]{};
+    frameData[0] = frame->data[0];
+    frameData[1] = frame->data[1];
+    frameData[2] = frame->data[2];
+    frameDataLen[0] = frame->linesize[0];
+    frameDataLen[1] = frame->linesize[1];
+    frameDataLen[2] = frame->linesize[2];
+
+    if (frame->format != AV_PIX_FMT_YUV420P) {
+        int width = frame->width;
+        int height = frame->height;
+        swsCtx_ = sws_getCachedContext(swsCtx_, 
+            width, height, (AVPixelFormat)frame->format, 
+            width, height, AV_PIX_FMT_YUV420P, 
+            SWS_BICUBIC, nullptr, nullptr, nullptr);
+        if (!swsCtx_) {
+            av_log(nullptr, AV_LOG_FATAL, "Cannot initialize the conversion context");
+            return ret;
+        }
+
+        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, data, len);
+        frameData[0] = data[0];
+        frameData[1] = data[1];
+        frameData[2] = data[2];
+        frameDataLen[0] = len[0];
+        frameDataLen[1] = len[1];
+        frameDataLen[2] = len[2];
+    }
+
+    ret.dataY = (char*)frameData[0];
+    ret.dataU = (char*)frameData[1];
+    ret.dataV = (char*)frameData[2];
+    ret.lenY = frameDataLen[0];
+    ret.lenU = frameDataLen[1];
+    ret.lenV = frameDataLen[2];
+
+    return ret;
+}
+
 void VideoDecodec::cleanup() {
     Decodec::cleanup();
 
