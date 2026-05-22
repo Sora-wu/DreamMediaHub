@@ -16,14 +16,12 @@ target_include_directories(DreamPlayer
 target_link_directories(DreamPlayer PRIVATE ${FFMPEG_ROOT}/lib)
 target_link_libraries(DreamPlayer PRIVATE ${FFMPEG_LIBS})
 
-# Windows 平台复制 DLL
 if (WIN32)
-    add_custom_command(TARGET DreamPlayer POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${COPY_FILES}
-        $<TARGET_FILE_DIR:DreamPlayer>
-    )
+	# Windows 平台复制 DLL
     install(FILES ${COPY_FILES} DESTINATION ${CMAKE_INSTALL_BINDIR})
+elseif (UNIX AND NOT APPLE)
+	set_target_properties(DreamPlayer PROPERTIES INSTALL_RPATH "$ORIGIN")
+	install(FILES ${COPY_FILES} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 install(

@@ -87,12 +87,12 @@ Dream::VideoFrame VideoDecodec::getVideoFrame() {
         frameDataLen[2] = len[2];
     }
 
-    ret.dataY = (char*)frameData[0];
-    ret.dataU = (char*)frameData[1];
-    ret.dataV = (char*)frameData[2];
-    ret.lenY = frameDataLen[0];
-    ret.lenU = frameDataLen[1];
-    ret.lenV = frameDataLen[2];
+    ret.data[0] = (char*)frameData[0];
+    ret.data[1] = (char*)frameData[1];
+    ret.data[2] = (char*)frameData[2];
+    ret.len[0] = frameDataLen[0];
+    ret.len[1] = frameDataLen[1];
+    ret.len[2] = frameDataLen[2];
 
     return ret;
 }

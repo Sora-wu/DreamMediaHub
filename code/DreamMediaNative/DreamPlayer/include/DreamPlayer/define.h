@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #ifdef PLATFORM_WINDOWS
     #ifdef DreamPlayer_EXPORTS
         #define DREAM_PLAYER_API __declspec(dllexport)
@@ -20,13 +22,7 @@ namespace Dream {
         uint32_t frameWidth{};
         uint32_t frameHeight{};
 
-        char* dataY{};
-        uint32_t lenY{};
-
-        char* dataU{};
-        uint32_t lenU{};
-
-        char* dataV{};
-        uint32_t lenV{};
+        char* data[3]{};
+        uint32_t len[3]{};
     };
 }

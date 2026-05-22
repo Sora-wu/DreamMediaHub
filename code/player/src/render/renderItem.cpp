@@ -11,12 +11,14 @@
 #include <QQuickOpenGLUtils>
 
 namespace {
+    const char* textureUniformName[3] = { "textureY", "textureU", "textureV" };
+
     std::string readShaderFile(const QString& filePath) {
         QFile file(filePath);
 
         // 尝试以只读和文本模式打开文件
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << QString("error: cannot open file: %1 error info: %2").arg(filePath).arg(file.errorString());
+            qWarning() << QString("error: cannot open file: %1 error info: %2").arg(filePath, file.errorString());
             return {};
         }
 
@@ -57,15 +59,12 @@ void OpenGLRender::render() {
 
     glBindVertexArray(vao_);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureY_);
-    glUniform1i(glGetUniformLocation(program_, "textureY"), 0);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, textureU_);
-    glUniform1i(glGetUniformLocation(program_, "textureU"), 0);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, textureV_);
-    glUniform1i(glGetUniformLocation(program_, "textureV"), 0);
+    VideoFrame videoFrame = player_->getVideoFrame();
+    for (uint32_t i = 0; i < 3; ++i) {
+        uint32_t textureHandle = texture_[i];
+        const char* uniformName = textureUniformName[i];
+        updateTexture(textureHandle, uniformName, i, videoFrame.frameWidth, videoFrame.frameHeight, videoFrame.data[i]);
+    }
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
@@ -143,14 +142,7 @@ void OpenGLRender::cleanup() {
     glDeleteBuffers(1, &ebo_);
     ebo_ = 0;
 
-    glDeleteTextures(1, &textureY_);
-    textureY_ = 0;
-
-    glDeleteTextures(1, &textureU_);
-    textureU_ = 0;
-
-    glDeleteTextures(1, &textureV_);
-    textureV_ = 0;
+    glDeleteTextures(3, texture_);
 }
 
 void OpenGLRender::initialize() {
@@ -194,14 +186,10 @@ void OpenGLRender::initialize() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    glGenTextures(1, &textureY_);
-    initTexture(textureY_);
-
-    glGenTextures(1, &textureU_);
-    initTexture(textureU_);
-
-    glGenTextures(1, &textureV_);
-    initTexture(textureV_);
+    glGenTextures(3, texture_);
+    for (uint32_t i = 0; i < 3; ++i) {
+        initTexture(texture_[i]);
+    }
 }
 
 void OpenGLRender::initTexture(GLuint textureHandle) {
@@ -213,12 +201,12 @@ void OpenGLRender::initTexture(GLuint textureHandle) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void OpenGLRender::updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, char* data, uint32_t len) {
-    // glActiveTexture(GL_TEXTURE0 + textureIndex);
-    // glBindTexture(GL_TEXTURE_2D, textureHandle);
-    // glUniform1i(glGetUniformLocation(program_, uniformName), 0);
-    //
-    // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width_ / 2, height_ / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
-    // glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+void OpenGLRender::updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, char* data) {
+    glActiveTexture(GL_TEXTURE0 + textureIndex);
+    glBindTexture(GL_TEXTURE_2D, textureHandle);
+    glUniform1i(glGetUniformLocation(program_, uniformName), 0);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, (int)frameWidth / 2, (int)frameHeight / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }

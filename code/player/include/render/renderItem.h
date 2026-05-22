@@ -33,18 +33,14 @@ private:
     void cleanup();
     void initialize();
     void initTexture(GLuint textureHandle);
-    void updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, char* data, uint32_t len);
-
-    void onVideoFrameRefresh(Dream::VideoFrame* videoFrame);
+    void updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, char* data);
 
 private:
     GLuint program_{};
     GLuint vao_{};
     GLuint vbo_{};
     GLuint ebo_{};
-    GLuint textureY_{};
-    GLuint textureU_{};
-    GLuint textureV_{};
+    GLuint texture_[3]{};
 
     bool initialized_ = false;
 
