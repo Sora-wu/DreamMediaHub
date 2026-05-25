@@ -6,7 +6,6 @@
 #pragma once
 
 #include <FFmpegPlayer/decodec.h>
-#include <DreamPlayer/define.h>
 
 namespace Dream {
     struct VideoFrame;
@@ -19,7 +18,7 @@ public:
 
     void run() override;
 
-    Dream::VideoFrame getVideoFrame();
+    void getVideoFrame(Dream::VideoFrame* videoFrame);
 
 protected:
     void cleanup() override;
@@ -30,4 +29,6 @@ private:
 
 private:
     SwsContext* swsCtx_ = nullptr;
+    uint8_t* convertBuf_ = nullptr;
+    int convertBufSize_ = 0;
 };

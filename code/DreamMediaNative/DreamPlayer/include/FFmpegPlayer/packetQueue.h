@@ -10,7 +10,7 @@
 
 struct Packet {
     AVPacket packet{};
-    uint32_t serial = -1;
+    uint32_t serial = 0;
 };
 
 class PacketQueue {

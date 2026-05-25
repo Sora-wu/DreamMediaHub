@@ -8,15 +8,12 @@
 #include <QQuickFramebufferObject>
 #include <QOpenGLExtraFunctions>
 
-namespace Dream {
-    class DreamPlayer;
-    struct VideoFrame;
-}
+#include <DreamPlayer/DreamContext.h>
 
 class RenderItem : public QQuickFramebufferObject {
     Q_OBJECT
 public:
-    Renderer* createRenderer() const override;
+    [[nodiscard]] Renderer* createRenderer() const override;
 };
 
 
@@ -45,4 +42,5 @@ private:
     bool initialized_ = false;
 
     Dream::DreamPlayer* player_ = nullptr;
+    Dream::VideoFrame videoFrame_{};
 };

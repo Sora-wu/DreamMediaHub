@@ -6,6 +6,7 @@
 #include <mutex>
 #include <FFmpegPlayer/demuxer.h>
 #include <FFmpegPlayer/ffcore.h>
+#include <FFmpegPlayer/ffinstance.h>
 
 #include <chrono>
 
@@ -15,7 +16,7 @@ bool Demuxer::open(const char* url) {
     int res = avformat_open_input(&fmtCtx_, url, nullptr, nullptr);
     if (res < 0) {
         std::string errorStr = FFUtils::getError(res);
-        av_log(nullptr, AV_LOG_FATAL, "Failed to open input, error code: %d, error message: %s", res, errorStr.c_str());
+        av_log(nullptr, AV_LOG_FATAL, "Failed to open input, error code: %d, error message: %s\n", res, errorStr.c_str());
         return false;
     }
 
@@ -31,6 +32,7 @@ bool Demuxer::open(const char* url) {
 
     duration_ = fmtCtx_->duration / AV_TIME_BASE;
     isEof_ = false;
+    FFINSTANCE()->setFormatContext(fmtCtx_);
 
     return true;
 }

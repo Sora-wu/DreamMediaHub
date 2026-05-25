@@ -5,8 +5,6 @@
 
 #include <render/renderItem.h>
 
-#include <DreamPlayer/DreamContext.h>
-
 #include <QFile>
 #include <QQuickOpenGLUtils>
 
@@ -40,9 +38,15 @@ QQuickFramebufferObject::Renderer* RenderItem::createRenderer() const {
 //////////////////////////OpenGLRender/////////////////////////////////
 OpenGLRender::OpenGLRender() {
     player_ = DreamContext::createDreamPlayer();
+
+    // TEST
+#ifdef PLATFORM_LINUX
+    player_->open("/home/sora/Videos/test.mp4");
+#endif
 }
 
 OpenGLRender::~OpenGLRender() {
+    videoFrame_.clear();
     cleanup();
 }
 
@@ -59,11 +63,11 @@ void OpenGLRender::render() {
 
     glBindVertexArray(vao_);
 
-    VideoFrame videoFrame = player_->getVideoFrame();
+    player_->getVideoFrame(&videoFrame_);
     for (uint32_t i = 0; i < 3; ++i) {
         uint32_t textureHandle = texture_[i];
         const char* uniformName = textureUniformName[i];
-        updateTexture(textureHandle, uniformName, i, videoFrame.frameWidth, videoFrame.frameHeight, videoFrame.data[i]);
+        updateTexture(textureHandle, uniformName, i, videoFrame_.frameWidth, videoFrame_.frameHeight, videoFrame_.data[i]);
     }
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
@@ -202,11 +206,18 @@ void OpenGLRender::initTexture(GLuint textureHandle) {
 }
 
 void OpenGLRender::updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, char* data) {
+    if (!data) {
+        return;
+    }
+
     glActiveTexture(GL_TEXTURE0 + textureIndex);
     glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glUniform1i(glGetUniformLocation(program_, uniformName), 0);
+    glUniform1i(glGetUniformLocation(program_, uniformName), (int)textureIndex);
+
+    const int width = (textureIndex == 0) ? (int)frameWidth : (frameWidth / 2);
+    const int height = (textureIndex == 0) ? (int)frameHeight : (frameHeight / 2);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, (int)frameWidth / 2, (int)frameHeight / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }

@@ -50,10 +50,15 @@ bool FFmpegPlayer::open(const char* url) {
         }
     }
 
+    demuxer_->start();
+    videoDecodec_->start();
+    // audioDecodec_->start();
+
     return true;
 }
 
 void FFmpegPlayer::play() {
+
 }
 
 void FFmpegPlayer::pause() {
@@ -80,8 +85,8 @@ void FFmpegPlayer::setSpeed(double speed) {
     speed_ = speed;
 }
 
-Dream::VideoFrame FFmpegPlayer::getVideoFrame() {
-    return videoDecodec_->getVideoFrame();
+void FFmpegPlayer::getVideoFrame(Dream::VideoFrame* videoFrame) {
+    videoDecodec_->getVideoFrame(videoFrame);
 }
 
 void FFmpegPlayer::handle(void* data) {

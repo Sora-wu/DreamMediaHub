@@ -6,8 +6,7 @@
 #pragma once
 
 #include <DreamPlayer/define.h>
-
-#include <cstdint>
+#include <DreamPlayer/structs.h>
 
 namespace Dream {
     class DREAM_PLAYER_API DreamPlayer {
@@ -26,6 +25,6 @@ namespace Dream {
 
         virtual void setSpeed(double speed) = 0;
 
-        [[nodiscard]] virtual VideoFrame getVideoFrame() = 0;
+        virtual void getVideoFrame(VideoFrame* videoFrame) = 0;
     };
 }

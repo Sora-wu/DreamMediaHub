@@ -1,0 +1,30 @@
+//
+// Author: sora
+// Mail: sora-wu@foxmail.com
+//
+
+#pragma once
+
+#include <DreamPlayer/define.h>
+
+#include <cstdint>
+
+namespace Dream {
+    struct DREAM_PLAYER_API VideoFrame {
+        uint32_t frameWidth{};
+        uint32_t frameHeight{};
+
+        char* data[3]{};
+        int len[3]{};
+
+        void clear() {
+            for (uint32_t i = 0; i < 3; ++i) {
+                if (data[i]) {
+                    delete[] data[i];
+                    data[i] = nullptr;
+                    len[i] = 0;
+                }
+            }
+        }
+    };
+}

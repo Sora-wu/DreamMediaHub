@@ -5,10 +5,25 @@
 
 #include <FFmpegPlayer/videoDecodec.h>
 #include <FFmpegPlayer/ffinstance.h>
+#include <DreamPlayer/structs.h>
 
 namespace {
     bool padding = false;
     AVPacket* paddingPkt = nullptr;
+
+    void updateVideoFrameSize(Dream::VideoFrame* videoFrame, const int linesize[3]) {
+        for (uint32_t i = 0; i < 3; ++i) {
+            if (linesize[i] != videoFrame->len[i]) {
+                if (videoFrame->data[i]) {
+                    delete[] videoFrame->data[i];
+                    videoFrame->data[i] = nullptr;
+                }
+
+                videoFrame->data[i] = new char[linesize[i]]{};
+                videoFrame->len[i] = linesize[i];
+            }
+        }
+    }
 }
 
 bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
@@ -45,17 +60,20 @@ void VideoDecodec::run() {
     av_frame_free(&frame);
 }
 
-Dream::VideoFrame VideoDecodec::getVideoFrame() {
+void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
     // TODO: 同步
-    Frame vp = frameQue_.pop();
+    std::optional<Frame> vpOpt = frameQue_.try_pop();
+    if (!vpOpt.has_value()) {
+        return;
+    }
+
+    Frame vp = vpOpt.value();
     AVFrame* frame = vp.frame;
+    const int width = frame->width;
+    const int height = frame->height;
 
-    uint8_t* data[3]{};
-    int len[3]{};
-
-    Dream::VideoFrame ret{};
-    ret.frameWidth = frame->width;
-    ret.frameHeight = frame->height;
+    videoFrame->frameWidth = frame->width;
+    videoFrame->frameHeight = frame->height;
 
     uint8_t* frameData[3]{};
     int frameDataLen[3]{};
@@ -67,40 +85,50 @@ Dream::VideoFrame VideoDecodec::getVideoFrame() {
     frameDataLen[2] = frame->linesize[2];
 
     if (frame->format != AV_PIX_FMT_YUV420P) {
-        int width = frame->width;
-        int height = frame->height;
-        swsCtx_ = sws_getCachedContext(swsCtx_, 
-            width, height, (AVPixelFormat)frame->format, 
-            width, height, AV_PIX_FMT_YUV420P, 
+        swsCtx_ = sws_getCachedContext(swsCtx_,
+            width, height, (AVPixelFormat)frame->format,
+            width, height, AV_PIX_FMT_YUV420P,
             SWS_BICUBIC, nullptr, nullptr, nullptr);
         if (!swsCtx_) {
-            av_log(nullptr, AV_LOG_FATAL, "Cannot initialize the conversion context");
-            return ret;
+            av_frame_unref(frame);
+            av_frame_free(&frame);
+            return;
         }
 
-        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, data, len);
-        frameData[0] = data[0];
-        frameData[1] = data[1];
-        frameData[2] = data[2];
-        frameDataLen[0] = len[0];
-        frameDataLen[1] = len[1];
-        frameDataLen[2] = len[2];
+        int bufSize = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 32);
+        if (!convertBuf_ || convertBufSize_ < bufSize) {
+            av_freep(&convertBuf_);
+            convertBuf_ = static_cast<uint8_t*>(av_malloc(bufSize));
+            convertBufSize_ = bufSize;
+        }
+
+        uint8_t* outData[4]{};
+        int outLinesize[4]{};
+        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, outData, outLinesize);
+        frameData[0] = outData[0];
+        frameData[1] = outData[1];
+        frameData[2] = outData[2];
+        frameDataLen[0] = outLinesize[0];
+        frameDataLen[1] = outLinesize[1];
+        frameDataLen[2] = outLinesize[2];
     }
 
-    ret.data[0] = (char*)frameData[0];
-    ret.data[1] = (char*)frameData[1];
-    ret.data[2] = (char*)frameData[2];
-    ret.len[0] = frameDataLen[0];
-    ret.len[1] = frameDataLen[1];
-    ret.len[2] = frameDataLen[2];
+    updateVideoFrameSize(videoFrame, frameDataLen);
+    for (uint32_t i = 0; i < 3; ++i) {
+        memcpy(videoFrame->data[i], frameData[i], frameDataLen[i]);
+        videoFrame->len[i] = frameDataLen[i];
+    }
 
-    return ret;
+    av_frame_unref(frame);
+    av_frame_free(&frame);
 }
 
 void VideoDecodec::cleanup() {
     Decodec::cleanup();
 
     sws_freeContext(swsCtx_);
+    av_freep(&convertBuf_);
+    convertBufSize_ = 0;
 }
 
 bool VideoDecodec::decodeFrame(AVFrame* frame) {
@@ -157,13 +185,17 @@ bool VideoDecodec::decodeFrame(AVFrame* frame) {
 }
 
 void VideoDecodec::pushFrame(AVFrame* frame, uint32_t serial, double pts, double duration) {
-    Frame vp{};
+    AVFrame* dup = av_frame_alloc();
+    if (!dup || av_frame_ref(dup, frame) < 0) {
+        av_frame_free(&dup);
+        return;
+    }
 
-    vp.frame = frame;
+    Frame vp{};
+    vp.frame = dup;
     vp.serial = serial;
     vp.pts = pts;
     vp.duration = duration;
 
-    av_frame_move_ref(vp.frame, frame);
     frameQue_.push(vp);
 }

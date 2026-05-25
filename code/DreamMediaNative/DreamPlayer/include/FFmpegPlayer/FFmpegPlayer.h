@@ -32,7 +32,7 @@ public:
 
     void setSpeed(double speed) override;
 
-    [[nodiscard]] Dream::VideoFrame getVideoFrame() override;
+    void getVideoFrame(Dream::VideoFrame* videoFrame) override;
 
     void handle(void* data) override;
 private:

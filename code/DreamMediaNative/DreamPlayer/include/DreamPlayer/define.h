@@ -16,13 +16,3 @@
 #else
     #define DREAM_PLAYER_API
 #endif
-
-namespace Dream {
-    struct VideoFrame {
-        uint32_t frameWidth{};
-        uint32_t frameHeight{};
-
-        char* data[3]{};
-        uint32_t len[3]{};
-    };
-}
