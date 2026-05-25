@@ -16,7 +16,7 @@ bool Demuxer::open(const char* url) {
     int res = avformat_open_input(&fmtCtx_, url, nullptr, nullptr);
     if (res < 0) {
         std::string errorStr = FFUtils::getError(res);
-        av_log(nullptr, AV_LOG_FATAL, "Failed to open input, error code: %d, error message: %s\n", res, errorStr.c_str());
+        av_log(nullptr, AV_LOG_FATAL, "Failed to open input, error code: %d, error message: %s path: %s\n", res, errorStr.c_str(), url);
         return false;
     }
 
@@ -37,11 +37,11 @@ bool Demuxer::open(const char* url) {
     return true;
 }
 
-void Demuxer::run() {
+void Demuxer::run(std::stop_token st) {
     AVPacket pkt{};
     int res = 0;
 
-    while (!isExit_) {
+    while (!st.stop_requested()) {
         res = av_read_frame(fmtCtx_, &pkt);
         if (res < 0) {
             if ((res == AVERROR_EOF || avio_feof(fmtCtx_->pb)) && !isEof_) {
@@ -49,7 +49,7 @@ void Demuxer::run() {
                 isEof_ = true;
             }
             if (fmtCtx_->pb && fmtCtx_->pb->error) {
-                isExit_ = true;
+                exit();
                 break;
             }
 

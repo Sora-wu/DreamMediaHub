@@ -13,7 +13,7 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
     return true;
 }
 
-void AudioDecodec::run() {
+void AudioDecodec::run(std::stop_token st) {
 
 }
 

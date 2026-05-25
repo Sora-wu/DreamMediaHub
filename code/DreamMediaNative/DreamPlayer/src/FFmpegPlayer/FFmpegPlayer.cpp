@@ -21,8 +21,9 @@ FFmpegPlayer::FFmpegPlayer() {
     demuxer_ = std::make_unique<Demuxer>();
     demuxer_->setNextHandler(this);
 
+
     videoDecodec_ = std::make_unique<VideoDecodec>(FRAME_VIDEO_SIZE);
-    audioDecodec_ = std::make_unique<AudioDecodec>(FRAME_AUDIO_SIZE);
+    // audioDecodec_ = std::make_unique<AudioDecodec>(FRAME_AUDIO_SIZE);
 }
 
 FFmpegPlayer::~FFmpegPlayer() {
@@ -43,11 +44,12 @@ bool FFmpegPlayer::open(const char* url) {
             if (!videoDecodec_->openCodec(i, stream)) {
                 return false;
             }
-        } else if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO && !audioDecodec_->isOpen()) {
-            if (!audioDecodec_->openCodec(i, stream)) {
-                return false;
-            }
         }
+        // else if (stream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO && !audioDecodec_->isOpen()) {
+        //     if (!audioDecodec_->openCodec(i, stream)) {
+        //         return false;
+        //     }
+        // }
     }
 
     demuxer_->start();
@@ -75,6 +77,7 @@ uint64_t FFmpegPlayer::getDuration() const {
 }
 
 void FFmpegPlayer::setVolume(uint32_t volume) {
+    volume_ = volume;
 }
 
 uint32_t FFmpegPlayer::getVolume() const {
@@ -95,12 +98,13 @@ void FFmpegPlayer::handle(void* data) {
     if (pkt->stream_index == videoDecodec_->getStreamIndex()) {
         videoDecodec_->handle(pkt);
     }
-    else if (pkt->stream_index == audioDecodec_->getStreamIndex()) {
-        audioDecodec_->handle(pkt);
-    }
+    // else if (pkt->stream_index == audioDecodec_->getStreamIndex()) {
+    //     audioDecodec_->handle(pkt);
+    // }
 }
 
-
 void FFmpegPlayer::cleanup() {
-
+    demuxer_->exit();
+    videoDecodec_->exit();
+    // audioDecodec_->exit();
 }

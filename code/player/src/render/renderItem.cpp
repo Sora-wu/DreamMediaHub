@@ -7,6 +7,7 @@
 
 #include <QFile>
 #include <QQuickOpenGLUtils>
+#include <QOpenGLDebugLogger>
 
 namespace {
     const char* textureUniformName[3] = { "textureY", "textureU", "textureV" };
@@ -42,12 +43,16 @@ OpenGLRender::OpenGLRender() {
     // TEST
 #ifdef PLATFORM_LINUX
     player_->open("/home/sora/Videos/test.mp4");
+#else
+    player_->open("D:/Desktop/Test/test31.mp4");
 #endif
 }
 
 OpenGLRender::~OpenGLRender() {
     videoFrame_.clear();
     cleanup();
+
+    DreamContext::destroyDreamPlayer(&player_);
 }
 
 void OpenGLRender::render() {
@@ -55,6 +60,10 @@ void OpenGLRender::render() {
         initialize();
         initialized_ = true;
     }
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
 
     glClearColor(0.0f, 0.0f, 0.0f,1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -64,10 +73,18 @@ void OpenGLRender::render() {
     glBindVertexArray(vao_);
 
     player_->getVideoFrame(&videoFrame_);
+    if (!videoFrame_.data[0] || !videoFrame_.frameWidth || !videoFrame_.frameHeight) {
+        glBindVertexArray(0);
+        glUseProgram(0);
+        QQuickOpenGLUtils::resetOpenGLState();
+        update();
+        return;
+    }
+
     for (uint32_t i = 0; i < 3; ++i) {
         uint32_t textureHandle = texture_[i];
         const char* uniformName = textureUniformName[i];
-        updateTexture(textureHandle, uniformName, i, videoFrame_.frameWidth, videoFrame_.frameHeight, videoFrame_.data[i]);
+        updateTexture(textureHandle, uniformName, i, videoFrame_.frameWidth, videoFrame_.frameHeight, videoFrame_.stride[i], videoFrame_.data[i]);
     }
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
@@ -80,7 +97,8 @@ void OpenGLRender::render() {
 }
 
 void OpenGLRender::synchronize(QQuickFramebufferObject* item) {
-
+    itemWidth = (uint32_t)item->width();
+    itemHeight = (uint32_t)item->height();
 }
 
 bool OpenGLRender::compileShader() {
@@ -149,8 +167,20 @@ void OpenGLRender::cleanup() {
     glDeleteTextures(3, texture_);
 }
 
+void OpenGLRender::initDebugMessage() {
+    logger_ = new QOpenGLDebugLogger;
+    if (logger_->initialize()) {
+        QObject::connect(logger_, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage& msg){
+            qWarning() << msg;
+        });
+        logger_->startLogging();
+    }
+}
+
 void OpenGLRender::initialize() {
     initializeOpenGLFunctions();
+
+    initDebugMessage();
 
     if (!compileShader()) {
         return;
@@ -198,15 +228,24 @@ void OpenGLRender::initialize() {
 
 void OpenGLRender::initTexture(GLuint textureHandle) {
     glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glTexParameteri(textureHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(textureHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(textureHandle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(textureHandle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1, 1, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGetError();
 }
 
-void OpenGLRender::updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, char* data) {
-    if (!data) {
+void OpenGLRender::updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, int stride, char* data) {
+    if (!data || !frameWidth || !frameHeight || stride <= 0) {
+        return;
+    }
+
+    const int width = (textureIndex == 0) ? (int)frameWidth : (int)(frameWidth / 2);
+    const int height = (textureIndex == 0) ? (int)frameHeight : (int)(frameHeight / 2);
+    if (width <= 0 || height <= 0) {
         return;
     }
 
@@ -214,10 +253,15 @@ void OpenGLRender::updateTexture(GLuint textureHandle, const char* uniformName, 
     glBindTexture(GL_TEXTURE_2D, textureHandle);
     glUniform1i(glGetUniformLocation(program_, uniformName), (int)textureIndex);
 
-    const int width = (textureIndex == 0) ? (int)frameWidth : (frameWidth / 2);
-    const int height = (textureIndex == 0) ? (int)frameHeight : (frameHeight / 2);
-
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, std::max(stride, width));
+    if (width != texWidth_[textureIndex] || height != texHeight_[textureIndex]) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+        texWidth_[textureIndex] = width;
+        texHeight_[textureIndex] = height;
+    } else {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, data);
+    }
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }

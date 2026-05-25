@@ -6,21 +6,26 @@
 #pragma once
 
 #include <thread>
+#include <functional>
 
 class DreamThraed {
 public:
     virtual ~DreamThraed() = default;
 
     void start() {
-        isExit_ = false;
-        thread_ = std::jthread(&DreamThraed::run, this);
+        thread_ = std::jthread([this](std::stop_token st) {
+            run(st);
+            onExit();
+        });
     }
 
     void exit() {
-        isExit_ = true;
+        thread_.request_stop();
     }
 
-    virtual void run() = 0;
+    virtual void run(std::stop_token st) = 0;
+
+    virtual void onExit() {}
 
     static void msleep(uint32_t ms) {
         std::this_thread::sleep_for(std::chrono::milliseconds(ms));
@@ -29,9 +34,6 @@ public:
     static void sleep(uint32_t s) {
         std::this_thread::sleep_for(std::chrono::seconds(s));
     }
-
-protected:
-    bool isExit_ = false;
 
 private:
     std::jthread thread_;

@@ -11,5 +11,6 @@ namespace Dream {
     class DREAM_PLAYER_API DreamContext {
     public:
         static DreamPlayer* createDreamPlayer();
+        static void destroyDreamPlayer(DreamPlayer** player);
     };
 } // Dream

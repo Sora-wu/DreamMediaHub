@@ -16,6 +16,7 @@ namespace Dream {
 
         char* data[3]{};
         int len[3]{};
+        int stride[3]{};
 
         void clear() {
             for (uint32_t i = 0; i < 3; ++i) {
@@ -23,6 +24,7 @@ namespace Dream {
                     delete[] data[i];
                     data[i] = nullptr;
                     len[i] = 0;
+                    stride[i] = 0;
                 }
             }
         }

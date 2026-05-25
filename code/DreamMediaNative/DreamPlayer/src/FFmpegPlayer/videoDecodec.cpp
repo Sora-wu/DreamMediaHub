@@ -11,17 +11,25 @@ namespace {
     bool padding = false;
     AVPacket* paddingPkt = nullptr;
 
-    void updateVideoFrameSize(Dream::VideoFrame* videoFrame, const int linesize[3]) {
+    void updateVideoFrameSize(Dream::VideoFrame* videoFrame, int height, const int linesize[3]) {
+        const int planeHeights[3] = { height, height / 2, height / 2 };
         for (uint32_t i = 0; i < 3; ++i) {
-            if (linesize[i] != videoFrame->len[i]) {
-                if (videoFrame->data[i]) {
-                    delete[] videoFrame->data[i];
-                    videoFrame->data[i] = nullptr;
-                }
-
-                videoFrame->data[i] = new char[linesize[i]]{};
-                videoFrame->len[i] = linesize[i];
+            if (!linesize[i]) {
+                continue;
             }
+
+            const int bufSize = linesize[i] * planeHeights[i];
+            if (bufSize == videoFrame->len[i] && videoFrame->data[i]) {
+                continue;
+            }
+
+            if (videoFrame->data[i]) {
+                delete[] videoFrame->data[i];
+                videoFrame->data[i] = nullptr;
+            }
+
+            videoFrame->data[i] = new char[bufSize]{};
+            videoFrame->len[i] = bufSize;
         }
     }
 }
@@ -34,7 +42,7 @@ bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
     return true;
 }
 
-void VideoDecodec::run() {
+void VideoDecodec::run(std::stop_token st) {
     AVFrame* frame = av_frame_alloc();
     if (!frame) {
         av_log(nullptr, AV_LOG_FATAL, "Could not allocate video frame");
@@ -47,7 +55,7 @@ void VideoDecodec::run() {
     double duration{};
     double pts{};
 
-    while  (!isExit_) {
+    while  (!st.stop_requested()) {
         if (!decodeFrame(frame)) {
             continue;
         }
@@ -72,17 +80,15 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
     const int width = frame->width;
     const int height = frame->height;
 
-    videoFrame->frameWidth = frame->width;
-    videoFrame->frameHeight = frame->height;
+    videoFrame->frameWidth = width;
+    videoFrame->frameHeight = height;
 
     uint8_t* frameData[3]{};
-    int frameDataLen[3]{};
-    frameData[0] = frame->data[0];
-    frameData[1] = frame->data[1];
-    frameData[2] = frame->data[2];
-    frameDataLen[0] = frame->linesize[0];
-    frameDataLen[1] = frame->linesize[1];
-    frameDataLen[2] = frame->linesize[2];
+    int frameLensize[3]{};
+    for (uint32_t i = 0; i < 3; ++i) {
+        frameData[i] = frame->data[i];
+        frameLensize[i] = frame->linesize[i];
+    }
 
     if (frame->format != AV_PIX_FMT_YUV420P) {
         swsCtx_ = sws_getCachedContext(swsCtx_,
@@ -95,7 +101,7 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
             return;
         }
 
-        int bufSize = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 32);
+        int bufSize = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 1);
         if (!convertBuf_ || convertBufSize_ < bufSize) {
             av_freep(&convertBuf_);
             convertBuf_ = static_cast<uint8_t*>(av_malloc(bufSize));
@@ -105,18 +111,21 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
         uint8_t* outData[4]{};
         int outLinesize[4]{};
         sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, outData, outLinesize);
-        frameData[0] = outData[0];
-        frameData[1] = outData[1];
-        frameData[2] = outData[2];
-        frameDataLen[0] = outLinesize[0];
-        frameDataLen[1] = outLinesize[1];
-        frameDataLen[2] = outLinesize[2];
+        for (uint32_t i = 0; i < 3; ++i) {
+            frameData[i] = outData[i];
+            frameLensize[i] = outLinesize[i];
+        }
     }
 
-    updateVideoFrameSize(videoFrame, frameDataLen);
+    updateVideoFrameSize(videoFrame, height, frameLensize);
+    const int planeHeights[3] = { height, height / 2, height / 2 };
     for (uint32_t i = 0; i < 3; ++i) {
-        memcpy(videoFrame->data[i], frameData[i], frameDataLen[i]);
-        videoFrame->len[i] = frameDataLen[i];
+        const int stride = frameLensize[i];
+        const int planeHeight = planeHeights[i];
+        for (int row = 0; row < planeHeight; ++row) {
+            memcpy(videoFrame->data[i] + row * stride, frameData[i] + row * stride, stride);
+        }
+        videoFrame->stride[i] = stride;
     }
 
     av_frame_unref(frame);

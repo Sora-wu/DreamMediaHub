@@ -30,7 +30,7 @@ public:
         return streams_;
     }
 
-    void run() override;
+    void run(std::stop_token st) override;
 
 private:
     AVFormatContext* fmtCtx_ = nullptr;

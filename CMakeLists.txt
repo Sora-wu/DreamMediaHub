@@ -11,7 +11,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_compile_definitions(PLATFORM_LINUX)
 elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(PLATFORM_NAME "win")
-    file(GLOB_RECURSE COPY_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFORM_NAME}/*.dll)
+    file(GLOB_RECURSE COPY_FILES ${CMAKE_CURRENT_SOURCE_DIR}/code/third/build/${PLATFORM_NAME}/*.dll)
     add_compile_definitions(PLATFORM_WINDOWS)
 endif()
 
