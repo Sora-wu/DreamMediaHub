@@ -8,9 +8,9 @@
 #include <thread>
 #include <functional>
 
-class DreamThraed {
+class DreamThread {
 public:
-    virtual ~DreamThraed() = default;
+    virtual ~DreamThread() = default;
 
     void start() {
         thread_ = std::jthread([this](std::stop_token st) {

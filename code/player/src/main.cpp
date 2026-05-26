@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
 
     QSurfaceFormat format;
+    format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setVersion(4, 5);
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setOption(QSurfaceFormat::DebugContext);

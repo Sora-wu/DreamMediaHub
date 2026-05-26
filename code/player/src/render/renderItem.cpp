@@ -170,6 +170,7 @@ void OpenGLRender::cleanup() {
 void OpenGLRender::initDebugMessage() {
     logger_ = new QOpenGLDebugLogger;
     if (logger_->initialize()) {
+        logger_->disableMessages(QOpenGLDebugMessage::AnySource, QOpenGLDebugMessage::AnyType,QOpenGLDebugMessage::NotificationSeverity);
         QObject::connect(logger_, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage& msg){
             qWarning() << msg;
         });

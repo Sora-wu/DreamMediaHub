@@ -17,7 +17,7 @@ struct Frame {
     double duration{};
 };
 
-class Decodec : public DataHandler, public DreamThraed {
+class Decodec : public DataHandler, public DreamThread {
 public:
     explicit Decodec(std::size_t frameQueueSize) : frameQue_(frameQueueSize) {}
     ~Decodec() override {

@@ -17,7 +17,7 @@ extern "C" {
     struct AVStream;
 }
 
-class Demuxer : public DataHandler, public DreamThraed {
+class Demuxer : public DataHandler, public DreamThread {
 public:
     ~Demuxer() override {}
 
