@@ -39,6 +39,20 @@ void Decodec::handle(void* data) {
     pktQue_.push((AVPacket*)data);
 }
 
+void Decodec::shutdown() {
+    pktQue_.close();
+    frameQue_.close();
+}
+
+void Decodec::reopen() {
+    pktQue_.reopen();
+    while (std::optional<Frame> frameOpt = frameQue_.try_pop()) {
+        av_frame_unref(frameOpt->frame);
+        av_frame_free(&frameOpt->frame);
+    }
+    frameQue_.reopen();
+}
+
 void Decodec::cleanup() {
     if (codecCtx_) {
         avcodec_free_context(&codecCtx_);

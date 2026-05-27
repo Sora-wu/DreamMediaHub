@@ -53,6 +53,8 @@ OpenGLRender::~OpenGLRender() {
     cleanup();
 
     DreamContext::destroyDreamPlayer(&player_);
+
+    int a = 0;
 }
 
 void OpenGLRender::render() {

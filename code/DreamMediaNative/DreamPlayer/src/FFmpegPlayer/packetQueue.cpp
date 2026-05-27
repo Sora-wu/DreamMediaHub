@@ -36,9 +36,8 @@ Packet PacketQueue::pop() {
 }
 
 void PacketQueue::clear() {
-    while (!que_.empty()) {
-        Packet packet = que_.pop();
-        av_packet_unref(&packet.packet);
+    while (std::optional<Packet> packetOpt = que_.try_pop()) {
+        av_packet_unref(&packetOpt->packet);
     }
 
     {
@@ -46,4 +45,14 @@ void PacketQueue::clear() {
         duration_ = 0;
         packetSize_ = 0;
     }
+}
+
+void PacketQueue::close() {
+    push(FFINSTANCE()->getFlushPkt());
+    que_.close();
+}
+
+void PacketQueue::reopen() {
+    clear();
+    que_.reopen();
 }

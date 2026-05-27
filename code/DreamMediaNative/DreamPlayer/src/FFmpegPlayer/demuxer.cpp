@@ -61,4 +61,6 @@ void Demuxer::run(std::stop_token st) {
         handle(&pkt);
         av_packet_unref(&pkt);
     }
+
+    av_log(nullptr, AV_LOG_INFO, "Demuxer exit\n");
 }

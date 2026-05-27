@@ -6,7 +6,6 @@
 #pragma once
 
 #include <thread>
-#include <functional>
 
 class DreamThread {
 public:
@@ -15,7 +14,6 @@ public:
     void start() {
         thread_ = std::jthread([this](std::stop_token st) {
             run(st);
-            onExit();
         });
     }
 
@@ -24,8 +22,6 @@ public:
     }
 
     virtual void run(std::stop_token st) = 0;
-
-    virtual void onExit() {}
 
     static void msleep(uint32_t ms) {
         std::this_thread::sleep_for(std::chrono::milliseconds(ms));

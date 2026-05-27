@@ -55,23 +55,27 @@ void VideoDecodec::run(std::stop_token st) {
     double duration{};
     double pts{};
 
-    while  (!st.stop_requested()) {
+    while (!st.stop_requested()) {
         if (!decodeFrame(frame)) {
+            if (st.stop_requested()) {
+                break;
+            }
             continue;
         }
-        
+
         duration = av_q2d(frameRate) > 0 ? av_q2d(av_inv_q(frameRate)) : 0.0;
         pts = frame->pts == AV_NOPTS_VALUE ? NAN : frame->pts * av_q2d(timeBase);
         pushFrame(frame, decodecSerial_, pts, duration);
     }
 
     av_frame_free(&frame);
+    av_log(nullptr, AV_LOG_INFO, "Finished decoding video stream\n");
 }
 
 void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
     // TODO: 同步
     std::optional<Frame> vpOpt = frameQue_.try_pop();
-    if (!vpOpt.has_value()) {
+    if (!vpOpt) {
         return;
     }
 
@@ -141,7 +145,6 @@ void VideoDecodec::cleanup() {
 }
 
 bool VideoDecodec::decodeFrame(AVFrame* frame) {
-    // TODO: 如果要退出
     // 先Frame后Packet，两个操作错开，避免更多的AVERROR(EAGAIN)
     AVPacket* prePkt = nullptr;
     int res = AVERROR(EAGAIN);

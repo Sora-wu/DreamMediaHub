@@ -21,6 +21,8 @@ public:
     void push(AVPacket* pkt);
     Packet pop();
     void clear();
+    void close();
+    void reopen();
 
     void setSerial(uint32_t serial) {
         serial_ = serial;

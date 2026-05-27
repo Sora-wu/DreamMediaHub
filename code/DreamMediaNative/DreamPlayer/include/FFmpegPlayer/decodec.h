@@ -36,6 +36,9 @@ public:
 
     void handle(void* data) override;
 
+    void shutdown();
+    void reopen();
+
 protected:
     virtual void cleanup();
     [[nodiscard]] virtual bool decodeFrame(AVFrame* frame) = 0;

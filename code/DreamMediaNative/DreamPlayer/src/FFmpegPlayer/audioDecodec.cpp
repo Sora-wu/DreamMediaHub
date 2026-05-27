@@ -14,7 +14,7 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
 }
 
 void AudioDecodec::run(std::stop_token st) {
-
+    av_log(nullptr, AV_LOG_INFO, "Finished decoding audio stream\n");
 }
 
 void AudioDecodec::cleanup() {

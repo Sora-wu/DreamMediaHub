@@ -52,6 +52,7 @@ bool FFmpegPlayer::open(const char* url) {
         // }
     }
 
+    videoDecodec_->reopen();
     demuxer_->start();
     videoDecodec_->start();
     // audioDecodec_->start();
@@ -106,5 +107,5 @@ void FFmpegPlayer::handle(void* data) {
 void FFmpegPlayer::cleanup() {
     demuxer_->exit();
     videoDecodec_->exit();
-    // audioDecodec_->exit();
+    videoDecodec_->shutdown();
 }

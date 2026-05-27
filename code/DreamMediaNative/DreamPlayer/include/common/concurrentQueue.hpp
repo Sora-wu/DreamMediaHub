@@ -14,23 +14,44 @@ template <typename T, typename Deque = std::deque<T>>
 class ConcurrentQueue {
 public:
     ConcurrentQueue() : maxSize_(std::numeric_limits<std::size_t>::max()) {}
-    explicit  ConcurrentQueue(std::size_t maxSize) : maxSize_(maxSize) {}
+    explicit  ConcurrentQueue(std::size_t maxSize) : maxSize_(maxSize ? maxSize : std::numeric_limits<std::size_t>::max()) {}
 
-    [[nodiscard]] bool empty() {
+    [[nodiscard]] bool empty() const {
         std::unique_lock lock(mutex_);
         return queue_.empty();
     }
 
-    [[nodiscard]] std::size_t size() {
+    [[nodiscard]] std::size_t size() const {
         std::unique_lock lock(mutex_);
         return queue_.size();
     }
 
-    // 推入数据，如果满，则阻塞
+    void close() {
+        std::unique_lock lock(mutex_);
+        closed_ = true;
+        cvEmpty_.notify_all();
+        cvFull_.notify_all();
+    }
+
+    void reopen() {
+        std::unique_lock lock(mutex_);
+        closed_ = false;
+    }
+
+    [[nodiscard]] bool isClosed() const {
+        return closed_;
+    }
+
     void push(T value) {
         std::unique_lock lock(mutex_);
+        if (closed_) {
+            return;
+        }
         while (queue_.size() >= maxSize_) {
-            cvFull_.wait(lock);
+            cvFull_.wait(lock, [&] { return queue_.size() < maxSize_ || closed_; });
+            if (closed_) {
+                return;
+            }
         }
 
         queue_.push_back(std::move(value));
@@ -40,7 +61,7 @@ public:
     // 尝试推数据，不阻塞，如果满，返回 false
     bool try_push(T value) {
         std::unique_lock lock(mutex_);
-        if  (queue_.size() >= maxSize_) {
+        if (closed_ || queue_.size() >= maxSize_) {
             return false;
         }
 
@@ -73,11 +94,17 @@ public:
         return true;
     }
 
-    // 陷入阻塞，直到有数据
     T pop() {
         std::unique_lock lock(mutex_);
+
+        if (closed_) {
+            return {};
+        }
         while (queue_.empty()) {
-            cvEmpty_.wait(lock);
+            cvEmpty_.wait(lock, [&] { return !queue_.empty() || closed_; });
+            if (closed_) {
+                return {};
+            }
         }
 
         T value = std::move(queue_.front());
@@ -130,4 +157,6 @@ private:
     std::condition_variable cvEmpty_;
     std::condition_variable cvFull_;
     std::size_t maxSize_{};
+
+    bool closed_ = false;
 };
