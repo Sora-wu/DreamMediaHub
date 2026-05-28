@@ -7,6 +7,7 @@
 
 #include <QQuickFramebufferObject>
 #include <QOpenGLFunctions_4_5_Core>
+#include <QMatrix4x4>
 
 #include <DreamPlayer/DreamContext.h>
 
@@ -31,8 +32,11 @@ private:
     void cleanup();
     void initDebugMessage();
     void initialize();
-    void initTexture(GLuint textureHandle);
-    void updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, int stride, char* data);
+    void initTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex);
+
+    QRect updateItemRect() const;
+    void updateMVP();
+    void updateTexture(GLuint textureHandle, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, int stride, char* data);
 
 private:
     GLuint program_{};
@@ -40,6 +44,7 @@ private:
     GLuint vbo_{};
     GLuint ebo_{};
     GLuint texture_[3]{};
+    GLint texUniformLocation_[3]{};
     int texWidth_[3]{};
     int texHeight_[3]{};
 
@@ -48,8 +53,9 @@ private:
     Dream::DreamPlayer* player_ = nullptr;
     Dream::VideoFrame videoFrame_{};
 
-    uint32_t itemWidth = 0;
-    uint32_t itemHeight = 0;
+    float itemWidth = 0;
+    float itemHeight = 0;
+    QMatrix4x4 modelMatrix_{};
 
     QOpenGLDebugLogger* logger_ = nullptr;
 };

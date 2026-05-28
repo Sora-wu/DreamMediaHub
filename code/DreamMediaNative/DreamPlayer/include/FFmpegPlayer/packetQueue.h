@@ -19,7 +19,7 @@ public:
     explicit PacketQueue(std::size_t maxSize) : que_(maxSize) {}
 
     void push(AVPacket* pkt);
-    Packet pop();
+    std::optional<Packet> pop();
     void clear();
     void close();
     void reopen();

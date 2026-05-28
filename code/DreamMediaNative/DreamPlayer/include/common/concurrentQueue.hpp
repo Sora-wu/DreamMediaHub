@@ -17,50 +17,49 @@ public:
     explicit  ConcurrentQueue(std::size_t maxSize) : maxSize_(maxSize ? maxSize : std::numeric_limits<std::size_t>::max()) {}
 
     [[nodiscard]] bool empty() const {
-        std::unique_lock lock(mutex_);
+        std::lock_guard lock(mutex_);
         return queue_.empty();
     }
 
     [[nodiscard]] std::size_t size() const {
-        std::unique_lock lock(mutex_);
+        std::lock_guard lock(mutex_);
         return queue_.size();
     }
 
     void close() {
-        std::unique_lock lock(mutex_);
+        std::lock_guard lock(mutex_);
         closed_ = true;
         cvEmpty_.notify_all();
         cvFull_.notify_all();
     }
 
     void reopen() {
-        std::unique_lock lock(mutex_);
+        std::lock_guard lock(mutex_);
         closed_ = false;
     }
 
     [[nodiscard]] bool isClosed() const {
+        std::lock_guard lock(mutex_);
         return closed_;
     }
 
-    void push(T value) {
+    bool push(T value) {
         std::unique_lock lock(mutex_);
+        cvFull_.wait(lock, [&] { return queue_.size() < maxSize_ || closed_; });
+
         if (closed_) {
-            return;
-        }
-        while (queue_.size() >= maxSize_) {
-            cvFull_.wait(lock, [&] { return queue_.size() < maxSize_ || closed_; });
-            if (closed_) {
-                return;
-            }
+            return false;
         }
 
         queue_.push_back(std::move(value));
         cvEmpty_.notify_one();
+
+        return true;
     }
 
     // 尝试推数据，不阻塞，如果满，返回 false
     bool try_push(T value) {
-        std::unique_lock lock(mutex_);
+        std::lock_guard lock(mutex_);
         if (closed_ || queue_.size() >= maxSize_) {
             return false;
         }
@@ -73,7 +72,10 @@ public:
     // 尝试推数据，如果满，等待一段时间，超时返回 false
     bool try_push_for(T value, std::chrono::steady_clock::duration timeout) {
         std::unique_lock lock(mutex_);
-        if (!cvFull_.wait_for(lock, timeout, [&] { return queue_.size() < maxSize_; })) {
+        if (!cvFull_.wait_for(lock, timeout, [&] { return queue_.size() < maxSize_ || closed_; })) {
+            return false;
+        }
+        if (closed_) {
             return false;
         }
 
@@ -85,7 +87,10 @@ public:
     // 尝试推数据，如果满，等待直到时间点，超时返回 false
     bool try_push_until(T value, std::chrono::steady_clock::time_point timeout) {
         std::unique_lock lock(mutex_);
-        if (!cvFull_.wait_until(lock, timeout, [&] { return queue_.size() < maxSize_; })) {
+        if (!cvFull_.wait_until(lock, timeout, [&] { return queue_.size() < maxSize_ || closed_; })) {
+            return false;
+        }
+        if (closed_) {
             return false;
         }
 
@@ -94,17 +99,13 @@ public:
         return true;
     }
 
-    T pop() {
+    std::optional<T> pop() {
         std::unique_lock lock(mutex_);
+        cvEmpty_.wait(lock, [&] { return !queue_.empty() || closed_; });
 
-        if (closed_) {
-            return {};
-        }
-        while (queue_.empty()) {
-            cvEmpty_.wait(lock, [&] { return !queue_.empty() || closed_; });
-            if (closed_) {
-                return {};
-            }
+        // 只有在队列为空且关闭时，才返回空。允许把关闭前遗留的数据消费完
+        if (closed_ && queue_.empty()) {
+            return std::nullopt;
         }
 
         T value = std::move(queue_.front());
@@ -115,7 +116,7 @@ public:
 
     // 尝试取数据，不阻塞，如果没有，返回 nullopt
     std::optional<T> try_pop() {
-        std::unique_lock lock(mutex_);
+        std::lock_guard lock(mutex_);
         if (queue_.empty()) {
             return std::nullopt;
         }
@@ -128,7 +129,11 @@ public:
     // 尝试取数据，如果没有，等待一段时间，超时返回 nullopt
     std::optional<T> try_pop_for(std::chrono::steady_clock::duration timeout) {
         std::unique_lock lock(mutex_);
-        if (!cvEmpty_.wait_for(lock, timeout, [&] { return !queue_.empty(); })) {
+        if (!cvEmpty_.wait_for(lock, timeout, [&] { return !queue_.empty() || closed_; })) {
+            return std::nullopt;
+        }
+        // 只有在队列为空且关闭时，才返回空。允许把关闭前遗留的数据消费完
+        if (closed_ && queue_.empty()) {
             return std::nullopt;
         }
 
@@ -141,7 +146,12 @@ public:
     // 尝试取数据，如果没有，等待直到时间点，超时返回 nullopt
     std::optional<T> try_pop_until(std::chrono::steady_clock::time_point timeout) {
         std::unique_lock lock(mutex_);
-        if (!cvEmpty_.wait_until(lock, timeout, [&] { return !queue_.empty(); })) {
+        if (!cvEmpty_.wait_until(lock, timeout, [&] { return !queue_.empty() || closed_; })) {
+            return std::nullopt;
+        }
+
+        // 只有在队列为空且关闭时，才返回空。允许把关闭前遗留的数据消费完
+        if (closed_ && queue_.empty()) {
             return std::nullopt;
         }
         
@@ -153,7 +163,7 @@ public:
 
 private:
     Deque queue_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::condition_variable cvEmpty_;
     std::condition_variable cvFull_;
     std::size_t maxSize_{};

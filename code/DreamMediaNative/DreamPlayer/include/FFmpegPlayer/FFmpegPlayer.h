@@ -24,6 +24,9 @@ public:
     void pause() override;
     void stop() override;
 
+    [[nodiscard]] uint32_t getWidth() override;
+    [[nodiscard]] uint32_t getHeight() override;
+
     void seek(double position) override;
     [[nodiscard]] uint64_t getDuration() const override;
 

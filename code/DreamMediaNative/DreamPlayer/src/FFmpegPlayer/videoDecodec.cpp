@@ -42,6 +42,14 @@ bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
     return true;
 }
 
+uint32_t VideoDecodec::getWidth() const {
+    return codecCtx_->width;
+}
+
+uint32_t VideoDecodec::getHeight() const {
+    return codecCtx_->height;
+}
+
 void VideoDecodec::run(std::stop_token st) {
     AVFrame* frame = av_frame_alloc();
     if (!frame) {
@@ -86,6 +94,7 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
 
     videoFrame->frameWidth = width;
     videoFrame->frameHeight = height;
+    videoFrame->picWidthHeightRatio = av_q2d(frame->sample_aspect_ratio);
 
     uint8_t* frameData[3]{};
     int frameLensize[3]{};
@@ -170,8 +179,12 @@ bool VideoDecodec::decodeFrame(AVFrame* frame) {
                 av_packet_move_ref(prePkt, paddingPkt);
             }
             else {
-                Packet packet = pktQue_.pop();
-                auto&[pkt, serial] = packet;
+                std::optional<Packet> packetOpt = pktQue_.pop();
+                if (!packetOpt) {
+                    return false;
+                }
+
+                auto&[pkt, serial] = *packetOpt;
                 decodecSerial_ = serial;
 
                 prePkt = &pkt;

@@ -23,9 +23,13 @@ void PacketQueue::push(AVPacket* pkt) {
     que_.push(packet);
 }
 
-Packet PacketQueue::pop() {
-    Packet packet = que_.pop();
+std::optional<Packet> PacketQueue::pop() {
+    std::optional<Packet> packetOpt = que_.pop();
+    if (!packetOpt) {
+        return std::nullopt;
+    }
 
+    Packet packet = *packetOpt;
     {
         std::lock_guard lock(mutex_);
         duration_ -= packet.packet.duration;

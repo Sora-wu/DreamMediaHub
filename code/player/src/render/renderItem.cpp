@@ -53,8 +53,6 @@ OpenGLRender::~OpenGLRender() {
     cleanup();
 
     DreamContext::destroyDreamPlayer(&player_);
-
-    int a = 0;
 }
 
 void OpenGLRender::render() {
@@ -72,7 +70,7 @@ void OpenGLRender::render() {
 
     glUseProgram(program_);
 
-    glBindVertexArray(vao_);
+    updateMVP();
 
     player_->getVideoFrame(&videoFrame_);
     if (!videoFrame_.data[0] || !videoFrame_.frameWidth || !videoFrame_.frameHeight) {
@@ -99,8 +97,8 @@ void OpenGLRender::render() {
 }
 
 void OpenGLRender::synchronize(QQuickFramebufferObject* item) {
-    itemWidth = (uint32_t)item->width();
-    itemHeight = (uint32_t)item->height();
+    itemWidth = item->width();
+    itemHeight = item->height();
 }
 
 bool OpenGLRender::compileShader() {
@@ -225,23 +223,71 @@ void OpenGLRender::initialize() {
 
     glGenTextures(3, texture_);
     for (uint32_t i = 0; i < 3; ++i) {
-        initTexture(texture_[i]);
+        initTexture(texture_[i], textureUniformName[i], i);
     }
 }
 
-void OpenGLRender::initTexture(GLuint textureHandle) {
+void OpenGLRender::initTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex) {
     glBindTexture(GL_TEXTURE_2D, textureHandle);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1, 1, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    texUniformLocation_[textureIndex] = glGetUniformLocation(program_, uniformName);
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGetError();
 }
 
-void OpenGLRender::updateTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, int stride, char* data) {
+QRect OpenGLRender::updateItemRect() const {
+    const uint32_t height = player_->getWidth();
+    const uint32_t width = player_->getHeight();
+
+    uint32_t rectHeight = height;
+    uint32_t rectWidth = (uint32_t)std::round(height * videoFrame_.picWidthHeightRatio) & ~1;
+    if (rectWidth > width) {
+        rectWidth = width;
+        rectHeight = (uint32_t)std::round(width / videoFrame_.picWidthHeightRatio) & ~1;
+    }
+
+    QRect itemRect{};
+    itemRect.setX((width - rectWidth) / 2);
+    itemRect.setY((height - rectHeight) / 2);
+    itemRect.setWidth(rectWidth);
+    itemRect.setHeight(rectHeight);
+
+    return itemRect;
+}
+
+void OpenGLRender::updateMVP() {
+    const QRect itemRect = updateItemRect();
+    const float left = itemRect.left();
+    const float right = left + itemRect.width();
+    const float top = itemRect.top();
+    const float bottom = top + itemRect.height();
+
+    const float vertices[] = {
+        // 位置                     // 纹理坐标
+        left, bottom, 0.0f,        0.0f, 0.0f,  // 左下
+        right, bottom, 0.0f,       1.0f, 0.0f,  // 右下
+        right, top, 0.0f,          1.0f, 1.0f,  // 右上
+        left, top, 0.0f,           0.0f, 1.0f   // 左上
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+    glBindVertexArray(vao_);
+
+    QMatrix4x4 viewMatrix{};
+    viewMatrix.translate((left + right) / 2, (top + bottom) / 2);
+
+    QMatrix4x4 projMatrix{};
+    projMatrix.ortho(left, right, bottom, top, -1, 1);
+
+    modelMatrix_ = viewMatrix * projMatrix;
+}
+
+void OpenGLRender::updateTexture(GLuint textureHandle, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, int stride, char* data) {
     if (!data || !frameWidth || !frameHeight || stride <= 0) {
         return;
     }
@@ -254,7 +300,7 @@ void OpenGLRender::updateTexture(GLuint textureHandle, const char* uniformName, 
 
     glActiveTexture(GL_TEXTURE0 + textureIndex);
     glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glUniform1i(glGetUniformLocation(program_, uniformName), (int)textureIndex);
+    glUniform1i(texUniformLocation_[textureIndex], (int)textureIndex);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, std::max(stride, width));

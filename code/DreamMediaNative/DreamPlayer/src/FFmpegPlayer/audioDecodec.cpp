@@ -22,7 +22,6 @@ void AudioDecodec::cleanup() {
 }
 
 bool AudioDecodec::decodeFrame(AVFrame* frame) {
-    Packet packet = pktQue_.pop();
 
     return false;
 }

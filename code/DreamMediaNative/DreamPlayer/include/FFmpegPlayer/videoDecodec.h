@@ -16,6 +16,9 @@ public:
     explicit VideoDecodec(std::size_t frameQueueSize) : Decodec(frameQueueSize) {}
     bool openCodec(int streamIndex, AVStream* stream) override;
 
+    uint32_t getWidth() const;
+    uint32_t getHeight() const;
+
     void run(std::stop_token st) override;
 
     void getVideoFrame(Dream::VideoFrame* videoFrame);

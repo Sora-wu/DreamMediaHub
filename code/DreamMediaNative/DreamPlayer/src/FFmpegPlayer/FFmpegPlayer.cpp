@@ -70,6 +70,14 @@ void FFmpegPlayer::pause() {
 void FFmpegPlayer::stop() {
 }
 
+uint32_t FFmpegPlayer::getWidth() {
+    return videoDecodec_->getWidth();
+}
+
+uint32_t FFmpegPlayer::getHeight() {
+    return videoDecodec_->getHeight();
+}
+
 void FFmpegPlayer::seek(double position) {
 }
 

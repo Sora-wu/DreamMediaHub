@@ -13,6 +13,7 @@ namespace Dream {
     struct DREAM_PLAYER_API VideoFrame {
         uint32_t frameWidth{};
         uint32_t frameHeight{};
+        double picWidthHeightRatio{};
 
         char* data[3]{};
         int len[3]{};
