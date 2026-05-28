@@ -7,7 +7,6 @@
 
 #include <QQuickFramebufferObject>
 #include <QOpenGLFunctions_4_5_Core>
-#include <QMatrix4x4>
 
 #include <DreamPlayer/DreamContext.h>
 
@@ -45,6 +44,7 @@ private:
     GLuint ebo_{};
     GLuint texture_[3]{};
     GLint texUniformLocation_[3]{};
+    GLint modelViewMatUniformLoc_{};
     int texWidth_[3]{};
     int texHeight_[3]{};
 
@@ -55,7 +55,6 @@ private:
 
     float itemWidth = 0;
     float itemHeight = 0;
-    QMatrix4x4 modelMatrix_{};
 
     QOpenGLDebugLogger* logger_ = nullptr;
 };

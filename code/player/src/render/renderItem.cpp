@@ -5,6 +5,7 @@
 
 #include <render/renderItem.h>
 
+#include <QMatrix4x4>
 #include <QFile>
 #include <QQuickOpenGLUtils>
 #include <QOpenGLDebugLogger>
@@ -84,7 +85,7 @@ void OpenGLRender::render() {
     for (uint32_t i = 0; i < 3; ++i) {
         uint32_t textureHandle = texture_[i];
         const char* uniformName = textureUniformName[i];
-        updateTexture(textureHandle, uniformName, i, videoFrame_.frameWidth, videoFrame_.frameHeight, videoFrame_.stride[i], videoFrame_.data[i]);
+        updateTexture(textureHandle, i, videoFrame_.frameWidth, videoFrame_.frameHeight, videoFrame_.stride[i], videoFrame_.data[i]);
     }
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
@@ -225,6 +226,8 @@ void OpenGLRender::initialize() {
     for (uint32_t i = 0; i < 3; ++i) {
         initTexture(texture_[i], textureUniformName[i], i);
     }
+
+    modelViewMatUniformLoc_ = glGetUniformLocation(program_, "modelViewMatrix");
 }
 
 void OpenGLRender::initTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex) {
@@ -239,19 +242,20 @@ void OpenGLRender::initTexture(GLuint textureHandle, const char* uniformName, ui
 }
 
 QRect OpenGLRender::updateItemRect() const {
-    const uint32_t height = player_->getWidth();
-    const uint32_t width = player_->getHeight();
+    const uint32_t height = player_->getHeight();
+    const uint32_t width = player_->getWidth();
 
-    uint32_t rectHeight = height;
-    uint32_t rectWidth = (uint32_t)std::round(height * videoFrame_.picWidthHeightRatio) & ~1;
+    // TODO: 需要视频像素宽高比
+    uint32_t rectHeight = itemHeight;
+    uint32_t rectWidth = (uint32_t)std::round((float)rectHeight * width / height) & ~1;
     if (rectWidth > width) {
-        rectWidth = width;
-        rectHeight = (uint32_t)std::round(width / videoFrame_.picWidthHeightRatio) & ~1;
+        rectWidth = itemWidth;
+        rectHeight = (uint32_t)std::round((float)rectWidth * height / width) & ~1;
     }
 
     QRect itemRect{};
-    itemRect.setX((width - rectWidth) / 2);
-    itemRect.setY((height - rectHeight) / 2);
+    itemRect.setX((itemWidth - rectWidth) / 2);
+    itemRect.setY((itemHeight - rectHeight) / 2);
     itemRect.setWidth(rectWidth);
     itemRect.setHeight(rectHeight);
 
@@ -265,26 +269,25 @@ void OpenGLRender::updateMVP() {
     const float top = itemRect.top();
     const float bottom = top + itemRect.height();
 
+    // 这里需要上下颠倒，OpenGL的uv是倒过来的
     const float vertices[] = {
         // 位置                     // 纹理坐标
-        left, bottom, 0.0f,        0.0f, 0.0f,  // 左下
-        right, bottom, 0.0f,       1.0f, 0.0f,  // 右下
-        right, top, 0.0f,          1.0f, 1.0f,  // 右上
-        left, top, 0.0f,           0.0f, 1.0f   // 左上
+        left, bottom, 0.0f,        0.0f, 1.0f,  // 左下
+        right, bottom, 0.0f,       1.0f, 1.0f,  // 右下
+        right, top, 0.0f,          1.0f, 0.0f,  // 右上
+        left, top, 0.0f,           0.0f, 0.0f   // 左上
     };
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(vao_);
 
-    QMatrix4x4 viewMatrix{};
-    viewMatrix.translate((left + right) / 2, (top + bottom) / 2);
+    QMatrix4x4 modelViewMatrix{};
+    modelViewMatrix.ortho(0, itemWidth, 0, itemHeight, -1, 1);
 
-    QMatrix4x4 projMatrix{};
-    projMatrix.ortho(left, right, bottom, top, -1, 1);
-
-    modelMatrix_ = viewMatrix * projMatrix;
+    glUniformMatrix4fv(modelViewMatUniformLoc_, 1, GL_FALSE, modelViewMatrix.constData());
 }
 
 void OpenGLRender::updateTexture(GLuint textureHandle, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, int stride, char* data) {

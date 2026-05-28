@@ -39,6 +39,8 @@ bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
         return false;
     }
 
+
+
     return true;
 }
 
@@ -71,6 +73,7 @@ void VideoDecodec::run(std::stop_token st) {
             continue;
         }
 
+        frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(fmtCtx, stream_, frame);
         duration = av_q2d(frameRate) > 0 ? av_q2d(av_inv_q(frameRate)) : 0.0;
         pts = frame->pts == AV_NOPTS_VALUE ? NAN : frame->pts * av_q2d(timeBase);
         pushFrame(frame, decodecSerial_, pts, duration);
