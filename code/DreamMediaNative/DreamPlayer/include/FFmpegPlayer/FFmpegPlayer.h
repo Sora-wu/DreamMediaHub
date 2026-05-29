@@ -36,6 +36,7 @@ public:
     void setSpeed(double speed) override;
 
     void getVideoFrame(Dream::VideoFrame* videoFrame) override;
+    void getAudioFrame(Dream::AudioFrame* audioFrame) override;
 
     void handle(void* data) override;
 private:

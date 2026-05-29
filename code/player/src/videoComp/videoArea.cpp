@@ -3,7 +3,7 @@
 // Mail: sora-wu@foxmail.com
 //
 
-#include <render/videoArea.h>
+#include <videoComp/videoArea.h>
 
 #include <QMatrix4x4>
 #include <QFile>

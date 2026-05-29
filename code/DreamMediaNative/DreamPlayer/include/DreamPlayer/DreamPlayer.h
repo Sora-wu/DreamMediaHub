@@ -29,5 +29,6 @@ namespace Dream {
         virtual void setSpeed(double speed) = 0;
 
         virtual void getVideoFrame(VideoFrame* videoFrame) = 0;
+        virtual void getAudioFrame(AudioFrame* audioFrame) = 0;
     };
 }

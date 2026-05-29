@@ -30,4 +30,9 @@ namespace Dream {
             }
         }
     };
+
+    struct DREAM_PLAYER_API AudioFrame {
+        char* data{};
+        int len{};
+    };
 }
