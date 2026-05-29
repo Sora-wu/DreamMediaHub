@@ -10,10 +10,17 @@
 
 #include <DreamPlayer/DreamContext.h>
 
-class RenderItem : public QQuickFramebufferObject {
+namespace Dream {
+    class DreamPlayer;
+}
+
+class OpenGLRender;
+
+class VideoArea : public QQuickFramebufferObject {
     Q_OBJECT
 public:
     [[nodiscard]] Renderer* createRenderer() const override;
+    static void setPlayer(Dream::DreamPlayer* player);
 };
 
 class QOpenGLDebugLogger;

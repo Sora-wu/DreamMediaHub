@@ -3,7 +3,7 @@
 // Mail: sora-wu@foxmail.com
 //
 
-#include <render/renderItem.h>
+#include <render/videoArea.h>
 
 #include <QMatrix4x4>
 #include <QFile>
@@ -11,7 +11,9 @@
 #include <QOpenGLDebugLogger>
 
 namespace {
+    const double EPSILON = 1e-8;
     const char* textureUniformName[3] = { "textureY", "textureU", "textureV" };
+    Dream::DreamPlayer* player = nullptr;
 
     std::string readShaderFile(const QString& filePath) {
         QFile file(filePath);
@@ -33,27 +35,22 @@ namespace {
 using namespace Dream;
 
 //////////////////////////RenderItem/////////////////////////////////
-QQuickFramebufferObject::Renderer* RenderItem::createRenderer() const {
+QQuickFramebufferObject::Renderer* VideoArea::createRenderer() const {
     return new OpenGLRender;
 }
 
-//////////////////////////OpenGLRender/////////////////////////////////
-OpenGLRender::OpenGLRender() {
-    player_ = DreamContext::createDreamPlayer();
-
-    // TEST
-#ifdef PLATFORM_LINUX
-    player_->open("/home/sora/Videos/test.mp4");
-#else
-    player_->open("D:/Desktop/Test/test31.mp4");
-#endif
+void VideoArea::setPlayer(DreamPlayer* p) {
+    player = p;
 }
+
+//////////////////////////OpenGLRender/////////////////////////////////
+OpenGLRender::OpenGLRender() {}
 
 OpenGLRender::~OpenGLRender() {
     videoFrame_.clear();
     cleanup();
 
-    DreamContext::destroyDreamPlayer(&player_);
+    DreamContext::destroyDreamPlayer(&player);
 }
 
 void OpenGLRender::render() {
@@ -73,7 +70,7 @@ void OpenGLRender::render() {
 
     updateMVP();
 
-    player_->getVideoFrame(&videoFrame_);
+    player->getVideoFrame(&videoFrame_);
     if (!videoFrame_.data[0] || !videoFrame_.frameWidth || !videoFrame_.frameHeight) {
         glBindVertexArray(0);
         glUseProgram(0);
@@ -242,15 +239,19 @@ void OpenGLRender::initTexture(GLuint textureHandle, const char* uniformName, ui
 }
 
 QRect OpenGLRender::updateItemRect() const {
-    const uint32_t height = player_->getHeight();
-    const uint32_t width = player_->getWidth();
+    const uint32_t height = player->getHeight();
+    const uint32_t width = player->getWidth();
 
-    // TODO: 需要视频像素宽高比
+    double aspectRatio = (double)width / height;
+    if (videoFrame_.picWidthHeightRatio > EPSILON) {
+        aspectRatio *= videoFrame_.picWidthHeightRatio;
+    }
+
     uint32_t rectHeight = itemHeight;
-    uint32_t rectWidth = (uint32_t)std::round((float)rectHeight * width / height) & ~1;
-    if (rectWidth > width) {
+    uint32_t rectWidth = (uint32_t)std::round((float)rectHeight * aspectRatio) & ~1;
+    if (rectWidth > itemWidth) {
         rectWidth = itemWidth;
-        rectHeight = (uint32_t)std::round((float)rectWidth * height / width) & ~1;
+        rectHeight = (uint32_t)std::round((float)rectWidth / aspectRatio) & ~1;
     }
 
     QRect itemRect{};

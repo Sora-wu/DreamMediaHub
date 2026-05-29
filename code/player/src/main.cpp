@@ -3,10 +3,27 @@
 // Mail: sora-wu@foxmail.com
 //
 
-#include <render/renderItem.h>
+#include <render/videoArea.h>
 
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
+
+#include <DreamPlayer/DreamContext.h>
+
+void initPlayer() {
+    using namespace Dream;
+
+    DreamPlayer* player = DreamContext::createDreamPlayer();
+    VideoArea::setPlayer(player);
+
+
+    // TEST
+#ifdef PLATFORM_LINUX
+    player->open("/home/sora/Videos/test.mp4");
+#else
+    player->open("D:/Desktop/Test/test31.mp4");
+#endif
+}
 
 int main(int argc, char *argv[])
 {
@@ -20,7 +37,7 @@ int main(int argc, char *argv[])
     format.setOption(QSurfaceFormat::DebugContext);
     QSurfaceFormat::setDefaultFormat(format);
 
-    qmlRegisterType<RenderItem>("Dream.play", 1, 0, "RenderItem");
+    qmlRegisterType<VideoArea>("Dream.play", 1, 0, "VideoArea");
 
     QGuiApplication app(argc, argv);
 
@@ -28,6 +45,8 @@ int main(int argc, char *argv[])
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,
         []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
     engine.loadFromModule("Dream.play", "Main");
+
+    initPlayer();
 
     return QCoreApplication::exec();
 }

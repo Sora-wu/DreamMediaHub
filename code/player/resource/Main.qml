@@ -126,8 +126,8 @@ Window {
         }
     }
 
-    RenderItem {
-        id: renderer
+    VideoArea {
+        id: videoArea
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right

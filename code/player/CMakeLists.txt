@@ -1,4 +1,4 @@
-find_package(Qt6 COMPONENTS OpenGL Core Quick Gui REQUIRED)
+find_package(Qt6 COMPONENTS OpenGL Core Multimedia Quick Gui REQUIRED)
 qt_standard_project_setup(REQUIRES 6.8)
 
 message(STATUS ${CMAKE_PREFIX_PATH})
@@ -40,7 +40,7 @@ target_include_directories(playerApp
 
 target_link_libraries(playerApp
         PRIVATE Dream::Player
-        PRIVATE Qt6::OpenGL Qt6::Quick Qt6::Gui Qt6::Core
+        PRIVATE Qt6::OpenGL Qt6::Quick Qt6::Multimedia Qt6::Gui Qt6::Core
 )
 
 install(TARGETS playerApp
