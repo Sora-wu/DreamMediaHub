@@ -56,10 +56,12 @@ void AudioDecodec::run(std::stop_token st) {
 }
 
 void AudioDecodec::getAudioFrame(Dream::AudioFrame* audioFrame) {
+    audioFrame->isUpdated = false;
+
     // TODO: 同步 seek
     Frame ap{};
     do {
-        std::optional<Frame> apOpt = frameQue_.try_pop();
+        std::optional<Frame> apOpt = frameQue_.pop();
         if (!apOpt) {
             return;
         }
@@ -90,20 +92,27 @@ void AudioDecodec::getAudioFrame(Dream::AudioFrame* audioFrame) {
 
         const uint8_t** in = (const uint8_t**)frame->extended_data;
         // 简单推导：无论采样率怎么变，这段音频播放的物理时间长度是不变的，而time = nb_samples / sample_rate，分别带入双方变量即可
-        const int outSampleCount = frame->nb_samples * (SAMPLE_RATE / frame->sample_rate) + 256;
+        const int outSampleCount = av_rescale_rnd(frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP) + 256;
         const int bufferSize = av_samples_get_buffer_size(nullptr, CHANNEL_COUNT, outSampleCount,
                                                                 SAMPLE_FORMAT, 1);
         updateAudioFrameSize(audioFrame, bufferSize);
-        swr_convert(swrCtx_, (uint8_t**)&audioFrame->data, outSampleCount, in, frame->nb_samples);
+        const int converted = swr_convert(swrCtx_, (uint8_t**)&audioFrame->data, outSampleCount, in, frame->nb_samples);
+        if (converted <= 0) {
+            av_frame_unref(frame);
+            av_frame_free(&frame);
+            return;
+        }
+        // 因为转换的采样数一定不会比outSampleCount大，所以这里可以不重新分配内存
+        audioFrame->len = av_samples_get_buffer_size(nullptr, CHANNEL_COUNT, converted, SAMPLE_FORMAT, 1);
     }
     else {
-        const int bufferSize = av_samples_get_buffer_size(nullptr, frame->channels, frame->nb_samples,
-                                                                (AVSampleFormat)frame->format, 1);
+        const int bufferSize = av_samples_get_buffer_size(nullptr, frame->channels, frame->nb_samples, (AVSampleFormat)frame->format, 1);
         audioFrame->len = bufferSize;
         updateAudioFrameSize(audioFrame, bufferSize);
         memcpy(audioFrame->data, frame->data[0], bufferSize);
     }
 
+    audioFrame->isUpdated = true;
     av_frame_unref(frame);
     av_frame_free(&frame);
 }

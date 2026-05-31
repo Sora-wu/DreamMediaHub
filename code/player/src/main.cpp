@@ -22,8 +22,8 @@ namespace {
             player_ = DreamContext::createDreamPlayer();
 
             QAudioFormat format;
-            format.setSampleRate(44100);
-            format.setChannelCount(2);
+            format.setSampleRate(AudioBufferDevice::SAMPLE_RATE);
+            format.setChannelCount(AudioBufferDevice::CHANNEL_COUNT);
             format.setSampleFormat(QAudioFormat::Int16);
             QAudioDevice audioDevice = QMediaDevices::defaultAudioOutput();
             if (!audioDevice.isFormatSupported(format)) {
@@ -43,19 +43,23 @@ namespace {
         }
 
         void initPlayer() {
-            VideoArea::setPlayer(player_);
-
-            audioBufferDevice_->setPlayer(player_);
-            audioBufferDevice_->startPull();
-            audioSink_->start(audioBufferDevice_);
-
-
             // TEST
 #ifdef PLATFORM_LINUX
             player_->open("/home/sora/Videos/test.mp4");
 #else
             player_->open("D:/Desktop/Test/test31.mp4");
 #endif
+
+            VideoArea::setPlayer(player_);
+            audioBufferDevice_->setPlayer(player_);
+
+            audioBufferDevice_->startPull();
+            // 预缓存
+            if (!audioBufferDevice_->waitForBuffered(std::chrono::milliseconds(800))) {
+                qWarning() << "prebuffer timeout";
+            }
+            audioSink_->setBufferSize(16384);
+            audioSink_->start(audioBufferDevice_);
         }
 
     private:

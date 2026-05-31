@@ -86,10 +86,13 @@ void VideoDecodec::run(std::stop_token st) {
 }
 
 void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
+    videoFrame->frameWidth = 0;
+    videoFrame->frameHeight = 0;
+
     // TODO: 同步 seek
     Frame vp{};
     do {
-        std::optional<Frame> vpOpt = frameQue_.try_pop();
+        std::optional<Frame> vpOpt = frameQue_.pop();
         if (!vpOpt) {
             return;
         }

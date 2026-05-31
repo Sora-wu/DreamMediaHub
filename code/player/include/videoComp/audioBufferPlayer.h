@@ -19,6 +19,10 @@ namespace Dream {
 
 class AudioBufferDevice final : public QIODevice {
 public:
+    static constexpr int SAMPLE_RATE = 44100;
+    static constexpr int CHANNEL_COUNT = 2;
+    static constexpr int SAMPLE_SIZE = 2;
+
     explicit AudioBufferDevice(QObject* parent = nullptr);
     ~AudioBufferDevice() override;
 
@@ -29,6 +33,8 @@ public:
     void startPull();
     void stopPull();
     void pull(std::stop_token);
+
+    [[nodiscard]] bool waitForBuffered(std::chrono::milliseconds prebufferMs, std::stop_token st = {});
 
     void clear();
 
@@ -43,7 +49,7 @@ protected:
 private:
     std::deque<char> buffer_{};
 
-    std::mutex mtx_{};
+    mutable std::mutex mtx_{};
     std::jthread thread_{};
     std::condition_variable cv_{};
 

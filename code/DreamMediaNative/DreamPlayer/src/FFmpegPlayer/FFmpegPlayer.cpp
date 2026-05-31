@@ -11,7 +11,7 @@
 
 namespace {
     constexpr std::size_t FRAME_VIDEO_SIZE = 3;
-    constexpr std::size_t FRAME_AUDIO_SIZE = 9;
+    constexpr std::size_t FRAME_AUDIO_SIZE = 32;
 }
 
 FFmpegPlayer::FFmpegPlayer() {
