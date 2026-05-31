@@ -53,6 +53,8 @@ bool FFmpegPlayer::open(const char* url) {
     }
 
     videoDecodec_->reopen();
+    audioDecodec_->reopen();
+
     demuxer_->start();
     videoDecodec_->start();
     audioDecodec_->start();
@@ -102,16 +104,20 @@ void FFmpegPlayer::getVideoFrame(Dream::VideoFrame* videoFrame) {
 }
 
 void FFmpegPlayer::getAudioFrame(Dream::AudioFrame* audioFrame) {
-    
+    audioDecodec_->getAudioFrame(audioFrame);
 }
 
 void FFmpegPlayer::handle(void* data) {
     AVPacket* pkt = (AVPacket*)data;
 
     if (pkt->stream_index == videoDecodec_->getStreamIndex()) {
+        // static int video = 0;
+        // av_log(nullptr, AV_LOG_INFO, "video packet %d\n", video++);
         videoDecodec_->handle(pkt);
     }
     else if (pkt->stream_index == audioDecodec_->getStreamIndex()) {
+        // static int audio = 0;
+        // av_log(nullptr, AV_LOG_INFO, "audio packet %d\n", audio++);
         audioDecodec_->handle(pkt);
     }
 }

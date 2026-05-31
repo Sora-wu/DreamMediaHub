@@ -57,9 +57,6 @@ private:
 
     bool initialized_ = false;
 
-    Dream::DreamPlayer* player_ = nullptr;
-    Dream::VideoFrame videoFrame_{};
-
     float itemWidth = 0;
     float itemHeight = 0;
 

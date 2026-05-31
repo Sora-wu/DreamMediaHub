@@ -14,6 +14,8 @@ namespace Dream {
 class VideoDecodec : public Decodec {
 public:
     explicit VideoDecodec(std::size_t frameQueueSize) : Decodec(frameQueueSize) {}
+    ~VideoDecodec() override;
+
     bool openCodec(int streamIndex, AVStream* stream) override;
 
     uint32_t getWidth() const;
@@ -28,6 +30,4 @@ protected:
 
 private:
     SwsContext* swsCtx_ = nullptr;
-    uint8_t* convertBuf_ = nullptr;
-    int convertBufSize_ = 0;
 };

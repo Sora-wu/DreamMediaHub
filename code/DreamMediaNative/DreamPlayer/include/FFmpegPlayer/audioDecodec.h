@@ -11,6 +11,10 @@ extern "C" {
     struct SwrContext;
 }
 
+namespace Dream {
+    struct AudioFrame;
+}
+
 class AudioDecodec : public Decodec {
 public:
     explicit AudioDecodec(std::size_t frameQueueSize) : Decodec(frameQueueSize) {}
@@ -18,11 +22,10 @@ public:
 
     void run(std::stop_token st) override;
 
-    void getAudioFrame(Dream::AudioFrame* frame);
+    void getAudioFrame(Dream::AudioFrame* audioFrame);
 
 protected:
     void cleanup() override;
-    [[nodiscard]] bool decodeFrame(AVFrame* frame) override;
 
 private:
     SwrContext* swrCtx_ = nullptr;

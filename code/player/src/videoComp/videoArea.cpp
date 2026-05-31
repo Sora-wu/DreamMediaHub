@@ -14,6 +14,7 @@ namespace {
     const double EPSILON = 1e-8;
     const char* textureUniformName[3] = { "textureY", "textureU", "textureV" };
     Dream::DreamPlayer* player = nullptr;
+    Dream::VideoFrame videoFrame{};
 
     std::string readShaderFile(const QString& filePath) {
         QFile file(filePath);
@@ -47,10 +48,9 @@ void VideoArea::setPlayer(DreamPlayer* p) {
 OpenGLRender::OpenGLRender() {}
 
 OpenGLRender::~OpenGLRender() {
-    videoFrame_.clear();
     cleanup();
 
-    DreamContext::destroyDreamPlayer(&player);
+    videoFrame.clear();
 }
 
 void OpenGLRender::render() {
@@ -70,8 +70,8 @@ void OpenGLRender::render() {
 
     updateMVP();
 
-    player->getVideoFrame(&videoFrame_);
-    if (!videoFrame_.data[0] || !videoFrame_.frameWidth || !videoFrame_.frameHeight) {
+    player->getVideoFrame(&videoFrame);
+    if (!videoFrame.data[0] || !videoFrame.frameWidth || !videoFrame.frameHeight) {
         glBindVertexArray(0);
         glUseProgram(0);
         QQuickOpenGLUtils::resetOpenGLState();
@@ -81,8 +81,7 @@ void OpenGLRender::render() {
 
     for (uint32_t i = 0; i < 3; ++i) {
         uint32_t textureHandle = texture_[i];
-        const char* uniformName = textureUniformName[i];
-        updateTexture(textureHandle, i, videoFrame_.frameWidth, videoFrame_.frameHeight, videoFrame_.stride[i], videoFrame_.data[i]);
+        updateTexture(textureHandle, i, videoFrame.frameWidth, videoFrame.frameHeight, videoFrame.stride[i], videoFrame.data[i]);
     }
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
@@ -243,8 +242,8 @@ QRect OpenGLRender::updateItemRect() const {
     const uint32_t width = player->getWidth();
 
     double aspectRatio = (double)width / height;
-    if (videoFrame_.picWidthHeightRatio > EPSILON) {
-        aspectRatio *= videoFrame_.picWidthHeightRatio;
+    if (videoFrame.picWidthHeightRatio > EPSILON) {
+        aspectRatio *= videoFrame.picWidthHeightRatio;
     }
 
     uint32_t rectHeight = itemHeight;

@@ -31,6 +31,13 @@ namespace {
     }
 }
 
+VideoDecodec::~VideoDecodec() {
+    if (swsCtx_) {
+        sws_freeContext(swsCtx_);
+        swsCtx_ = nullptr;
+    }
+}
+
 bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
     if (!Decodec::openCodec(streamIndex, stream)) {
         return false;
@@ -79,27 +86,29 @@ void VideoDecodec::run(std::stop_token st) {
 }
 
 void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
-    // TODO: 同步
-    std::optional<Frame> vpOpt = frameQue_.try_pop();
-    if (!vpOpt) {
-        return;
-    }
+    // TODO: 同步 seek
+    Frame vp{};
+    do {
+        std::optional<Frame> vpOpt = frameQue_.try_pop();
+        if (!vpOpt) {
+            return;
+        }
 
-    Frame vp = vpOpt.value();
+        vp = *vpOpt;
+        if (vp.serial != decodecSerial_) {
+            AVFrame* frame = vp.frame;
+            av_frame_unref(frame);
+            av_frame_free(&frame);
+        }
+    } while (vp.serial != decodecSerial_);
+
     AVFrame* frame = vp.frame;
     const int width = frame->width;
     const int height = frame->height;
 
     videoFrame->frameWidth = width;
     videoFrame->frameHeight = height;
-    videoFrame->picWidthHeightRatio = av_q2d(frame->sample_aspect_ratio);
-
-    uint8_t* frameData[3]{};
-    int frameLensize[3]{};
-    for (uint32_t i = 0; i < 3; ++i) {
-        frameData[i] = frame->data[i];
-        frameLensize[i] = frame->linesize[i];
-    }
+    videoFrame->picWidthHeightRatio = frame->sample_aspect_ratio.den == 0 ? 0 : av_q2d(frame->sample_aspect_ratio);
 
     if (frame->format != AV_PIX_FMT_YUV420P) {
         swsCtx_ = sws_getCachedContext(swsCtx_,
@@ -107,36 +116,33 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
             width, height, AV_PIX_FMT_YUV420P,
             SWS_BICUBIC, nullptr, nullptr, nullptr);
         if (!swsCtx_) {
+            av_log(nullptr, AV_LOG_ERROR, "Cannot initialize the conversion context\n");
             av_frame_unref(frame);
             av_frame_free(&frame);
             return;
         }
 
-        int bufSize = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 1);
-        if (!convertBuf_ || convertBufSize_ < bufSize) {
-            av_freep(&convertBuf_);
-            convertBuf_ = static_cast<uint8_t*>(av_malloc(bufSize));
-            convertBufSize_ = bufSize;
-        }
-
-        uint8_t* outData[4]{};
         int outLinesize[4]{};
-        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, outData, outLinesize);
-        for (uint32_t i = 0; i < 3; ++i) {
-            frameData[i] = outData[i];
-            frameLensize[i] = outLinesize[i];
+        if (av_image_fill_linesizes(outLinesize, AV_PIX_FMT_YUV420P, width) < 0) {
+            av_log(nullptr, AV_LOG_ERROR, "Cannot fill linesize\n");
+            av_frame_unref(frame);
+            av_frame_free(&frame);
+            return;
         }
+        updateVideoFrameSize(videoFrame, height, outLinesize);
+        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, (uint8_t* const*)videoFrame->data, videoFrame->len);
     }
-
-    updateVideoFrameSize(videoFrame, height, frameLensize);
-    const int planeHeights[3] = { height, height / 2, height / 2 };
-    for (uint32_t i = 0; i < 3; ++i) {
-        const int stride = frameLensize[i];
-        const int planeHeight = planeHeights[i];
-        for (int row = 0; row < planeHeight; ++row) {
-            memcpy(videoFrame->data[i] + row * stride, frameData[i] + row * stride, stride);
+    else {
+        updateVideoFrameSize(videoFrame, height, frame->linesize);
+        const int planeHeights[3] = { height, height / 2, height / 2 };
+        for (uint32_t i = 0; i < 3; ++i) {
+            const int stride = frame->linesize[i];
+            const int planeHeight = planeHeights[i];
+            for (int row = 0; row < planeHeight; ++row) {
+                memcpy(videoFrame->data[i] + row * stride, frame->data[i] + row * stride, stride);
+            }
+            videoFrame->stride[i] = stride;
         }
-        videoFrame->stride[i] = stride;
     }
 
     av_frame_unref(frame);
@@ -147,6 +153,4 @@ void VideoDecodec::cleanup() {
     Decodec::cleanup();
 
     sws_freeContext(swsCtx_);
-    av_freep(&convertBuf_);
-    convertBufSize_ = 0;
 }

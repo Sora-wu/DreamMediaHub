@@ -4,25 +4,65 @@
 //
 
 #include <videoComp/videoArea.h>
+#include <videoComp/audioBufferPlayer.h>
 
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
+#include <QMediaDevices>
+#include <QAudioSink>
 
 #include <DreamPlayer/DreamContext.h>
 
-void initPlayer() {
-    using namespace Dream;
+using namespace Dream;
 
-    DreamPlayer* player = DreamContext::createDreamPlayer();
-    VideoArea::setPlayer(player);
+namespace {
+    class PlayerAPP {
+    public:
+        PlayerAPP() {
+            player_ = DreamContext::createDreamPlayer();
+
+            QAudioFormat format;
+            format.setSampleRate(44100);
+            format.setChannelCount(2);
+            format.setSampleFormat(QAudioFormat::Int16);
+            QAudioDevice audioDevice = QMediaDevices::defaultAudioOutput();
+            if (!audioDevice.isFormatSupported(format)) {
+                qInfo() << "sample rate: " << format.sampleRate();
+                qInfo() << "channel count: " << format.channelCount();
+                qCritical() << "can not support this audio format";
+            }
+            audioBufferDevice_ = new AudioBufferDevice;
+            audioSink_ = new QAudioSink(audioDevice, format);
+        }
+
+        ~PlayerAPP() {
+            delete audioBufferDevice_;
+            delete audioSink_;
+
+            DreamContext::destroyDreamPlayer(&player_);
+        }
+
+        void initPlayer() {
+            VideoArea::setPlayer(player_);
+
+            audioBufferDevice_->setPlayer(player_);
+            audioBufferDevice_->startPull();
+            audioSink_->start(audioBufferDevice_);
 
 
-    // TEST
+            // TEST
 #ifdef PLATFORM_LINUX
-    player->open("/home/sora/Videos/test.mp4");
+            player_->open("/home/sora/Videos/test.mp4");
 #else
-    player->open("D:/Desktop/Test/test31.mp4");
+            player_->open("D:/Desktop/Test/test31.mp4");
 #endif
+        }
+
+    private:
+        AudioBufferDevice* audioBufferDevice_ = nullptr;
+        QAudioSink* audioSink_ = nullptr;
+        DreamPlayer* player_ = nullptr;
+    };
 }
 
 int main(int argc, char *argv[])
@@ -46,7 +86,8 @@ int main(int argc, char *argv[])
         []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
     engine.loadFromModule("Dream.play", "Main");
 
-    initPlayer();
+    PlayerAPP playerApp{};
+    playerApp.initPlayer();
 
     return QCoreApplication::exec();
 }
