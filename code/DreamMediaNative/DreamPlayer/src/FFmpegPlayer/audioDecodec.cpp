@@ -76,19 +76,7 @@ void AudioDecodec::getAudioFrame(Dream::AudioFrame* audioFrame) {
 
     AVFrame* frame = ap.frame;
     if (frame->sample_rate != SAMPLE_RATE || frame->channels != CHANNEL_COUNT || frame->format != SAMPLE_FORMAT) {
-        swr_free(&swrCtx_);
-        swrCtx_ = swr_alloc_set_opts(nullptr,
-                                     AV_CH_LAYOUT_STEREO,
-                                     SAMPLE_FORMAT, SAMPLE_RATE, frame->channel_layout,
-                                     (AVSampleFormat)frame->format, frame->sample_rate,
-                                     0, nullptr);
-        if (!swrCtx_ || swr_init(swrCtx_) < 0) {
-            av_log(nullptr, AV_LOG_ERROR, "swr_alloc_set_opts failed\n");
-            swr_free(&swrCtx_);
-            av_frame_unref(frame);
-            av_frame_free(&frame);
-            return;
-        }
+        refreshSwr(frame);
 
         const uint8_t** in = (const uint8_t**)frame->extended_data;
         // 简单推导：无论采样率怎么变，这段音频播放的物理时间长度是不变的，而time = nb_samples / sample_rate，分别带入双方变量即可
@@ -124,4 +112,25 @@ void AudioDecodec::cleanup() {
     }
 
     Decodec::cleanup();
+}
+
+void AudioDecodec::refreshSwr(AVFrame* frame) {
+    if (frame->sample_rate != cachedSampleRate || frame->channel_layout != cachedChannelLayout || frame->format != cachedFormat) {
+        swr_free(&swrCtx_);
+        swrCtx_ = swr_alloc_set_opts(nullptr,
+                                     AV_CH_LAYOUT_STEREO, SAMPLE_FORMAT, SAMPLE_RATE,
+                                     frame->channel_layout, (AVSampleFormat)frame->format, frame->sample_rate,
+                                     0, nullptr);
+        if (!swrCtx_ || swr_init(swrCtx_) < 0) {
+            av_log(nullptr, AV_LOG_ERROR, "swr_alloc_set_opts failed\n");
+            swr_free(&swrCtx_);
+            av_frame_unref(frame);
+            av_frame_free(&frame);
+            return;
+        }
+
+        cachedSampleRate = frame->sample_rate;
+        cachedChannelLayout = frame->channel_layout;
+        cachedFormat = frame->format;
+    }
 }

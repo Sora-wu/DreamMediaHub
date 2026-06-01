@@ -13,6 +13,14 @@ class FFInstance {
 public:
     static FFInstance* instance();
 
+    void setSyncType(SyncType syncType) {
+        syncType_ = syncType;
+    }
+
+    [[nodiscard]] SyncType getSyncType() const {
+        return syncType_;
+    }
+
     void setFormatContext(AVFormatContext* fmtCtx) {
         fmtCtx_ = fmtCtx;
     }
@@ -34,6 +42,8 @@ private:
 
     AVFormatContext* fmtCtx_ = nullptr;
     AVPacket flushPkt_{};
+
+    SyncType syncType_ = SyncType::AudioMaster;
 };
 
 #define FFINSTANCE FFInstance::instance

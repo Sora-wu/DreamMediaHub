@@ -15,7 +15,13 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/time.h>
 }
+
+enum class SyncType {
+    AudioMaster,
+    VideoMaster,
+};
 
 class FFUtils {
 public:

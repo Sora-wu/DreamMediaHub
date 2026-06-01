@@ -59,6 +59,10 @@ bool FFmpegPlayer::open(const char* url) {
     videoDecodec_->start();
     audioDecodec_->start();
 
+    uint32_t* videoPktQueSerial = &videoDecodec_->getSerial();
+    uint32_t* audioPktQueSerial = &audioDecodec_->getSerial();
+    clock_.initClock(videoPktQueSerial, audioPktQueSerial);
+
     return true;
 }
 

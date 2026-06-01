@@ -34,6 +34,10 @@ public:
         return streamIndex_;
     }
 
+    [[nodiscard]] uint32_t& getSerial() {
+        return decodecSerial_;
+    }
+
     void handle(void* data) override;
 
     void shutdown();
@@ -51,5 +55,5 @@ protected:
     AVCodecContext* codecCtx_ = nullptr;
     AVStream* stream_ = nullptr;
     int streamIndex_ = -1;
-    uint32_t decodecSerial_ = -1;
+    uint32_t decodecSerial_ = 0;
 };

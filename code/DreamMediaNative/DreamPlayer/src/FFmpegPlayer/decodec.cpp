@@ -57,6 +57,8 @@ void Decodec::reopen() {
         av_frame_free(&frameOpt->frame);
     }
     frameQue_.reopen();
+
+    decodecSerial_ = 0;
 }
 
 void Decodec::cleanup() {

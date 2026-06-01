@@ -28,5 +28,11 @@ protected:
     void cleanup() override;
 
 private:
+    void refreshSwr(AVFrame* frame);
+
+private:
     SwrContext* swrCtx_ = nullptr;
+    uint64_t cachedChannelLayout = 0;
+    int cachedFormat = AV_SAMPLE_FMT_NONE;
+    int cachedSampleRate = 0;
 };
