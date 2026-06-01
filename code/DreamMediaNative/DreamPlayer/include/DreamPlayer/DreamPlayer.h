@@ -1,4 +1,4 @@
-//
+﻿//
 // Author: sora
 // Mail: sora-wu@foxmail.com
 //
@@ -30,5 +30,8 @@ namespace Dream {
 
         virtual void getVideoFrame(VideoFrame* videoFrame) = 0;
         virtual void getAudioFrame(AudioFrame* audioFrame) = 0;
+
+        // 由于native只负责解码出帧，音频播放位置需要外部回传
+        virtual void updateAudioClock(double pts) = 0;
     };
 }

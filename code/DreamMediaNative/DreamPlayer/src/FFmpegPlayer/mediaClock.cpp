@@ -1,4 +1,4 @@
-//
+﻿//
 // Author: sora
 // Mail: sora-wu@foxmail.com
 //
@@ -9,7 +9,7 @@
 ///////////////////////////Clock///////////////////////////////////////////
 void MediaClock::Clock::init(uint32_t* qSerial) {
     pts = NAN;
-    lastUpdatedTime = (double)av_gettime_relative() / 1e6;
+    lastUpdatedTime = CURRENT_TIME;
     speed = 1.0;
     paused = false;
     serial = 0;
@@ -25,16 +25,19 @@ double MediaClock::Clock::getTime() const {
         return pts;
     }
 
-    // TODO: 加上变速
-    return (double)av_gettime_relative() / 1e6;
+    double now = CURRENT_TIME;
+    return pts + (now - lastUpdatedTime) * speed;
 }
 
 void MediaClock::Clock::setTime(double pts, uint32_t serial) {
-    double time = (double)av_gettime_relative() / 1e6;
+    double time = CURRENT_TIME;
     setTime(pts, serial, time);
 }
 
 void MediaClock::Clock::setTime(double pts, uint32_t serial, double time) {
+    this->pts = pts;
+    this->lastUpdatedTime = time;
+    this->serial = serial;
 }
 
 //////////////////////////MediaClock///////////////////////////////////////
@@ -46,10 +49,6 @@ void MediaClock::initClock(uint32_t* videoPktQueSerial, uint32_t* audioPktQueSer
 double MediaClock::getMasterClock() const {
     SyncType syncType = FFINSTANCE()->getSyncType();
 
-    if (syncType == SyncType::AudioMaster) {
-        return audioClock_.getTime();
-    }
-
     switch (syncType) {
     case SyncType::VideoMaster:
         return videoClock_.getTime();
@@ -58,4 +57,28 @@ double MediaClock::getMasterClock() const {
     }
 
     return 0;
+}
+
+double MediaClock::getVideoClock() const {
+    return videoClock_.getTime();
+}
+
+double MediaClock::getAudioClock() const {
+    return audioClock_.getTime();
+}
+
+uint32_t MediaClock::getVideoSerial() const {
+    return videoClock_.getSerial();
+}
+
+uint32_t MediaClock::getAudioSerial() const {
+    return audioClock_.getSerial();
+}
+
+void MediaClock::setVideoClock(double pts, uint32_t serial, double time) {
+    videoClock_.setTime(pts, serial, time);
+}
+
+void MediaClock::setAudioClock(double pts, uint32_t serial, double time) {
+    audioClock_.setTime(pts, serial, time);
 }

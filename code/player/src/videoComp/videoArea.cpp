@@ -59,6 +59,11 @@ void OpenGLRender::render() {
         initialized_ = true;
     }
 
+    if (!player) {
+        update();
+        return;
+    }
+
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);

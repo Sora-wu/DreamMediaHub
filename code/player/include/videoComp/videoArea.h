@@ -20,7 +20,7 @@ class VideoArea : public QQuickFramebufferObject {
     Q_OBJECT
 public:
     [[nodiscard]] Renderer* createRenderer() const override;
-    static void setPlayer(Dream::DreamPlayer* player);
+    void setPlayer(Dream::DreamPlayer* player);
 };
 
 class QOpenGLDebugLogger;

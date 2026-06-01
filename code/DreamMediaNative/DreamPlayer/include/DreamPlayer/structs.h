@@ -34,6 +34,8 @@ namespace Dream {
     struct DREAM_PLAYER_API AudioFrame {
         char* data{};
         int len{};
+        uint32_t capacity = 0;
+        double pts{};
         bool isUpdated = false;
 
         void clear() {

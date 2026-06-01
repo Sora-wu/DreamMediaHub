@@ -29,7 +29,7 @@ namespace {
             if (!audioDevice.isFormatSupported(format)) {
                 qInfo() << "sample rate: " << format.sampleRate();
                 qInfo() << "channel count: " << format.channelCount();
-                qCritical() << "can not support this audio format";
+                qWarning() << "can not support this audio format or detect any audio device, will play with no audio";
             }
             audioBufferDevice_ = new AudioBufferDevice;
             audioSink_ = new QAudioSink(audioDevice, format);
@@ -42,7 +42,7 @@ namespace {
             DreamContext::destroyDreamPlayer(&player_);
         }
 
-        void initPlayer() {
+        void initPlayer(VideoArea* videoArea) {
             // TEST
 #ifdef PLATFORM_LINUX
             player_->open("/home/sora/Videos/test.mp4");
@@ -50,7 +50,7 @@ namespace {
             player_->open("D:/Desktop/Test/test31.mp4");
 #endif
 
-            VideoArea::setPlayer(player_);
+            videoArea->setPlayer(player_);
             audioBufferDevice_->setPlayer(player_);
 
             audioBufferDevice_->startPull();
@@ -90,8 +90,12 @@ int main(int argc, char *argv[])
         []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
     engine.loadFromModule("Dream.play", "Main");
 
-    PlayerAPP playerApp{};
-    playerApp.initPlayer();
+    QObject* rootObject = engine.rootObjects().first();
+    VideoArea* videoArea = rootObject->findChild<VideoArea*>("videoArea");
+    if (videoArea) {
+        PlayerAPP playerApp{};
+        playerApp.initPlayer(videoArea);
+    }
 
     return QCoreApplication::exec();
 }

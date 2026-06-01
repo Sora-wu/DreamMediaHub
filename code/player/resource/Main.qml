@@ -128,6 +128,7 @@ Window {
 
     VideoArea {
         id: videoArea
+        objectName: "videoArea"
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right

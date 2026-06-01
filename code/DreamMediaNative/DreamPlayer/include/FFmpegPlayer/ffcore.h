@@ -18,6 +18,8 @@ extern "C" {
 #include <libavutil/time.h>
 }
 
+#define CURRENT_TIME (double)av_gettime_relative() / 1e6
+
 enum class SyncType {
     AudioMaster,
     VideoMaster,

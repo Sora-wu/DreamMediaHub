@@ -39,6 +39,8 @@ public:
     void getVideoFrame(Dream::VideoFrame* videoFrame) override;
     void getAudioFrame(Dream::AudioFrame* audioFrame) override;
 
+    void updateAudioClock(double pts) override;
+
     void handle(void* data) override;
 private:
     void cleanup();

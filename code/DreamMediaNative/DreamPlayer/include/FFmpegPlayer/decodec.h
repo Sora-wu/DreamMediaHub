@@ -38,6 +38,10 @@ public:
         return decodecSerial_;
     }
 
+    [[nodiscard]] uint64_t getTimer() const {
+        return decodecTimer_;
+    }
+
     void handle(void* data) override;
 
     void shutdown();
@@ -56,4 +60,5 @@ protected:
     AVStream* stream_ = nullptr;
     int streamIndex_ = -1;
     uint32_t decodecSerial_ = 0;
+    uint64_t decodecTimer_ = 0;
 };

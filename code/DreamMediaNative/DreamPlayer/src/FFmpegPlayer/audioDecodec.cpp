@@ -1,4 +1,4 @@
-//
+﻿//
 // Author: sora
 // Mail: sora-wu@foxmail.com
 //
@@ -12,11 +12,16 @@ namespace {
     constexpr AVSampleFormat SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
 
     void updateAudioFrameSize(Dream::AudioFrame* audioFrame, int buffSize) {
-        if (!audioFrame->data || buffSize != audioFrame->len) {
-            delete[] audioFrame->data;
-            audioFrame->data = new char[buffSize]{};
-            audioFrame->len = buffSize;
+        memset(audioFrame->data, 0, audioFrame->capacity);
+
+        if (audioFrame->capacity >= buffSize) {
+            return;
         }
+
+        delete[] audioFrame->data;
+        audioFrame->data = new char[buffSize]{};
+        audioFrame->len = buffSize;
+        audioFrame->capacity = buffSize;
     }
 }
 
@@ -75,6 +80,11 @@ void AudioDecodec::getAudioFrame(Dream::AudioFrame* audioFrame) {
     } while (ap.serial != decodecSerial_);
 
     AVFrame* frame = ap.frame;
+    decodecTimer_ = NAN;
+    if (!isnan(ap.pts)) {
+        decodecTimer_ = ap.pts + ap.duration;
+    }
+
     if (frame->sample_rate != SAMPLE_RATE || frame->channels != CHANNEL_COUNT || frame->format != SAMPLE_FORMAT) {
         refreshSwr(frame);
 

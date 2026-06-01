@@ -11,6 +11,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <deque>
+#include <vector>
 
 namespace Dream {
     class DreamPlayer;
@@ -18,6 +19,12 @@ namespace Dream {
 }
 
 class AudioBufferDevice final : public QIODevice {
+    struct AudioSegment {
+        std::vector<char> data;
+        double pts{};
+        uint32_t offset{};
+    };
+
 public:
     static constexpr int SAMPLE_RATE = 44100;
     static constexpr int CHANNEL_COUNT = 2;
@@ -46,12 +53,14 @@ protected:
 
     qint64 bytesAvailable() const override;
 
-private:
-    std::deque<char> buffer_{};
+private:    
+    std::deque<AudioSegment> segQue_{};
+    uint32_t dataLen{};
 
     mutable std::mutex mtx_{};
     std::jthread thread_{};
     std::condition_variable cv_{};
+    bool isClose_ = false;
 
     Dream::DreamPlayer* player_ = nullptr;
 };

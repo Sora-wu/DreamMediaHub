@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <cmath>
+#include <atomic>
 
 class MediaClock {
     struct Clock {
@@ -14,19 +15,27 @@ class MediaClock {
         double getTime() const;
         void setTime(double pts, uint32_t serial);
         void setTime(double pts, uint32_t serial, double time);
+        uint32_t getSerial() const {
+            return serial;
+        }
 
-
-        double pts = NAN;          // 单位：毫秒
-        double lastUpdatedTime = NAN;
+        std::atomic<double> pts = NAN;          // 单位：毫秒
+        std::atomic<double> lastUpdatedTime = NAN;
         double speed = 1.0;
         bool paused = true;
-        uint32_t serial = 0;
+        std::atomic<uint32_t> serial = 0;
         uint32_t* queSerial = nullptr;
     };
 
 public:
     void initClock(uint32_t* videoPktQueSerial, uint32_t* audioPktQueSerial);
     [[nodiscard]] double getMasterClock() const;
+    [[nodiscard]] double getVideoClock() const;
+    [[nodiscard]] double getAudioClock() const;
+    [[nodiscard]] uint32_t getVideoSerial() const;
+    [[nodiscard]] uint32_t getAudioSerial() const;
+    void setVideoClock(double pts, uint32_t serial, double time);
+    void setAudioClock(double pts, uint32_t serial, double time);
 
 private:
     Clock videoClock_;
