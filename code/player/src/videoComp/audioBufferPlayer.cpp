@@ -101,23 +101,23 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     qint64 needReadLen = readLen;
 
     AudioSegment& currentSeg = segQue_.front();
-    const double bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * SAMPLE_SIZE;
+    constexpr double bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * SAMPLE_SIZE;
     const double currentPTS = currentSeg.pts + (double)((currentSeg.offset + readLen) / bytesPerSec);
     player_->updateAudioClock(currentPTS);
 
     while (needReadLen) {
-        AudioSegment& currentSeg = segQue_.front();
-        qint64 bufferSize = (qint64)currentSeg.data.size() - currentSeg.offset;
+        AudioSegment& seg = segQue_.front();
+        qint64 bufferSize = (qint64)seg.data.size() - seg.offset;
         if (needReadLen <= bufferSize) {
-            memcpy(data, currentSeg.data.data() + currentSeg.offset, needReadLen);
-            currentSeg.offset += needReadLen;
-            if (currentSeg.data.size() == currentSeg.offset) {
+            memcpy(data, seg.data.data() + seg.offset, needReadLen);
+            seg.offset += needReadLen;
+            if (seg.data.size() == seg.offset) {
                 segQue_.pop_front();
             }
             break;
         }
 
-        memcpy(data, currentSeg.data.data() + currentSeg.offset, bufferSize);
+        memcpy(data, seg.data.data() + seg.offset, bufferSize);
         data += bufferSize;
         needReadLen -= bufferSize;
         segQue_.pop_front();

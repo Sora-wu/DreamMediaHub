@@ -29,5 +29,8 @@ protected:
     void cleanup() override;
 
 private:
+    double getFrameDuration(const Frame& curFrame, const Frame& lasrFrame) const;
+
+private:
     SwsContext* swsCtx_ = nullptr;
 };

@@ -89,8 +89,9 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
     videoFrame->frameWidth = 0;
     videoFrame->frameHeight = 0;
 
-    // TODO: 同步 seek
+    // TODO: 同步 seek 暂停
     Frame vp{};
+    Frame lastVP{};
     do {
         std::optional<Frame> vpOpt = frameQue_.pop();
         if (!vpOpt) {
@@ -99,11 +100,15 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
 
         vp = *vpOpt;
         if (vp.serial != decodecSerial_) {
+            lastVP = vp;
+
             AVFrame* frame = vp.frame;
             av_frame_unref(frame);
             av_frame_free(&frame);
         }
     } while (vp.serial != decodecSerial_);
+
+    const double frameDuration = getFrameDuration(vp, lastVP);
 
     AVFrame* frame = vp.frame;
     const int width = frame->width;
@@ -156,4 +161,12 @@ void VideoDecodec::cleanup() {
     Decodec::cleanup();
 
     sws_freeContext(swsCtx_);
+}
+
+double VideoDecodec::getFrameDuration(const Frame& curFrame, const Frame& lasrFrame) const {
+    if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
+        return 0;
+    }
+
+    return curFrame.pts - lasrFrame.pts;
 }

@@ -43,7 +43,7 @@ public:
 
     void handle(void* data) override;
 private:
-    void cleanup();
+    void cleanup() const;
 
 private:
     uint32_t volume_ = 100;

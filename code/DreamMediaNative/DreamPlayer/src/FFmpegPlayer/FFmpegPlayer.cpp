@@ -127,7 +127,7 @@ void FFmpegPlayer::handle(void* data) {
     }
 }
 
-void FFmpegPlayer::cleanup() {
+void FFmpegPlayer::cleanup() const {
     demuxer_->exit();
     videoDecodec_->exit();
     audioDecodec_->exit();

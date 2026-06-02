@@ -60,5 +60,5 @@ protected:
     AVStream* stream_ = nullptr;
     int streamIndex_ = -1;
     uint32_t decodecSerial_ = 0;
-    uint64_t decodecTimer_ = 0;
+    double decodecTimer_ = 0;
 };

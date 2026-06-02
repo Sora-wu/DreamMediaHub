@@ -92,8 +92,8 @@ int main(int argc, char *argv[])
 
     QObject* rootObject = engine.rootObjects().first();
     VideoArea* videoArea = rootObject->findChild<VideoArea*>("videoArea");
+    PlayerAPP playerApp{};
     if (videoArea) {
-        PlayerAPP playerApp{};
         playerApp.initPlayer(videoArea);
     }
 

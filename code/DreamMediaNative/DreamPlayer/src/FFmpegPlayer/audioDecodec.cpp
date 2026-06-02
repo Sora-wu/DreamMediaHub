@@ -63,7 +63,7 @@ void AudioDecodec::run(std::stop_token st) {
 void AudioDecodec::getAudioFrame(Dream::AudioFrame* audioFrame) {
     audioFrame->isUpdated = false;
 
-    // TODO: 同步 seek
+    // TODO: 同步 seek 暂停
     Frame ap{};
     do {
         std::optional<Frame> apOpt = frameQue_.pop();
@@ -80,10 +80,12 @@ void AudioDecodec::getAudioFrame(Dream::AudioFrame* audioFrame) {
     } while (ap.serial != decodecSerial_);
 
     AVFrame* frame = ap.frame;
+    // 更新音频时钟
     decodecTimer_ = NAN;
     if (!isnan(ap.pts)) {
         decodecTimer_ = ap.pts + ap.duration;
     }
+    audioFrame->pts = decodecTimer_;
 
     if (frame->sample_rate != SAMPLE_RATE || frame->channels != CHANNEL_COUNT || frame->format != SAMPLE_FORMAT) {
         refreshSwr(frame);
