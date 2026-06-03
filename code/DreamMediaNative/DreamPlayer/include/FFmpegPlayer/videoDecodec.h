@@ -11,6 +11,8 @@ namespace Dream {
     struct VideoFrame;
 }
 
+class MediaClock;
+
 class VideoDecodec : public Decodec {
 public:
     explicit VideoDecodec(std::size_t frameQueueSize) : Decodec(frameQueueSize) {}
@@ -23,14 +25,31 @@ public:
 
     void run(std::stop_token st) override;
 
+    void setMediaClock(MediaClock* clock) {
+        mediaClock_ = clock;
+    }
+
+    void reopen();
+
     void getVideoFrame(Dream::VideoFrame* videoFrame);
 
 protected:
     void cleanup() override;
 
 private:
-    double getFrameDuration(const Frame& curFrame, const Frame& lasrFrame) const;
+    void resetSyncState();
+    bool acquireFrame(Frame& out);
+    static void releaseFrame(Frame& frame);
+    bool shouldDropLateFrame(double time) const;
+    double getFrameDuration(const Frame& frame, const Frame& nextFrame) const;
+    double calcDelay(double duration) const;
+    void fillData(AVFrame* frame, Dream::VideoFrame* videoFrame);
 
 private:
     SwsContext* swsCtx_ = nullptr;
+
+    MediaClock* mediaClock_ = nullptr;
+    Frame heldFrame_{};
+    bool decodeTimerValid_ = false;
+    double maxFrameDuration_ = 3600.0;
 };

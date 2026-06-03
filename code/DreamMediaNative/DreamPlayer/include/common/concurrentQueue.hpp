@@ -161,6 +161,36 @@ public:
         return value;
     }
 
+    std::optional<T> peek() {
+        std::unique_lock lock(mutex_);
+        cvEmpty_.wait(lock, [&] { return !queue_.empty() || closed_; });
+        if (queue_.empty() && closed_) {
+            return std::nullopt;
+        }
+
+        return queue_.front();
+    }
+
+    std::optional<T> try_peek() {
+        std::lock_guard lock(mutex_);
+        if (queue_.empty()) {
+            return std::nullopt;
+        }
+
+        return queue_.front();
+    }
+
+    template <typename F>
+    bool visit_front(F&& visitor) const {
+        std::lock_guard lock(mutex_);
+        if (queue_.empty()) {
+            return false;
+        }
+
+        visitor(queue_.front());
+        return true;
+    }
+
 private:
     Deque queue_;
     mutable std::mutex mutex_;

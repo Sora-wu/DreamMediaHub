@@ -127,7 +127,7 @@ bool Decodec::decodeFrame(AVFrame* frame) {
     }
 }
 
-void Decodec::pushFrame(AVFrame* frame, uint32_t serial, double pts, double duration) {
+void Decodec::pushFrame(AVFrame* frame, double pts, double duration) {
     AVFrame* dup = av_frame_alloc();
     if (!dup || av_frame_ref(dup, frame) < 0) {
         av_frame_free(&dup);
@@ -136,7 +136,7 @@ void Decodec::pushFrame(AVFrame* frame, uint32_t serial, double pts, double dura
 
     Frame vp{};
     vp.frame = dup;
-    vp.serial = serial;
+    vp.serial = decodecSerial_;
     vp.pts = pts;
     vp.duration = duration;
 

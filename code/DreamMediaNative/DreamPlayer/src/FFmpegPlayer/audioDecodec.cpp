@@ -53,7 +53,7 @@ void AudioDecodec::run(std::stop_token st) {
 
         pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d({ 1, frame->sample_rate });
         duration = av_q2d({ frame->nb_samples, frame->sample_rate });
-        pushFrame(frame, decodecSerial_, pts, duration);
+        pushFrame(frame, pts, duration);
     }
 
     av_frame_free(&frame);

@@ -50,7 +50,7 @@ public:
 protected:
     virtual void cleanup();
     [[nodiscard]] virtual bool decodeFrame(AVFrame* frame);
-    void pushFrame(AVFrame* frame, uint32_t serial, double pts, double duration);
+    void pushFrame(AVFrame* frame, double pts, double duration);
 
 protected:
     PacketQueue pktQue_;
