@@ -19,7 +19,7 @@ class MediaClock {
             return serial;
         }
 
-        std::atomic<double> pts = NAN;          // 单位：毫秒
+        std::atomic<double> pts = NAN;          // 单位：秒
         std::atomic<double> lastUpdatedTime = NAN;
         double speed = 1.0;
         bool paused = true;

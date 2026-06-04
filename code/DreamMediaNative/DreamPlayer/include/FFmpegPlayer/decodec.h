@@ -9,6 +9,7 @@
 #include <common/dreamThread.hpp>
 #include <FFmpegPlayer/packetQueue.h>
 #include <FFmpegPlayer/ffcore.h>
+#include <FFmpegPlayer/mediaClock.h>
 
 struct Frame {
     AVFrame* frame{};
@@ -21,10 +22,11 @@ class Decodec : public DataHandler, public DreamThread {
 public:
     explicit Decodec(std::size_t frameQueueSize) : frameQue_(frameQueueSize) {}
     ~Decodec() override {
-        cleanup();
+        Decodec::cleanup();
     }
 
     virtual bool openCodec(int streamIndex, AVStream* stream);
+    virtual void reopen();
 
     [[nodiscard]] bool isOpen() const {
         return streamIndex_ != -1;
@@ -44,13 +46,18 @@ public:
 
     void handle(void* data) override;
 
+    void setMediaClock(MediaClock* clock) {
+        mediaClock_ = clock;
+    }
+
     void shutdown();
-    void reopen();
 
 protected:
     virtual void cleanup();
     [[nodiscard]] virtual bool decodeFrame(AVFrame* frame);
     void pushFrame(AVFrame* frame, double pts, double duration);
+    bool acquireFrame(Frame& out);
+    static void releaseFrame(Frame& frame);
 
 protected:
     PacketQueue pktQue_;
@@ -61,4 +68,7 @@ protected:
     int streamIndex_ = -1;
     uint32_t decodecSerial_ = 0;
     double decodecTimer_ = 0;
+    bool decodeTimerValid_ = false;
+
+    MediaClock* mediaClock_ = nullptr;
 };

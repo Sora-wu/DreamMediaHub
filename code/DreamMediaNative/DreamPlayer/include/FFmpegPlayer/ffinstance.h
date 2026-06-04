@@ -44,6 +44,7 @@ private:
     AVPacket flushPkt_{};
 
     SyncType syncType_ = SyncType::AudioMaster;
+    // SyncType syncType_ = SyncType::VideoMaster;
 };
 
 #define FFINSTANCE FFInstance::instance

@@ -5,8 +5,9 @@
 
 #include <FFmpegPlayer/videoDecodec.h>
 #include <FFmpegPlayer/ffinstance.h>
-#include <FFmpegPlayer/mediaClock.h>
 #include <DreamPlayer/structs.h>
+
+#include <algorithm>
 
 namespace {
     constexpr double SYNC_THRESHOLD_MIN = 0.04;
@@ -56,6 +57,11 @@ bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
     return true;
 }
 
+void VideoDecodec::reopen() {
+    resetSyncState();
+    Decodec::reopen();
+}
+
 uint32_t VideoDecodec::getWidth() const {
     return codecCtx_->width;
 }
@@ -95,45 +101,9 @@ void VideoDecodec::run(std::stop_token st) {
     av_log(nullptr, AV_LOG_INFO, "Finished decoding video stream\n");
 }
 
-void VideoDecodec::reopen() {
-    resetSyncState();
-    Decodec::reopen();
-}
-
 void VideoDecodec::resetSyncState() {
     releaseFrame(heldFrame_);
     decodeTimerValid_ = false;
-}
-
-void VideoDecodec::releaseFrame(Frame& frame) {
-    if (!frame.frame) {
-        return;
-    }
-
-    av_frame_unref(frame.frame);
-    av_frame_free(&frame.frame);
-    frame = {};
-}
-
-bool VideoDecodec::acquireFrame(Frame& out) {
-    while (true) {
-        std::optional<Frame> frameOpt = frameQue_.try_pop();
-        if (!frameOpt) {
-            frameOpt = frameQue_.pop();
-            if (!frameOpt) {
-                return false;
-            }
-        }
-
-        if (frameOpt->serial != decodecSerial_) {
-            releaseFrame(*frameOpt);
-            decodeTimerValid_ = false;
-            continue;
-        }
-
-        out = std::move(*frameOpt);
-        return true;
-    }
 }
 
 void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
@@ -147,7 +117,7 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
                 return;
             }
 
-            heldFrame_ = std::move(frame);
+            heldFrame_ = frame;
             decodecTimer_ = CURRENT_TIME;
             decodeTimerValid_ = true;
             if (mediaClock_ && !isnan(heldFrame_.pts)) {
@@ -186,12 +156,14 @@ void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
                 break;
             }
 
-            releaseFrame(*dropOpt);
             if (dropOpt->serial != decodecSerial_) {
                 decodeTimerValid_ = false;
             }
+
+            releaseFrame(*dropOpt);
         }
 
+        // 当前帧已经播放完毕，释放
         releaseFrame(heldFrame_);
         Frame frame{};
         if (!acquireFrame(frame)) {
@@ -237,6 +209,8 @@ double VideoDecodec::calcDelay(double duration) const {
     }
 
     double delay = duration;
+    auto a = mediaClock_->getAudioClock();
+    auto v = mediaClock_->getVideoClock();
     const double diff = mediaClock_->getVideoClock() - mediaClock_->getMasterClock();
     const double syncThreshold = std::clamp(delay, SYNC_THRESHOLD_MIN, SYNC_THRESHOLD_MAX);
     if (!isnan(diff) && std::fabs(diff) < maxFrameDuration_) {
@@ -264,6 +238,7 @@ bool VideoDecodec::shouldDropLateFrame(double time) const {
         const double duration = getFrameDuration(heldFrame_, next);
         drop = duration > 0 && time > decodecTimer_ + duration;
     });
+
     return drop;
 }
 

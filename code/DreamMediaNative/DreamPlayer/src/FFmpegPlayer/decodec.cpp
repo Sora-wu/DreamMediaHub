@@ -41,15 +41,6 @@ bool Decodec::openCodec(int streamIndex, AVStream* stream) {
     return true;
 }
 
-void Decodec::handle(void* data) {
-    pktQue_.push((AVPacket*)data);
-}
-
-void Decodec::shutdown() {
-    pktQue_.close();
-    frameQue_.close();
-}
-
 void Decodec::reopen() {
     pktQue_.reopen();
     while (std::optional<Frame> frameOpt = frameQue_.try_pop()) {
@@ -59,6 +50,15 @@ void Decodec::reopen() {
     frameQue_.reopen();
 
     decodecSerial_ = 0;
+}
+
+void Decodec::handle(void* data) {
+    pktQue_.push((AVPacket*)data);
+}
+
+void Decodec::shutdown() {
+    pktQue_.close();
+    frameQue_.close();
 }
 
 void Decodec::cleanup() {
@@ -141,4 +141,32 @@ void Decodec::pushFrame(AVFrame* frame, double pts, double duration) {
     vp.duration = duration;
 
     frameQue_.push(vp);
+}
+
+bool Decodec::acquireFrame(Frame& out) {
+    while (true) {
+        std::optional<Frame> frameOpt = frameQue_.pop();
+        if (!frameOpt) {
+            return false;
+        }
+
+        if (frameOpt->serial != decodecSerial_) {
+            releaseFrame(*frameOpt);
+            decodeTimerValid_ = false;
+            continue;
+        }
+
+        out = *frameOpt;
+        return true;
+    }
+}
+
+void Decodec::releaseFrame(Frame& frame) {
+    if (!frame.frame) {
+        return;
+    }
+
+    av_frame_unref(frame.frame);
+    av_frame_free(&frame.frame);
+    frame = {};
 }

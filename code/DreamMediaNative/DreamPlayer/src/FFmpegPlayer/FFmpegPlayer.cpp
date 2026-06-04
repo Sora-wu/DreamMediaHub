@@ -8,6 +8,7 @@
 #include <FFmpegPlayer/demuxer.h>
 #include <FFmpegPlayer/videoDecodec.h>
 #include <FFmpegPlayer/audioDecodec.h>
+#include <FFmpegPlayer/ffinstance.h>
 
 namespace {
     constexpr std::size_t FRAME_VIDEO_SIZE = 3;
@@ -52,6 +53,10 @@ bool FFmpegPlayer::open(const char* url) {
         }
     }
 
+    if (!audioDecodec_->isOpen()) {
+        FFINSTANCE()->setSyncType(SyncType::VideoMaster);
+    }
+
     videoDecodec_->reopen();
     audioDecodec_->reopen();
 
@@ -61,8 +66,10 @@ bool FFmpegPlayer::open(const char* url) {
 
     uint32_t* videoPktQueSerial = &videoDecodec_->getSerial();
     uint32_t* audioPktQueSerial = &audioDecodec_->getSerial();
+
     clock_.initClock(videoPktQueSerial, audioPktQueSerial);
     videoDecodec_->setMediaClock(&clock_);
+    audioDecodec_->setMediaClock(&clock_);
 
     return true;
 }

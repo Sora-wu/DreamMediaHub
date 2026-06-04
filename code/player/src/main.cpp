@@ -58,7 +58,7 @@ namespace {
             if (!audioBufferDevice_->waitForBuffered(std::chrono::milliseconds(800))) {
                 qWarning() << "prebuffer timeout";
             }
-            audioSink_->setBufferSize(16384);
+            audioSink_->setBufferSize(DreamContext::AUDIO_BUFFER_SIZE);
             audioSink_->start(audioBufferDevice_);
         }
 

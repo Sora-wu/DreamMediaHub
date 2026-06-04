@@ -12,5 +12,6 @@ namespace Dream {
     public:
         static DreamPlayer* createDreamPlayer();
         static void destroyDreamPlayer(DreamPlayer** player);
+        static constexpr int AUDIO_BUFFER_SIZE = 4096;
     };
 } // Dream
