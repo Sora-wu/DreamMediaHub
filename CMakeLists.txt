@@ -7,7 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(PLATFORM_NAME "linux")
-    list(APPEND CMAKE_CXX_FLAGS "-m64")
     add_compile_definitions(PLATFORM_LINUX)
 elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(PLATFORM_NAME "win")
@@ -18,3 +17,6 @@ endif()
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/code/third/build/${PLATFORM_NAME})
 
 add_subdirectory(code/player)
+
+# 供调试用，后续删除
+add_subdirectory(code/DreamMediaNative)

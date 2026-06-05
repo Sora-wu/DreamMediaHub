@@ -7,7 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(PLATFORM_NAME "linux")
-    list(APPEND CMAKE_CXX_FLAGS "-m64")
     file(GLOB_RECURSE COPY_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFORM_NAME}/lib/*.so*)
     add_compile_definitions(PLATFORM_LINUX)
 elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")

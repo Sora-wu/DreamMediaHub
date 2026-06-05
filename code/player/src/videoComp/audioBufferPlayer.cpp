@@ -11,8 +11,6 @@
 
 #include <QDebug>
 
-#include <cstring>
-
 namespace {
     constexpr uint32_t MAX_BUFFER_SIZE = 1024 * 1024 * 50;
 }

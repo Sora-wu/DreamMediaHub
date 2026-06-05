@@ -8,6 +8,8 @@
 #include <DreamPlayer/structs.h>
 #include <DreamPlayer/DreamContext.h>
 
+#include <algorithm>
+
 namespace {
     constexpr int SAMPLE_RATE = 44100;
     constexpr int CHANNEL_COUNT = 2;
@@ -175,8 +177,6 @@ int AudioDecodec::adjustSamples(int nbSamples) {
     int wantedNbSamples = nbSamples;
 
     if (FFINSTANCE()->getSyncType() != SyncType::AudioMaster) {
-        auto a = mediaClock_->getAudioClock();
-        auto v = mediaClock_->getVideoClock();
         double diff = mediaClock_->getAudioClock() - mediaClock_->getMasterClock();
 
         if (!std::isnan(diff) && std::fabs(diff) < AV_NOSYNC_THRESHOLD) {

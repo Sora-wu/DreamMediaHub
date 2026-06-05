@@ -52,7 +52,6 @@ void PacketQueue::clear() {
 }
 
 void PacketQueue::close() {
-    push(FFINSTANCE()->getFlushPkt());
     que_.close();
 }
 

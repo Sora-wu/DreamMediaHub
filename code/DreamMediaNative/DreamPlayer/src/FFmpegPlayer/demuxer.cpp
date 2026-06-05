@@ -45,7 +45,7 @@ void Demuxer::run(std::stop_token st) {
         res = av_read_frame(fmtCtx_, &pkt);
         if (res < 0) {
             if ((res == AVERROR_EOF || avio_feof(fmtCtx_->pb)) && !isEof_) {
-                // TODO: 放入空包
+                pushNullPacket();
                 isEof_ = true;
             }
             if (fmtCtx_->pb && fmtCtx_->pb->error) {
@@ -57,10 +57,25 @@ void Demuxer::run(std::stop_token st) {
             cvRead_.wait_for(lock, 10ms);
             continue;
         }
+        else {
+            isEof_ = false;
+            handle(&pkt);
+        }
 
-        handle(&pkt);
         av_packet_unref(&pkt);
     }
 
     av_log(nullptr, AV_LOG_INFO, "Demuxer exit\n");
+}
+
+void Demuxer::pushNullPacket() {
+    AVPacket pkt{};
+    av_init_packet(&pkt);
+    pkt.data = nullptr;
+    pkt.size = 0;
+
+    for (auto steam : streams_) {
+        pkt.stream_index = steam->index;
+        handle(&pkt);
+    }
 }

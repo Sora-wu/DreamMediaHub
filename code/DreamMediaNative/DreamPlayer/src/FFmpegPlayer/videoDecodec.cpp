@@ -78,7 +78,7 @@ void VideoDecodec::run(std::stop_token st) {
     }
 
     AVFormatContext* fmtCtx = FFINSTANCE()->getFormatContext();
-    AVRational timeBase = codecCtx_->time_base;
+    AVRational timeBase = stream_->time_base;
     AVRational frameRate = av_guess_frame_rate(fmtCtx, stream_, nullptr);
     double duration{};
     double pts{};
@@ -209,8 +209,6 @@ double VideoDecodec::calcDelay(double duration) const {
     }
 
     double delay = duration;
-    auto a = mediaClock_->getAudioClock();
-    auto v = mediaClock_->getVideoClock();
     const double diff = mediaClock_->getVideoClock() - mediaClock_->getMasterClock();
     const double syncThreshold = std::clamp(delay, SYNC_THRESHOLD_MIN, SYNC_THRESHOLD_MAX);
     if (!isnan(diff) && std::fabs(diff) < maxFrameDuration_) {

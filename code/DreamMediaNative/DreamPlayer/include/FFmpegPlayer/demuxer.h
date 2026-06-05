@@ -33,6 +33,9 @@ public:
     void run(std::stop_token st) override;
 
 private:
+    void pushNullPacket();
+
+private:
     AVFormatContext* fmtCtx_ = nullptr;
     uint64_t duration_ = 0;
 
