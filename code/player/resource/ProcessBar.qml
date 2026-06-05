@@ -9,6 +9,9 @@ Rectangle {
     property real maxValue: 300         // 做为音量条表示最大音量，作为视频条表示视频时长
     property real currentVal: 0
     property bool showCurrentValue: false
+    property alias isDragging: mouseArea.pressed
+
+    signal sliderRelease(real value)
 
     Rectangle {
         id: background
@@ -25,6 +28,7 @@ Rectangle {
         }
 
         MouseArea {
+            id: mouseArea
             anchors.fill: parent
             onPositionChanged: function(mouse) {
                 var progress = mouse.x / parent.width

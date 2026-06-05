@@ -10,10 +10,11 @@
 #include <QQuickOpenGLUtils>
 #include <QOpenGLDebugLogger>
 
+#include <DreamPlayer/DreamContext.h>
+
 namespace {
     const double EPSILON = 1e-8;
     const char* textureUniformName[3] = { "textureY", "textureU", "textureV" };
-    Dream::DreamPlayer* player = nullptr;
     Dream::VideoFrame videoFrame{};
 
     std::string readShaderFile(const QString& filePath) {
@@ -35,13 +36,23 @@ namespace {
 
 using namespace Dream;
 
-//////////////////////////RenderItem/////////////////////////////////
+//////////////////////////VideoArea/////////////////////////////////
 QQuickFramebufferObject::Renderer* VideoArea::createRenderer() const {
     return new OpenGLRender;
 }
 
-void VideoArea::setPlayer(DreamPlayer* p) {
-    player = p;
+
+PlayerController *VideoArea::controller() const
+{
+    return controller_;
+}
+
+void VideoArea::setController(PlayerController *newController)
+{
+    if (controller_ == newController)
+        return;
+    controller_ = newController;
+    emit controllerChanged();
 }
 
 //////////////////////////OpenGLRender/////////////////////////////////
@@ -59,7 +70,7 @@ void OpenGLRender::render() {
         initialized_ = true;
     }
 
-    if (!player) {
+    if (!player_) {
         update();
         return;
     }
@@ -75,7 +86,7 @@ void OpenGLRender::render() {
 
     updateMVP();
 
-    player->getVideoFrame(&videoFrame);
+    player_->getVideoFrame(&videoFrame);
     if (!videoFrame.data[0] || !videoFrame.frameWidth || !videoFrame.frameHeight) {
         glBindVertexArray(0);
         glUseProgram(0);
@@ -99,8 +110,15 @@ void OpenGLRender::render() {
 }
 
 void OpenGLRender::synchronize(QQuickFramebufferObject* item) {
-    itemWidth = item->width();
-    itemHeight = item->height();
+    VideoArea* area = (VideoArea*)item;
+
+    itemWidth = area->width();
+    itemHeight = area->height();
+
+    player_ = nullptr;
+    if (area->controller()) {
+        player_ = area->controller()->getPlayer();
+    }
 }
 
 bool OpenGLRender::compileShader() {
@@ -243,8 +261,8 @@ void OpenGLRender::initTexture(GLuint textureHandle, const char* uniformName, ui
 }
 
 QRect OpenGLRender::updateItemRect() const {
-    const uint32_t height = player->getHeight();
-    const uint32_t width = player->getWidth();
+    const uint32_t height = player_->getHeight();
+    const uint32_t width = player_->getWidth();
 
     double aspectRatio = (double)width / height;
     if (videoFrame.picWidthHeightRatio > EPSILON) {

@@ -22,7 +22,7 @@ public:
     ~Demuxer() override {}
 
     [[nodiscard]] bool open(const char* url);
-    [[nodiscard]] uint64_t getDuration() const {
+    [[nodiscard]] uint32_t getDuration() const {
         return duration_;
     }
 
@@ -37,7 +37,7 @@ private:
 
 private:
     AVFormatContext* fmtCtx_ = nullptr;
-    uint64_t duration_ = 0;
+    uint32_t duration_ = 0;
 
     std::vector<AVStream*> streams_;
     bool isEof_ = false;

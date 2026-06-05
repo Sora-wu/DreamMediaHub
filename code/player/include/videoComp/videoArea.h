@@ -5,10 +5,10 @@
 
 #pragma once
 
+#include <videoComp/playerController.h>
+
 #include <QQuickFramebufferObject>
 #include <QOpenGLFunctions_4_5_Core>
-
-#include <DreamPlayer/DreamContext.h>
 
 namespace Dream {
     class DreamPlayer;
@@ -18,9 +18,19 @@ class OpenGLRender;
 
 class VideoArea : public QQuickFramebufferObject {
     Q_OBJECT
+
+    Q_PROPERTY(PlayerController* controller READ controller WRITE setController NOTIFY controllerChanged)
+
 public:
     [[nodiscard]] Renderer* createRenderer() const override;
-    void setPlayer(Dream::DreamPlayer* player);
+    PlayerController *controller() const;
+    void setController(PlayerController *newController);
+
+signals:
+    void controllerChanged();
+
+private:
+    PlayerController *controller_ = nullptr;
 };
 
 class QOpenGLDebugLogger;
@@ -61,4 +71,6 @@ private:
     float itemHeight = 0;
 
     QOpenGLDebugLogger* logger_ = nullptr;
+
+    Dream::DreamPlayer* player_ = nullptr;
 };

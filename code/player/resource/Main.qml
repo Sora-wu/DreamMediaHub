@@ -11,6 +11,10 @@ Window {
     minimumWidth: 1280
     title: qsTr("DreamPlayer")
 
+    PlayerController {
+        id: playerCtrl
+    }
+
     Rectangle {
         id: buttomBar
         height: 55
@@ -42,8 +46,13 @@ Window {
 
                     Button {
                         id: btnPlayPause
-                        icon.source: "qrc:/Dream/play/resource/image/pause.png"
+                        icon.source: playerCtrl.isPlaying ? "qrc:/Dream/play/resource/image/pause.png"
+                                                              : "qrc:/Dream/play/resource/image/play.png"
                         flat: true
+
+                        onClicked: {
+                            playerCtrl.togglePlay();
+                        }
                     }
 
                     Button {
@@ -62,6 +71,11 @@ Window {
                         id: videoBar
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        maxValue: playerCtrl.duration
+
+                        onSliderRelease: function(value) {
+                            playerCtrl.seek(value)
+                        }
                     }
                 }
 
@@ -101,7 +115,7 @@ Window {
                 anchors.rightMargin: 0
 
                 Text {
-                    id: txtFIlename
+                    id: txtFilename
                     color: "#ffffff"
                     text: "111.mp4"
                     font.pixelSize: 20
@@ -133,6 +147,8 @@ Window {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: buttomBar.top
+
+        controller: playerCtrl
     }
 
 }

@@ -95,8 +95,12 @@ uint32_t FFmpegPlayer::getHeight() {
 void FFmpegPlayer::seek(double position) {
 }
 
-uint64_t FFmpegPlayer::getDuration() const {
+uint32_t FFmpegPlayer::getDuration() const {
     return demuxer_->getDuration();
+}
+
+double FFmpegPlayer::getCurrentTime() {
+    return clock_.getMasterClock();
 }
 
 void FFmpegPlayer::setVolume(uint32_t volume) {

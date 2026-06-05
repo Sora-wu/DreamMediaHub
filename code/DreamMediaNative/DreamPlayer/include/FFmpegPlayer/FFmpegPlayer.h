@@ -29,7 +29,8 @@ public:
     [[nodiscard]] uint32_t getHeight() override;
 
     void seek(double position) override;
-    [[nodiscard]] uint64_t getDuration() const override;
+    [[nodiscard]] uint32_t getDuration() const override;
+    [[nodiscard]] double getCurrentTime() override;
 
     void setVolume(uint32_t volume) override;
     [[nodiscard]] uint32_t getVolume() const override;
@@ -49,7 +50,6 @@ private:
     uint32_t volume_ = 100;
     double speed_ = 1.0;
     bool pause_ = false;
-    double duration_ = 0.0;
 
     std::unique_ptr<Demuxer> demuxer_;
     std::unique_ptr<VideoDecodec> videoDecodec_;

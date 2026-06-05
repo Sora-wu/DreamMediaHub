@@ -21,7 +21,8 @@ namespace Dream {
         [[nodiscard]] virtual uint32_t getHeight() = 0;
 
         virtual void seek(double position) = 0;
-        [[nodiscard]] virtual uint64_t getDuration() const = 0;
+        [[nodiscard]] virtual uint32_t getDuration() const = 0;
+        [[nodiscard]] virtual double getCurrentTime() = 0;
 
         virtual void setVolume(uint32_t volume) = 0;
         [[nodiscard]] virtual uint32_t getVolume() const = 0;
