@@ -62,13 +62,14 @@ private slots:
 
 private:
     QString mediaName_{};
-    QString progressText_{ "0/0" };
+    QString progressText_{};
     bool isPlaying_ = false;
 
     Dream::DreamPlayer* player_ = nullptr;
     AudioBufferDevice* audioBufferDevice_ = nullptr;
     QAudioSink* audioSink_ = nullptr;
     uint32_t currentProgress_;
+    uint32_t duration_ = 0;
 
     QTimer* timer_ = nullptr;
 };

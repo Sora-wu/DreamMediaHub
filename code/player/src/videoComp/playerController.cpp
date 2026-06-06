@@ -15,6 +15,25 @@
 
 using namespace Dream;
 
+namespace {
+    QString formatTimeFromSeconds(int totalSeconds) {
+        if (totalSeconds < 0) {
+            return "00:00:00";
+        }
+
+        int hours = totalSeconds / 3600;
+        int minutes = (totalSeconds % 3600) / 60;
+        int seconds = totalSeconds % 60;
+
+        QString formattedTime = QString("%1:%2:%3")
+                                .arg(hours, 2, 10, QChar('0'))
+                                .arg(minutes, 2, 10, QChar('0'))
+                                .arg(seconds, 2, 10, QChar('0'));
+
+        return formattedTime;
+    }
+}
+
 PlayerController::PlayerController(QObject* parent) {
     player_ = DreamContext::createDreamPlayer();
 
@@ -69,7 +88,7 @@ void PlayerController::setVolume(uint32_t newVolume)
 
 uint32_t PlayerController::duration() const
 {
-    return player_->getDuration();
+    return duration_;
 }
 
 uint32_t PlayerController::currentProgress() const
@@ -126,6 +145,10 @@ void PlayerController::initController() {
     timer_ = new QTimer(this);
     connect(timer_, &QTimer::timeout, this, &PlayerController::onTimerUpdate);
     timer_->start(500);
+
+    // TEST
+    duration_ = player_->getDuration();
+    progressText_ = QString("%1/%2").arg(formatTimeFromSeconds(0), formatTimeFromSeconds(duration_));
 }
 
 void PlayerController::onTimerUpdate() {
@@ -133,10 +156,8 @@ void PlayerController::onTimerUpdate() {
         return;
     }
 
-    uint32_t cur = static_cast<uint32_t>(player_->getCurrentTime());
-    uint32_t dur = player_->getDuration();
-
-    QString newText = QString::number(cur) + "/" + QString::number(dur);
+    uint32_t cur = (uint32_t)player_->getCurrentTime();
+    QString newText = QString("%1/%2").arg(formatTimeFromSeconds(cur), formatTimeFromSeconds(duration_));
 
     if (progressText_ != newText) {
         progressText_ = newText;

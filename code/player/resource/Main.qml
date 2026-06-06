@@ -17,7 +17,7 @@ Window {
 
     Rectangle {
         id: buttomBar
-        height: 55
+        height: 60
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
@@ -26,6 +26,7 @@ Window {
         Column {
             id: columnLayout
             anchors.fill: parent
+            anchors.topMargin: 5
             spacing: 5
 
             RowLayout {
@@ -49,7 +50,6 @@ Window {
                         icon.source: playerCtrl.isPlaying ? "qrc:/Dream/play/resource/image/pause.png"
                                                               : "qrc:/Dream/play/resource/image/play.png"
                         flat: true
-
                         onClicked: {
                             playerCtrl.togglePlay();
                         }
@@ -71,13 +71,26 @@ Window {
                         id: videoBar
                         Layout.fillWidth: true
                         Layout.fillHeight: true
+                        currentVal: playerCtrl.currentProgress
                         maxValue: playerCtrl.duration
 
                         onSliderRelease: function(value) {
                             playerCtrl.seek(value)
                         }
                     }
+
+                    Connections {
+                        target: playerCtrl
+                        function onCurrentProgressChanged() {
+                            if (!videoBar.isDragging) {
+                                videoBar.currentVal = playerCtrl.currentProgress
+                                // 实时同步进度条比例
+                                videoBar.progress = videoBar.maxValue > 0 ? (videoBar.currentVal / videoBar.maxValue) : 0
+                            }
+                        }
+                    }
                 }
+
 
                 RowLayout {
                     id: volumeLayout
@@ -128,7 +141,7 @@ Window {
                 Text {
                     id: txtProgress
                     color: "#ffffff"
-                    text: "114:51/419:19"
+                    text: playerCtrl.progressText
                     font.pixelSize: 20
                     horizontalAlignment: Text.AlignRight
                     verticalAlignment: Text.AlignVCenter

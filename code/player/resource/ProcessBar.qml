@@ -5,7 +5,7 @@ Rectangle {
     width: 1280
     height: 50
 
-    property real progress: 0.3
+    property real progress: 0
     property real maxValue: 300         // 做为音量条表示最大音量，作为视频条表示视频时长
     property real currentVal: 0
     property bool showCurrentValue: false
@@ -39,6 +39,8 @@ Rectangle {
                 var currentProgress = mouse.x / parent.width
                 root.progress = Math.max(0, Math.min(1, currentProgress))
                 root.currentVal = root.progress * maxValue;
+
+                root.sliderRelease(root.currentVal)
             }
         }
 
