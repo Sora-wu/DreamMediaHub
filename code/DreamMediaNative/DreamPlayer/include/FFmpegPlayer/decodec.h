@@ -11,6 +11,8 @@
 #include <FFmpegPlayer/ffcore.h>
 #include <FFmpegPlayer/mediaClock.h>
 
+#include "DreamPlayer/structs.h"
+
 struct Frame {
     AVFrame* frame{};
     uint32_t serial{};
@@ -27,6 +29,9 @@ public:
 
     virtual bool openCodec(int streamIndex, AVStream* stream);
     virtual void reopen();
+    void setMediaClock(MediaClock* clock) {
+        mediaClock_ = clock;
+    }
 
     [[nodiscard]] bool isOpen() const {
         return streamIndex_ != -1;
@@ -46,11 +51,10 @@ public:
 
     void handle(void* data) override;
 
-    void setMediaClock(MediaClock* clock) {
-        mediaClock_ = clock;
-    }
-
     void shutdown();
+    void setOnSeekCallback(const Dream::OnSeekCallback& cb) {
+        onSeekCallback_ = cb;
+    }
 
 protected:
     virtual void cleanup();
@@ -71,4 +75,6 @@ protected:
     bool decodeTimerValid_ = false;
 
     MediaClock* mediaClock_ = nullptr;
+
+    Dream::OnSeekCallback onSeekCallback_ = nullptr;
 };

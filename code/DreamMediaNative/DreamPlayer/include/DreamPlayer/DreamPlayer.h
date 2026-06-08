@@ -20,7 +20,11 @@ namespace Dream {
         [[nodiscard]] virtual uint32_t getWidth() = 0;
         [[nodiscard]] virtual uint32_t getHeight() = 0;
 
-        virtual void seek(double position) = 0;
+        // position: 单位秒
+        // offset: 单位秒，用键盘方向键按下时指定一个seek的范围
+        // 如果拖动进度条调用seek(target);
+        // 按键盘方向键呼叫seek(currentTime, offset);
+        virtual void seek(double position, double offset = 0) = 0;
         [[nodiscard]] virtual uint32_t getDuration() const = 0;
         [[nodiscard]] virtual double getCurrentTime() = 0;
 
@@ -34,5 +38,11 @@ namespace Dream {
 
         // 由于native只负责解码出帧，音频播放位置需要外部回传
         virtual void updateAudioClock(double pts) = 0;
+
+        // 当有seek操作时，会调用回调
+        // 由于native只负责解码出帧，清空外部缓存需要注册于此（比如外部音频缓存）
+        virtual void setOnAudioSeekCallback(const OnSeekCallback& cb) = 0;
+        // 由于native只负责解码出帧，清空外部缓存需要注册于此
+        virtual void setOnVideoSeekCallback(const OnSeekCallback& cb) = 0;
     };
 }

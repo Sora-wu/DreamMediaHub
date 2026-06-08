@@ -8,9 +8,12 @@
 
 void PacketQueue::push(AVPacket* pkt) {
     Packet packet{};
-    av_packet_ref(&packet.packet, pkt);
     if (pkt == FFINSTANCE()->getFlushPkt()) {
+        packet.packet = *pkt;
         ++serial_;
+    }
+    else {
+        av_packet_ref(&packet.packet, pkt);
     }
     packet.serial = serial_;
 

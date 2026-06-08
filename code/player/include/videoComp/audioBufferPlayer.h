@@ -33,9 +33,7 @@ public:
     explicit AudioBufferDevice(QObject* parent = nullptr);
     ~AudioBufferDevice() override;
 
-    void setPlayer(Dream::DreamPlayer* player) {
-        player_ = player;
-    }
+    void setPlayer(Dream::DreamPlayer* player);
 
     void startPull();
     void stopPull();
@@ -52,6 +50,9 @@ protected:
     qint64 writeData(const char *data, qint64 len) override;
 
     qint64 bytesAvailable() const override;
+
+private:
+    void clearQueue();
 
 private:    
     std::deque<AudioSegment> segQue_{};

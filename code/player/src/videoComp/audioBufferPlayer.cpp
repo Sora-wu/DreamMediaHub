@@ -29,6 +29,12 @@ AudioBufferDevice::~AudioBufferDevice() {
     cv_.notify_all();
 }
 
+void AudioBufferDevice::setPlayer(Dream::DreamPlayer* player) {
+    player_ = player;
+
+    player_->setOnAudioSeekCallback([this]{ clearQueue(); });
+}
+
 void AudioBufferDevice::startPull() {
     thread_ = std::jthread([this](std::stop_token st) {
         pull(std::move(st));
@@ -73,7 +79,7 @@ void AudioBufferDevice::pull(std::stop_token st) {
 
 bool AudioBufferDevice::waitForBuffered(std::chrono::milliseconds prebufferMs, std::stop_token st) {
     constexpr uint64_t bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * SAMPLE_SIZE;
-    const uint64_t targetBytes = bytesPerSec * static_cast<uint64_t>(prebufferMs.count()) / 1000;
+    const uint64_t targetBytes = bytesPerSec * (uint64_t)(prebufferMs.count()) / 1000;
 
     std::unique_lock lock(mtx_);
     return cv_.wait_for(lock, prebufferMs, [&]() {
@@ -138,4 +144,11 @@ qint64 AudioBufferDevice::writeData(const char *data, qint64 len) {
 qint64 AudioBufferDevice::bytesAvailable() const {
     std::lock_guard lock(mtx_);
     return QIODevice::bytesAvailable() + dataLen;
+}
+
+void AudioBufferDevice::clearQueue() {
+    std::lock_guard lock(mtx_);
+    segQue_.clear();
+    dataLen = 0;
+    cv_.notify_all();
 }

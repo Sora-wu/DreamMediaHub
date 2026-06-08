@@ -15,7 +15,7 @@ class Demuxer;
 class VideoDecodec;
 class AudioDecodec;
 
-class FFmpegPlayer : public Dream::DreamPlayer, public DataHandler {
+class FFmpegPlayer final : public Dream::DreamPlayer, public DataHandler {
 public:
     FFmpegPlayer();
     ~FFmpegPlayer() override;
@@ -28,7 +28,7 @@ public:
     [[nodiscard]] uint32_t getWidth() override;
     [[nodiscard]] uint32_t getHeight() override;
 
-    void seek(double position) override;
+    void seek(double position, double offset = 0) override;
     [[nodiscard]] uint32_t getDuration() const override;
     [[nodiscard]] double getCurrentTime() override;
 
@@ -41,6 +41,9 @@ public:
     void getAudioFrame(Dream::AudioFrame* audioFrame) override;
 
     void updateAudioClock(double pts) override;
+
+    void setOnAudioSeekCallback(const Dream::OnSeekCallback& cb) override;
+    void setOnVideoSeekCallback(const Dream::OnSeekCallback& cb) override;
 
     void handle(void* data) override;
 private:

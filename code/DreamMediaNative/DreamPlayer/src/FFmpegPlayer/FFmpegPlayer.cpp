@@ -92,7 +92,8 @@ uint32_t FFmpegPlayer::getHeight() {
     return videoDecodec_->getHeight();
 }
 
-void FFmpegPlayer::seek(double position) {
+void FFmpegPlayer::seek(double position, double offset) {
+    demuxer_->seek(position);
 }
 
 uint32_t FFmpegPlayer::getDuration() const {
@@ -124,8 +125,16 @@ void FFmpegPlayer::getAudioFrame(Dream::AudioFrame* audioFrame) {
 }
 
 void FFmpegPlayer::updateAudioClock(double pts) {
-    uint32_t serial = clock_.getAudioSerial();
+    uint32_t serial = audioDecodec_->getSerial();
     clock_.setAudioClock(pts, serial, CURRENT_TIME);
+}
+
+void FFmpegPlayer::setOnAudioSeekCallback(const Dream::OnSeekCallback& cb) {
+    audioDecodec_->setOnSeekCallback(cb);
+}
+
+void FFmpegPlayer::setOnVideoSeekCallback(const Dream::OnSeekCallback& cb) {
+    videoDecodec_->setOnSeekCallback(cb);
 }
 
 void FFmpegPlayer::handle(void* data) {

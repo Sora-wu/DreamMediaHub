@@ -9,7 +9,6 @@
 #include <common/dreamThread.hpp>
 
 #include <vector>
-#include <thread>
 #include <condition_variable>
 
 extern "C" {
@@ -31,6 +30,8 @@ public:
     }
 
     void run(std::stop_token st) override;
+
+    void seek(double position, double offset = 0);
 
 private:
     void pushNullPacket();

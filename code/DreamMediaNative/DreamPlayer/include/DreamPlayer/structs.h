@@ -6,10 +6,13 @@
 #pragma once
 
 #include <DreamPlayer/define.h>
+#include <functional>
 
 #include <cstdint>
 
 namespace Dream {
+    using OnSeekCallback = std::function<void()>;
+
     struct DREAM_PLAYER_API VideoFrame {
         uint32_t frameWidth{};
         uint32_t frameHeight{};

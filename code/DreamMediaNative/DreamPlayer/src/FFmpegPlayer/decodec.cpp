@@ -115,6 +115,9 @@ bool Decodec::decodeFrame(AVFrame* frame) {
         if (prePkt->data == FFINSTANCE()->getFlushPkt()->data) {
             // 是flush包
             avcodec_flush_buffers(codecCtx_);
+            if (onSeekCallback_) {
+                onSeekCallback_();
+            }
             continue;
         }
 
