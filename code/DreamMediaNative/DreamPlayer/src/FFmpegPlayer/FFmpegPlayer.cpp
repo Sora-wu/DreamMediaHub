@@ -95,6 +95,11 @@ uint32_t FFmpegPlayer::getHeight() {
 }
 
 void FFmpegPlayer::seek(double position, double offset) {
+    uint32_t serial = audioDecodec_->getSerial();
+    if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
+        serial = videoDecodec_->getSerial();
+    }
+    clock_.setMasterClock(position * AV_TIME_BASE, serial, CURRENT_TIME);
     demuxer_->seek(position);
 }
 

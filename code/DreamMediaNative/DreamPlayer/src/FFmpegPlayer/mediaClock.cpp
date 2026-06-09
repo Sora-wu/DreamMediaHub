@@ -77,6 +77,17 @@ uint32_t MediaClock::getAudioSerial() const {
     return audioClock_.getSerial();
 }
 
+void MediaClock::setMasterClock(double pts, uint32_t serial, double time) {
+    SyncType syncType = FFINSTANCE()->getSyncType();
+
+    switch (syncType) {
+    case SyncType::VideoMaster:
+        videoClock_.setTime(pts, serial, time);
+    case SyncType::AudioMaster:
+        audioClock_.setTime(pts, serial, time);
+    }
+}
+
 void MediaClock::setVideoClock(double pts, uint32_t serial, double time) {
     videoClock_.setTime(pts, serial, time);
 }

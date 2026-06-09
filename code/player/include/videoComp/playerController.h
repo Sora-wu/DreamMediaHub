@@ -44,7 +44,7 @@ public:
     Q_INVOKABLE void play();
     Q_INVOKABLE void pause();
     Q_INVOKABLE void togglePlay();
-    Q_INVOKABLE void seek(double position);
+    Q_INVOKABLE void seek(double position, double offset = 0);
 
 signals:
     void mediaNameChanged();

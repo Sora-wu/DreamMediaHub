@@ -139,9 +139,9 @@ void PlayerController::togglePlay() {
     isPlaying_ ? pause() : play();
 }
 
-void PlayerController::seek(double position) {
+void PlayerController::seek(double position, double offset) {
     if (player_) {
-        player_->seek(position);
+        player_->seek(position, offset);
         // 手动调用一下
         onTimerUpdate();
     }
