@@ -36,6 +36,12 @@ namespace {
 
 PlayerController::PlayerController(QObject* parent) {
     player_ = DreamContext::createDreamPlayer();
+    // TEST
+#ifdef PLATFORM_LINUX
+    player_->open("/home/sora/Videos/test.mp4");
+#else
+    player_->open("D:/Desktop/Test/test31.mp4");
+#endif
 
     QAudioFormat format;
     format.setSampleRate(AudioBufferDevice::SAMPLE_RATE);
@@ -46,11 +52,28 @@ PlayerController::PlayerController(QObject* parent) {
         qInfo() << "sample rate: " << format.sampleRate();
         qInfo() << "channel count: " << format.channelCount();
         qWarning() << "can not support this audio format or detect any audio device, will play with no audio";
-    }
-    audioBufferDevice_ = new AudioBufferDevice;
-    audioSink_ = new QAudioSink(audioDevice, format);
 
-    initController();
+        player_->setMasterMode(SyncType::VideoMaster);
+    }
+    else {
+        audioBufferDevice_ = new AudioBufferDevice;
+        audioSink_ = new QAudioSink(audioDevice, format);
+        audioBufferDevice_->setPlayer(player_);
+        audioBufferDevice_->startPull();
+        // 预缓存
+        if (!audioBufferDevice_->waitForBuffered(std::chrono::milliseconds(800))) {
+            qWarning() << "prebuffer timeout";
+        }
+        audioSink_->setBufferSize(DreamContext::AUDIO_BUFFER_SIZE);
+        audioSink_->start(audioBufferDevice_);
+    }
+
+    timer_ = new QTimer(this);
+    connect(timer_, &QTimer::timeout, this, &PlayerController::onTimerUpdate);
+    timer_->start(500);
+
+    duration_ = player_->getDuration();
+    progressText_ = QString("%1/%2").arg(formatTimeFromSeconds(0), formatTimeFromSeconds(duration_));
 }
 
 PlayerController::~PlayerController() {
@@ -122,33 +145,6 @@ void PlayerController::seek(double position) {
         // 手动调用一下
         onTimerUpdate();
     }
-}
-
-void PlayerController::initController() {
-    // TEST
-#ifdef PLATFORM_LINUX
-    player_->open("/home/sora/Videos/test.mp4");
-#else
-    player_->open("D:/Desktop/Test/test31.mp4");
-#endif
-
-    audioBufferDevice_->setPlayer(player_);
-
-    audioBufferDevice_->startPull();
-    // 预缓存
-    if (!audioBufferDevice_->waitForBuffered(std::chrono::milliseconds(800))) {
-        qWarning() << "prebuffer timeout";
-    }
-    audioSink_->setBufferSize(DreamContext::AUDIO_BUFFER_SIZE);
-    audioSink_->start(audioBufferDevice_);
-
-    timer_ = new QTimer(this);
-    connect(timer_, &QTimer::timeout, this, &PlayerController::onTimerUpdate);
-    timer_->start(500);
-
-    // TEST
-    duration_ = player_->getDuration();
-    progressText_ = QString("%1/%2").arg(formatTimeFromSeconds(0), formatTimeFromSeconds(duration_));
 }
 
 void PlayerController::onTimerUpdate() {

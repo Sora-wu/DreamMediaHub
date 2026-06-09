@@ -10,6 +10,8 @@
 
 #include <algorithm>
 
+using namespace Dream;
+
 namespace {
     constexpr int SAMPLE_RATE = 44100;
     constexpr int CHANNEL_COUNT = 2;
@@ -21,7 +23,7 @@ namespace {
     constexpr double AUDIO_DIFF_THRESHOLD_MIN = 0.04; // 最小同步触发阈值 (40ms)
     constexpr double AUDIO_DIFF_THRESHOLD_MAX = 0.1;  // 最大同步触发阈值 (100ms)
 
-    void updateAudioFrameSize(Dream::AudioFrame* audioFrame, int buffSize) {
+    void updateAudioFrameSize(AudioFrame* audioFrame, int buffSize) {
         memset(audioFrame->data, 0, audioFrame->capacity);
 
         if (audioFrame->capacity >= buffSize) {
@@ -46,7 +48,7 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
     audioDiffAvgCoef_ = std::exp(std::log(0.01) / AUDIO_DIFF_AVG_NB);
 
     int bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * av_get_bytes_per_sample(SAMPLE_FORMAT);
-    int dummyHwBufSize = Dream::DreamContext::AUDIO_BUFFER_SIZE * CHANNEL_COUNT * av_get_bytes_per_sample(SAMPLE_FORMAT);
+    int dummyHwBufSize = DreamContext::AUDIO_BUFFER_SIZE * CHANNEL_COUNT * av_get_bytes_per_sample(SAMPLE_FORMAT);
     audioDiffThreshold_ = (double)(dummyHwBufSize) / bytesPerSec;
 
     audioDiffThreshold_ = std::clamp(audioDiffThreshold_, AUDIO_DIFF_THRESHOLD_MIN, AUDIO_DIFF_THRESHOLD_MAX);
@@ -81,7 +83,7 @@ void AudioDecodec::run(std::stop_token st) {
     av_log(nullptr, AV_LOG_INFO, "Finished decoding audio stream\n");
 }
 
-void AudioDecodec::getAudioFrame(Dream::AudioFrame* audioFrame) {
+void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
     audioFrame->isUpdated = false;
 
     Frame ap{};
@@ -134,7 +136,7 @@ void AudioDecodec::refreshSwr(AVFrame* frame) {
     }
 }
 
-bool AudioDecodec::fillData(AVFrame* frame, Dream::AudioFrame* audioFrame) {
+bool AudioDecodec::fillData(AVFrame* frame, AudioFrame* audioFrame) {
     const int nbSamples = adjustSamples(frame->nb_samples);
 
     if (frame->sample_rate != SAMPLE_RATE || frame->channels != CHANNEL_COUNT || frame->format != SAMPLE_FORMAT) {

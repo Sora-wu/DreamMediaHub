@@ -6,6 +6,8 @@
 #include <FFmpegPlayer/mediaClock.h>
 #include <FFmpegPlayer/ffinstance.h>
 
+using namespace Dream;
+
 ///////////////////////////Clock///////////////////////////////////////////
 void MediaClock::Clock::init(uint32_t* qSerial) {
     pts = NAN;

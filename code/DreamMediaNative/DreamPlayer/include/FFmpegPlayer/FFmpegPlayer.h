@@ -45,6 +45,9 @@ public:
     void setOnAudioSeekCallback(const Dream::OnSeekCallback& cb) override;
     void setOnVideoSeekCallback(const Dream::OnSeekCallback& cb) override;
 
+    void setMasterMode(Dream::SyncType syncType) override;
+    [[nodiscard]] Dream::SyncType getMasterMode() const override;
+
     void handle(void* data) override;
 private:
     void cleanup() const;

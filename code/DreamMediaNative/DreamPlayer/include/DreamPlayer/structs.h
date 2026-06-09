@@ -13,6 +13,11 @@
 namespace Dream {
     using OnSeekCallback = std::function<void()>;
 
+    enum class SyncType {
+        AudioMaster,
+        VideoMaster,
+    };
+
     struct DREAM_PLAYER_API VideoFrame {
         uint32_t frameWidth{};
         uint32_t frameHeight{};

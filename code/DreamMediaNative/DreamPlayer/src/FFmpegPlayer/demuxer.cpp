@@ -89,7 +89,6 @@ void Demuxer::seek(double position, double offset) {
             handle(flushPkt);
         }
 
-        av_log(nullptr, AV_LOG_INFO, "=====Seek success=====\n");
         isEof_ = false;
     }
 }

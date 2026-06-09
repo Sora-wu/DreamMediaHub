@@ -44,5 +44,8 @@ namespace Dream {
         virtual void setOnAudioSeekCallback(const OnSeekCallback& cb) = 0;
         // 由于native只负责解码出帧，清空外部缓存需要注册于此
         virtual void setOnVideoSeekCallback(const OnSeekCallback& cb) = 0;
+
+        virtual void setMasterMode(SyncType syncType) = 0;
+        [[nodiscard]] virtual SyncType getMasterMode() const = 0;
     };
 }

@@ -56,5 +56,11 @@ Rectangle {
             fontSizeMode: Text.HorizontalFit
             style: Text.Outline
         }
+
+        // 设置进度条进度，范围【0 - maxValue】
+        function setProgress(value) {
+            root.currentVal = value
+            root.progress = value / maxValue
+        }
     }
 }

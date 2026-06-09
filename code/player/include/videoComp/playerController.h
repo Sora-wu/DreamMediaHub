@@ -54,9 +54,6 @@ signals:
     void durationChanged();
     void currentProgressChanged();
 
-private:
-    void initController();
-
 private slots:
     void onTimerUpdate();
 
@@ -68,7 +65,7 @@ private:
     Dream::DreamPlayer* player_ = nullptr;
     AudioBufferDevice* audioBufferDevice_ = nullptr;
     QAudioSink* audioSink_ = nullptr;
-    uint32_t currentProgress_;
+    uint32_t currentProgress_ = 0;
     uint32_t duration_ = 0;
 
     QTimer* timer_ = nullptr;

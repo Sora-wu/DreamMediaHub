@@ -20,11 +20,6 @@ extern "C" {
 
 #define CURRENT_TIME (double)av_gettime_relative() / 1e6
 
-enum class SyncType {
-    AudioMaster,
-    VideoMaster,
-};
-
 class FFUtils {
 public:
     static std::string getError(int errnum);

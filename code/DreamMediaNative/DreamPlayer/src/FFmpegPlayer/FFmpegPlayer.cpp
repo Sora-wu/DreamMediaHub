@@ -10,6 +10,8 @@
 #include <FFmpegPlayer/audioDecodec.h>
 #include <FFmpegPlayer/ffinstance.h>
 
+using namespace Dream;
+
 namespace {
     constexpr std::size_t FRAME_VIDEO_SIZE = 3;
     constexpr std::size_t FRAME_AUDIO_SIZE = 32;
@@ -116,11 +118,11 @@ void FFmpegPlayer::setSpeed(double speed) {
     speed_ = speed;
 }
 
-void FFmpegPlayer::getVideoFrame(Dream::VideoFrame* videoFrame) {
+void FFmpegPlayer::getVideoFrame(VideoFrame* videoFrame) {
     videoDecodec_->getVideoFrame(videoFrame);
 }
 
-void FFmpegPlayer::getAudioFrame(Dream::AudioFrame* audioFrame) {
+void FFmpegPlayer::getAudioFrame(AudioFrame* audioFrame) {
     audioDecodec_->getAudioFrame(audioFrame);
 }
 
@@ -129,12 +131,20 @@ void FFmpegPlayer::updateAudioClock(double pts) {
     clock_.setAudioClock(pts, serial, CURRENT_TIME);
 }
 
-void FFmpegPlayer::setOnAudioSeekCallback(const Dream::OnSeekCallback& cb) {
+void FFmpegPlayer::setOnAudioSeekCallback(const OnSeekCallback& cb) {
     audioDecodec_->setOnSeekCallback(cb);
 }
 
-void FFmpegPlayer::setOnVideoSeekCallback(const Dream::OnSeekCallback& cb) {
+void FFmpegPlayer::setOnVideoSeekCallback(const OnSeekCallback& cb) {
     videoDecodec_->setOnSeekCallback(cb);
+}
+
+void FFmpegPlayer::setMasterMode(SyncType syncType) {
+    FFINSTANCE()->setSyncType(syncType);
+}
+
+SyncType FFmpegPlayer::getMasterMode() const {
+    return FFINSTANCE()->getSyncType();
 }
 
 void FFmpegPlayer::handle(void* data) {

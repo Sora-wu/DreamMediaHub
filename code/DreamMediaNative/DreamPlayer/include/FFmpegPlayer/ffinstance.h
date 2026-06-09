@@ -6,6 +6,7 @@
 #pragma once
 
 #include <FFmpegPlayer/ffcore.h>
+#include <DreamPlayer/structs.h>
 
 #include <cassert>
 
@@ -13,11 +14,11 @@ class FFInstance {
 public:
     static FFInstance* instance();
 
-    void setSyncType(SyncType syncType) {
+    void setSyncType(Dream::SyncType syncType) {
         syncType_ = syncType;
     }
 
-    [[nodiscard]] SyncType getSyncType() const {
+    [[nodiscard]] Dream::SyncType getSyncType() const {
         return syncType_;
     }
 
@@ -43,7 +44,7 @@ private:
     AVFormatContext* fmtCtx_ = nullptr;
     AVPacket flushPkt_{};
 
-    SyncType syncType_ = SyncType::AudioMaster;
+    Dream::SyncType syncType_ = Dream::SyncType::AudioMaster;
 };
 
 #define FFINSTANCE FFInstance::instance

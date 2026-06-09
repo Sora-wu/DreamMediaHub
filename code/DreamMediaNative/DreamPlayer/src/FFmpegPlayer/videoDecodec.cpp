@@ -9,15 +9,15 @@
 
 #include <algorithm>
 
+using namespace Dream;
+
 namespace {
     constexpr double SYNC_THRESHOLD_MIN = 0.04;
     constexpr double SYNC_THRESHOLD_MAX = 0.1;
     constexpr double SYNC_FRAMEDUP_THRESHOLD = 0.1;
     constexpr double SYNC_THRESHOLD_MAX_DRIFT = 0.1;
-}
 
-namespace {
-    void updateVideoFrameSize(Dream::VideoFrame* videoFrame, int height, const int linesize[3]) {
+    void updateVideoFrameSize(VideoFrame* videoFrame, int height, const int linesize[3]) {
         const int planeHeights[3] = { height, height / 2, height / 2 };
         for (uint32_t i = 0; i < 3; ++i) {
             if (!linesize[i]) {
@@ -106,7 +106,7 @@ void VideoDecodec::resetSyncState() {
     decodeTimerValid_ = false;
 }
 
-void VideoDecodec::getVideoFrame(Dream::VideoFrame* videoFrame) {
+void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
     videoFrame->frameWidth = 0;
     videoFrame->frameHeight = 0;
 
@@ -240,7 +240,7 @@ bool VideoDecodec::shouldDropLateFrame(double time) const {
     return drop;
 }
 
-void VideoDecodec::fillData(AVFrame* frame, Dream::VideoFrame* videoFrame) {
+void VideoDecodec::fillData(AVFrame* frame, VideoFrame* videoFrame) {
     const int width = frame->width;
     const int height = frame->height;
 

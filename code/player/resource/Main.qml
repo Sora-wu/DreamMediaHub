@@ -22,6 +22,23 @@ Window {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         color: "#3b4252"
+        focus: true
+
+        Keys.onPressed: (event)=> {
+            console.log("in");
+            if (event.key === Qt.Key_Left) {
+                var newPos = Math.max(0, playerCtrl.currentProgress - 5)
+                playerCtrl.seek(newPos)
+                videoArea.setProgress(newPos)
+                event.accepted = true
+            }
+            else if (event.key === Qt.Key_Right) {
+                newPos = Math.max(0, playerCtrl.currentProgress + 5)
+                playerCtrl.seek(newPos)
+                videoArea.setProgress(newPos)
+                event.accepted = true
+            }
+        }
 
         Column {
             id: columnLayout
@@ -163,5 +180,4 @@ Window {
 
         controller: playerCtrl
     }
-
 }
