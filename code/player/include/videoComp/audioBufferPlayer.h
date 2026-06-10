@@ -42,6 +42,7 @@ public:
     [[nodiscard]] bool waitForBuffered(std::chrono::milliseconds prebufferMs, std::stop_token st = {});
 
     void clear();
+    void clearQueue();
 
 protected:
     qint64 readData(char* data, qint64 maxlen) override;
@@ -51,12 +52,9 @@ protected:
 
     qint64 bytesAvailable() const override;
 
-private:
-    void clearQueue();
-
 private:    
     std::deque<AudioSegment> segQue_{};
-    uint32_t dataLen{};
+    uint32_t dataLen_{};
 
     mutable std::mutex mtx_{};
     std::jthread thread_{};

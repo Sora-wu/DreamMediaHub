@@ -83,8 +83,10 @@ void MediaClock::setMasterClock(double pts, uint32_t serial, double time) {
     switch (syncType) {
     case SyncType::VideoMaster:
         videoClock_.setTime(pts, serial, time);
+        break;
     case SyncType::AudioMaster:
         audioClock_.setTime(pts, serial, time);
+        break;
     }
 }
 

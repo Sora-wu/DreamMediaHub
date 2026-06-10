@@ -99,8 +99,9 @@ void FFmpegPlayer::seek(double targetPos, double seekRel) {
     if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
         serial = videoDecodec_->getSerial();
     }
-    clock_.setMasterClock(targetPos * AV_TIME_BASE, serial, CURRENT_TIME);
-    demuxer_->seek(targetPos);
+
+    clock_.setMasterClock(targetPos, serial, CURRENT_TIME);
+    demuxer_->seek(targetPos, seekRel);
 }
 
 uint32_t FFmpegPlayer::getDuration() const {
@@ -108,14 +109,8 @@ uint32_t FFmpegPlayer::getDuration() const {
 }
 
 double FFmpegPlayer::getCurrentTime() {
-    static double cacaheTime = 0;
-    double currentTime = clock_.getMasterClock();
-    av_log(nullptr, AV_LOG_INFO, "currentTime: %lf\n", currentTime);
-    if (!isnan(currentTime)) {
-        cacaheTime = currentTime;
-    }
-
-    return cacaheTime;
+    av_log(nullptr, AV_LOG_INFO, "currentTime: %lf\n", clock_.getMasterClock());
+    return clock_.getMasterClock();
 }
 
 void FFmpegPlayer::setVolume(uint32_t volume) {

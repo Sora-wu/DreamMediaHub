@@ -70,7 +70,7 @@ PlayerController::PlayerController(QObject* parent) {
 
     timer_ = new QTimer(this);
     connect(timer_, &QTimer::timeout, this, &PlayerController::onTimerUpdate);
-    timer_->start(500);
+    timer_->start(250);
 
     duration_ = player_->getDuration();
     progressText_ = QString("%1/%2").arg(formatTimeFromSeconds(0), formatTimeFromSeconds(duration_));
@@ -141,8 +141,9 @@ void PlayerController::togglePlay() {
 
 void PlayerController::seek(double targetPos, double seekRel) {
     if (player_) {
+        // 立即清空音频缓冲，避免 seek 完成前继续播放旧数据导致音画不同步，优化体验
+        // audioBufferDevice_->clearQueue();
         player_->seek(targetPos, seekRel);
-        // 手动调用一下
         onTimerUpdate();
     }
 }
@@ -161,6 +162,7 @@ void PlayerController::onTimerUpdate() {
     }
 
     uint32_t cur = (uint32_t)player_->getCurrentTime();
+    qDebug() << "cur:" << cur;
     QString newText = QString("%1/%2").arg(formatTimeFromSeconds(cur), formatTimeFromSeconds(duration_));
 
     if (progressText_ != newText) {

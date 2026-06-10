@@ -57,7 +57,7 @@ void AudioBufferDevice::pull(std::stop_token st) {
 
         {
             std::unique_lock lock(mtx_);
-            cv_.wait(lock, [&](){ return dataLen + audioFrame.len <= MAX_BUFFER_SIZE || st.stop_requested(); });
+            cv_.wait(lock, [&](){ return dataLen_ + audioFrame.len <= MAX_BUFFER_SIZE || st.stop_requested(); });
             if (st.stop_requested()) {
                 break;
             }
@@ -66,7 +66,7 @@ void AudioBufferDevice::pull(std::stop_token st) {
             segment.pts = audioFrame.pts;
             segment.data.assign(audioFrame.data, audioFrame.data + audioFrame.len);
             segQue_.push_back(std::move(segment));
-            dataLen += audioFrame.len;
+            dataLen_ += audioFrame.len;
 
             // 有数据唤醒消费者
             cv_.notify_one();
@@ -83,25 +83,25 @@ bool AudioBufferDevice::waitForBuffered(std::chrono::milliseconds prebufferMs, s
 
     std::unique_lock lock(mtx_);
     return cv_.wait_for(lock, prebufferMs, [&]() {
-        return dataLen >= targetBytes || st.stop_requested() || isClose_;
-    }) && dataLen >= targetBytes && !isClose_;
+        return dataLen_ >= targetBytes || st.stop_requested() || isClose_;
+    }) && dataLen_ >= targetBytes && !isClose_;
 }
 
 void AudioBufferDevice::clear() {
     std::lock_guard lock(mtx_);
     segQue_.clear();
-    dataLen = 0;
+    dataLen_ = 0;
 }
 
 qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     std::unique_lock lock(mtx_);
 
-    cv_.wait(lock, [this](){ return dataLen > 0 || !isClose_; });
-    if (dataLen == 0 && isClose_) {
+    cv_.wait(lock, [this](){ return (dataLen_ > 0 && !segQue_.empty()) || !isClose_; });
+    if ((dataLen_ == 0 && segQue_.empty()) && isClose_) {
         return 0;
     }
 
-    const qint64 readLen = std::min(maxlen, (qint64)dataLen);
+    const qint64 readLen = std::min(maxlen, (qint64)dataLen_);
     qint64 needReadLen = readLen;
 
     AudioSegment& currentSeg = segQue_.front();
@@ -128,7 +128,7 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
         segQue_.pop_front();
     }
 
-    dataLen -= readLen;
+    dataLen_ -= readLen;
 
     // 数据减少，唤醒生产者
     cv_.notify_one();
@@ -144,12 +144,12 @@ qint64 AudioBufferDevice::writeData(const char *data, qint64 len) {
 
 qint64 AudioBufferDevice::bytesAvailable() const {
     std::lock_guard lock(mtx_);
-    return QIODevice::bytesAvailable() + dataLen;
+    return QIODevice::bytesAvailable() + dataLen_;
 }
 
 void AudioBufferDevice::clearQueue() {
     std::lock_guard lock(mtx_);
     segQue_.clear();
-    dataLen = 0;
+    dataLen_ = 0;
     cv_.notify_all();
 }

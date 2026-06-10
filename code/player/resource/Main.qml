@@ -28,15 +28,11 @@ Window {
             if (event.key === Qt.Key_Left) {
                 var newPos = Math.max(0, playerCtrl.currentProgress - 5);
                 playerCtrl.seek(newPos, -5)
-                playerCtrl.setCurrentProgress(newPos)
-                videoBar.setProgress(newPos)
                 event.accepted = true
             }
             else if (event.key === Qt.Key_Right) {
-                newPos = Math.max(0, playerCtrl.currentProgress + 5);
+                newPos = Math.min(playerCtrl.duration, playerCtrl.currentProgress + 5);
                 playerCtrl.seek(newPos, 5)
-                playerCtrl.setCurrentProgress(newPos)
-                videoBar.setProgress(newPos)
                 event.accepted = true
             }
         }
