@@ -68,15 +68,15 @@ void Demuxer::run(std::stop_token st) {
     av_log(nullptr, AV_LOG_INFO, "Demuxer exit\n");
 }
 
-void Demuxer::seek(double position, double offset) {
-    int64_t pts = (int64_t)(position * AV_TIME_BASE);
-    int64_t offsetPts = (int64_t)(offset * AV_TIME_BASE);
+void Demuxer::seek(double targetPos, double seekRel) {
+    int64_t pts = (int64_t)(targetPos * AV_TIME_BASE);
+    int64_t offsetPts = (int64_t)(seekRel * AV_TIME_BASE);
     if (fmtCtx_->start_time != AV_NOPTS_VALUE) {
         pts += fmtCtx_->start_time;
     }
 
-    const int64_t seekMin = offset > 0 ? pts - offsetPts + 2 : INT64_MIN;
-    const int64_t seekMax = offset < 0 ? pts - offsetPts - 2 : INT64_MAX;
+    const int64_t seekMin = seekRel > 0 ? pts - offsetPts + 2 : INT64_MIN;
+    const int64_t seekMax = seekRel < 0 ? pts - offsetPts - 2 : INT64_MAX;
     int res = avformat_seek_file(fmtCtx_, -1, seekMin, pts, seekMax, AVSEEK_FLAG_BACKWARD);
     if (res < 0) {
         av_log(nullptr, AV_LOG_ERROR, "Seek failed\n");

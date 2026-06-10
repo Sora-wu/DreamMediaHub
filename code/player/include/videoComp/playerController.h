@@ -23,7 +23,7 @@ class PlayerController : public QObject {
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY isPlayingChanged)
     Q_PROPERTY(uint32_t volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(uint32_t duration READ duration NOTIFY durationChanged)
-    Q_PROPERTY(uint32_t currentProgress READ currentProgress NOTIFY currentProgressChanged)
+    Q_PROPERTY(uint32_t currentProgress READ currentProgress WRITE setCurrentProgress NOTIFY currentProgressChanged)
 
 public:
     explicit PlayerController(QObject* parent = nullptr);
@@ -44,7 +44,9 @@ public:
     Q_INVOKABLE void play();
     Q_INVOKABLE void pause();
     Q_INVOKABLE void togglePlay();
-    Q_INVOKABLE void seek(double position, double offset = 0);
+    Q_INVOKABLE void seek(double targetPos, double seekRel = 0);
+
+    Q_INVOKABLE void setCurrentProgress(uint32_t newCurrentProgress);
 
 signals:
     void mediaNameChanged();

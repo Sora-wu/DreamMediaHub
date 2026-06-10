@@ -139,12 +139,20 @@ void PlayerController::togglePlay() {
     isPlaying_ ? pause() : play();
 }
 
-void PlayerController::seek(double position, double offset) {
+void PlayerController::seek(double targetPos, double seekRel) {
     if (player_) {
-        player_->seek(position, offset);
+        player_->seek(targetPos, seekRel);
         // 手动调用一下
         onTimerUpdate();
     }
+}
+
+void PlayerController::setCurrentProgress(uint32_t newCurrentProgress)
+{
+    if (currentProgress_ == newCurrentProgress)
+        return;
+    currentProgress_ = newCurrentProgress;
+    emit currentProgressChanged();
 }
 
 void PlayerController::onTimerUpdate() {

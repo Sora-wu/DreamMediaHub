@@ -31,7 +31,7 @@ public:
 
     void run(std::stop_token st) override;
 
-    void seek(double position, double offset = 0);
+    void seek(double targetPos, double seekRel = 0);
 
 private:
     void pushNullPacket();

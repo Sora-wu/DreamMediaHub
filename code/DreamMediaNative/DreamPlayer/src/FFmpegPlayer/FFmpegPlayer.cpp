@@ -94,13 +94,13 @@ uint32_t FFmpegPlayer::getHeight() {
     return videoDecodec_->getHeight();
 }
 
-void FFmpegPlayer::seek(double position, double offset) {
+void FFmpegPlayer::seek(double targetPos, double seekRel) {
     uint32_t serial = audioDecodec_->getSerial();
     if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
         serial = videoDecodec_->getSerial();
     }
-    clock_.setMasterClock(position * AV_TIME_BASE, serial, CURRENT_TIME);
-    demuxer_->seek(position);
+    clock_.setMasterClock(targetPos * AV_TIME_BASE, serial, CURRENT_TIME);
+    demuxer_->seek(targetPos);
 }
 
 uint32_t FFmpegPlayer::getDuration() const {
@@ -108,7 +108,14 @@ uint32_t FFmpegPlayer::getDuration() const {
 }
 
 double FFmpegPlayer::getCurrentTime() {
-    return clock_.getMasterClock();
+    static double cacaheTime = 0;
+    double currentTime = clock_.getMasterClock();
+    av_log(nullptr, AV_LOG_INFO, "currentTime: %lf\n", currentTime);
+    if (!isnan(currentTime)) {
+        cacaheTime = currentTime;
+    }
+
+    return cacaheTime;
 }
 
 void FFmpegPlayer::setVolume(uint32_t volume) {

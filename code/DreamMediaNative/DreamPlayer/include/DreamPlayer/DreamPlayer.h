@@ -20,11 +20,11 @@ namespace Dream {
         [[nodiscard]] virtual uint32_t getWidth() = 0;
         [[nodiscard]] virtual uint32_t getHeight() = 0;
 
-        // position: 单位秒
-        // offset: 单位秒，用键盘方向键按下时指定一个seek的范围
+        // targetPos: 单位秒
+        // seekRel: 单位秒，用键盘方向键按下时指定一个seek的范围
         // 如果拖动进度条调用seek(target);
-        // 按键盘方向键呼叫seek(currentTime, offset);
-        virtual void seek(double position, double offset = 0) = 0;
+        // 按键盘方向键则seek(currentTime, offset);
+        virtual void seek(double targetPos, double seekRel) = 0;
         [[nodiscard]] virtual uint32_t getDuration() const = 0;
         [[nodiscard]] virtual double getCurrentTime() = 0;
 
