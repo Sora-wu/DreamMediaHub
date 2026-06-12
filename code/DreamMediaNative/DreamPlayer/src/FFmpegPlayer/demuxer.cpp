@@ -42,6 +42,14 @@ void Demuxer::run(std::stop_token st) {
     int res = 0;
 
     while (!st.stop_requested()) {
+        {
+            std::lock_guard lock(mtxRead_);
+            if (hasSeekRequest_) {
+                seek();
+                hasSeekRequest_ = false;
+            }
+        }
+
         res = av_read_frame(fmtCtx_, &pkt);
         if (res < 0) {
             if ((res == AVERROR_EOF || avio_feof(fmtCtx_->pb)) && !isEof_) {
@@ -68,15 +76,22 @@ void Demuxer::run(std::stop_token st) {
     av_log(nullptr, AV_LOG_INFO, "Demuxer exit\n");
 }
 
-void Demuxer::seek(double targetPos, double seekRel) {
-    int64_t pts = (int64_t)(targetPos * AV_TIME_BASE);
-    int64_t offsetPts = (int64_t)(seekRel * AV_TIME_BASE);
+void Demuxer::seekRequest(double targetPos, double seekRel) {
+    std::lock_guard lock(mtxRead_);
+    seekTargetPos_ = targetPos;
+    seekRel_ = seekRel;
+    hasSeekRequest_ = true;
+}
+
+void Demuxer::seek() {
+    int64_t pts = (int64_t)(seekTargetPos_ * AV_TIME_BASE);
+    int64_t offsetPts = (int64_t)(seekRel_ * AV_TIME_BASE);
     if (fmtCtx_->start_time != AV_NOPTS_VALUE) {
         pts += fmtCtx_->start_time;
     }
 
-    const int64_t seekMin = seekRel > 0 ? pts - offsetPts + 2 : INT64_MIN;
-    const int64_t seekMax = seekRel < 0 ? pts - offsetPts - 2 : INT64_MAX;
+    const int64_t seekMin = seekRel_ > 0 ? pts - offsetPts + 2 : INT64_MIN;
+    const int64_t seekMax = seekRel_ < 0 ? pts - offsetPts - 2 : INT64_MAX;
     int res = avformat_seek_file(fmtCtx_, -1, seekMin, pts, seekMax, AVSEEK_FLAG_BACKWARD);
     if (res < 0) {
         av_log(nullptr, AV_LOG_ERROR, "Seek failed\n");

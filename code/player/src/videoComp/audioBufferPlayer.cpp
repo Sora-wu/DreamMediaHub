@@ -97,7 +97,7 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     std::unique_lock lock(mtx_);
 
     cv_.wait(lock, [this](){ return (dataLen_ > 0 && !segQue_.empty()) || !isClose_; });
-    if ((dataLen_ == 0 && segQue_.empty()) && isClose_) {
+    if (dataLen_ == 0 && segQue_.empty() && isClose_) {
         return 0;
     }
 
@@ -152,4 +152,6 @@ void AudioBufferDevice::clearQueue() {
     segQue_.clear();
     dataLen_ = 0;
     cv_.notify_all();
+
+    qDebug() << "audio buffer clear";
 }

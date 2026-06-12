@@ -101,7 +101,7 @@ void FFmpegPlayer::seek(double targetPos, double seekRel) {
     }
 
     clock_.setMasterClock(targetPos, serial, CURRENT_TIME);
-    demuxer_->seek(targetPos, seekRel);
+    demuxer_->seekRequest(targetPos, seekRel);
 }
 
 uint32_t FFmpegPlayer::getDuration() const {

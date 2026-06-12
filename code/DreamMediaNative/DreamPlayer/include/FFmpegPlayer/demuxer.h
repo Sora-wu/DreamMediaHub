@@ -18,7 +18,7 @@ extern "C" {
 
 class Demuxer : public DataHandler, public DreamThread {
 public:
-    ~Demuxer() override {}
+    ~Demuxer() override = default;
 
     [[nodiscard]] bool open(const char* url);
     [[nodiscard]] uint32_t getDuration() const {
@@ -31,9 +31,10 @@ public:
 
     void run(std::stop_token st) override;
 
-    void seek(double targetPos, double seekRel = 0);
+    void seekRequest(double targetPos, double seekRel);
 
 private:
+    void seek();
     void pushNullPacket();
 
 private:
@@ -43,6 +44,9 @@ private:
     std::vector<AVStream*> streams_;
     bool isEof_ = false;
 
+    bool hasSeekRequest_ = false;
+    double seekTargetPos_ = 0;
+    double seekRel_ = 0;
     std::condition_variable cvRead_;
     std::mutex mtxRead_;
 };

@@ -98,6 +98,7 @@ void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
         decodecTimer_ = ap.pts + ap.duration;
     }
     audioFrame->pts = decodecTimer_;
+    av_log(nullptr, AV_LOG_INFO, "pts: %lf\n", audioFrame->pts);
 
     if (fillData(frame, audioFrame)) {
         audioFrame->isUpdated = true;
