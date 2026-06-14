@@ -52,12 +52,17 @@ public:
     void handle(void* data) override;
 
     void shutdown();
-    void setOnSeekCallback(const Dream::OnSeekCallback& cb) {
-        onSeekCallback_ = cb;
-    }
 
     [[nodiscard]] bool isDecodeFinished() const;
     [[nodiscard]] bool hasBufferedFrames() const;
+    void setPause(bool isPause) {
+        isPause_ = isPause;
+    }
+
+
+    void setOnSeekCallback(const Dream::OnSeekCallback& cb) {
+        onSeekCallback_ = cb;
+    }
 
 protected:
     virtual void cleanup();
@@ -79,6 +84,7 @@ protected:
     bool decodeTimerValid_ = false;
 
     MediaClock* mediaClock_ = nullptr;
+    bool isPause_ = true;
 
     Dream::OnSeekCallback onSeekCallback_ = nullptr;
 };

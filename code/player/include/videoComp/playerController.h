@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <QObject>
 #include <QTimer>
 
 namespace Dream {
@@ -21,9 +20,9 @@ class PlayerController : public QObject {
     Q_PROPERTY(QString mediaName READ mediaName NOTIFY mediaNameChanged)
     Q_PROPERTY(QString progressText READ progressText NOTIFY progressTextChanged)
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY isPlayingChanged)
-    Q_PROPERTY(uint32_t volume READ volume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(uint32_t volume READ volume NOTIFY volumeChanged)
     Q_PROPERTY(uint32_t duration READ duration NOTIFY durationChanged)
-    Q_PROPERTY(uint32_t currentProgress READ currentProgress WRITE setCurrentProgress NOTIFY currentProgressChanged)
+    Q_PROPERTY(uint32_t currentProgress READ currentProgress NOTIFY currentProgressChanged)
 
 public:
     explicit PlayerController(QObject* parent = nullptr);
@@ -37,15 +36,15 @@ public:
     QString progressText() const;
     bool isPlaying() const;
     uint32_t volume() const;
-    void setVolume(uint32_t newVolume);
     uint32_t duration() const;
     uint32_t currentProgress() const;
 
+    Q_INVOKABLE void open(const QString& path);
     Q_INVOKABLE void play();
     Q_INVOKABLE void pause();
     Q_INVOKABLE void togglePlay();
     Q_INVOKABLE void seek(double targetPos, double seekRel = 0);
-
+    Q_INVOKABLE void setVolume(uint32_t newVolume);
     Q_INVOKABLE void setCurrentProgress(uint32_t newCurrentProgress);
 
 signals:
@@ -63,6 +62,7 @@ private slots:
 private:
     QString mediaName_{};
     QString progressText_{};
+    uint32_t volume_ = 100;
     bool isPlaying_ = false;
 
     Dream::DreamPlayer* player_ = nullptr;

@@ -35,6 +35,10 @@ Window {
                 playerCtrl.seek(newPos, 5)
                 event.accepted = true
             }
+            else if (event.key === Qt.Key_Space) {
+                playerCtrl.togglePlay();
+                event.accepted = true
+            }
         }
 
         Column {
@@ -121,13 +125,27 @@ Window {
 
                     ProcessBar {
                         id: volumeBar
-                        currentVal: 100
-                        progress: 1
+                        currentVal: playerCtrl.volume
+                        progress: playerCtrl.volume / maxValue
                         maxValue: 100
                         Layout.preferredWidth: 150
                         showCurrentValue: true
                         Layout.fillHeight: true
                         Layout.fillWidth: true
+
+                        onSliderRelease: function(value) {
+                            playerCtrl.setVolume(value);
+                        }
+
+                        Connections {
+                            target: playerCtrl
+                            function onVolumeChanged() {
+                                if (!volumeBar.isDragging) {
+                                    volumeBar.currentVal = playerCtrl.volume
+                                    volumeBar.progress = volumeBar.maxValue > 0 ? (volumeBar.currentVal / volumeBar.maxValue) : 0
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -144,7 +162,7 @@ Window {
                 Text {
                     id: txtFilename
                     color: "#ffffff"
-                    text: "111.mp4"
+                    text: playerCtrl.mediaName
                     font.pixelSize: 20
                     verticalAlignment: Text.AlignVCenter
                     Layout.fillWidth: true

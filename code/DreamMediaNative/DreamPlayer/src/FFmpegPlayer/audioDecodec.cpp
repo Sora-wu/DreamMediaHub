@@ -99,7 +99,7 @@ void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
     }
     audioFrame->pts = decodecTimer_;
 
-    if (fillData(frame, audioFrame)) {
+    if (fillData(frame, audioFrame) && !isPause_) {
         audioFrame->isUpdated = true;
     }
 

@@ -32,9 +32,6 @@ public:
     [[nodiscard]] uint32_t getDuration() const override;
     [[nodiscard]] double getCurrentTime() override;
 
-    void setVolume(uint32_t volume) override;
-    [[nodiscard]] uint32_t getVolume() const override;
-
     void setSpeed(double speed) override;
 
     void getVideoFrame(Dream::VideoFrame* videoFrame) override;
@@ -59,7 +56,6 @@ private:
     void resetPlaybackState();
 
 private:
-    uint32_t volume_ = 100;
     double speed_ = 1.0;
     bool pause_ = false;
     bool playbackCompleted_ = false;

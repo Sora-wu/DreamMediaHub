@@ -28,9 +28,6 @@ namespace Dream {
         [[nodiscard]] virtual uint32_t getDuration() const = 0;
         [[nodiscard]] virtual double getCurrentTime() = 0;
 
-        virtual void setVolume(uint32_t volume) = 0;
-        [[nodiscard]] virtual uint32_t getVolume() const = 0;
-
         virtual void setSpeed(double speed) = 0;
 
         virtual void getVideoFrame(VideoFrame* videoFrame) = 0;

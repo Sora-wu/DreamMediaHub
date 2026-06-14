@@ -7,12 +7,13 @@
 #include <videoComp/audioBufferPlayer.h>
 
 #include <DreamPlayer/DreamPlayer.h>
-#include <DreamPlayer/structs.h>
-
 #include <QDebug>
+
+#include <algorithm>
 
 namespace {
     constexpr uint32_t MAX_BUFFER_SIZE = 1024 * 1024 * 50;
+    constexpr float MAX_FLOAT_VOLUME = 2.0f;
 }
 
 AudioBufferDevice::AudioBufferDevice(QObject *parent) : QIODevice(parent) {
@@ -77,6 +78,26 @@ void AudioBufferDevice::pull(std::stop_token st) {
     qInfo() << "audio buffer end";
 }
 
+void AudioBufferDevice::pause() {
+    std::lock_guard lock(mtx_);
+    isPause_ = true;
+}
+
+void AudioBufferDevice::play() {
+    std::lock_guard lock(mtx_);
+    isPause_ = false;
+}
+
+void AudioBufferDevice::setVolume(float volume) {
+    std::lock_guard lock(mtx_);
+    volume_ = std::clamp(volume, 0.0f, MAX_FLOAT_VOLUME);
+}
+
+float AudioBufferDevice::getVolume() const {
+    std::lock_guard lock(mtx_);
+    return volume_;
+}
+
 bool AudioBufferDevice::waitForBuffered(std::chrono::milliseconds prebufferMs, std::stop_token st) {
     constexpr uint64_t bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * SAMPLE_SIZE;
     const uint64_t targetBytes = bytesPerSec * (uint64_t)(prebufferMs.count()) / 1000;
@@ -97,12 +118,13 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     std::unique_lock lock(mtx_);
 
     cv_.wait(lock, [this](){ return (dataLen_ > 0 && !segQue_.empty()) || !isClose_; });
-    if (dataLen_ == 0 && segQue_.empty() && isClose_) {
+    if ((dataLen_ == 0 && segQue_.empty() && isClose_) || isPause_) {
         return 0;
     }
 
     const qint64 readLen = std::min(maxlen, (qint64)dataLen_);
     qint64 needReadLen = readLen;
+    char* out = data;
 
     AudioSegment& currentSeg = segQue_.front();
     constexpr double bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * SAMPLE_SIZE;
@@ -126,8 +148,9 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
         needReadLen -= bufferSize;
         segQue_.pop_front();
     }
-
     dataLen_ -= readLen;
+
+    scaleData(out, readLen);
 
     // 数据减少，唤醒生产者
     cv_.notify_one();
@@ -144,6 +167,15 @@ qint64 AudioBufferDevice::writeData(const char *data, qint64 len) {
 qint64 AudioBufferDevice::bytesAvailable() const {
     std::lock_guard lock(mtx_);
     return QIODevice::bytesAvailable() + dataLen_;
+}
+
+void AudioBufferDevice::scaleData(char* data, qint64 len) const {
+    int16_t* pcmData = reinterpret_cast<int16_t*>(data);
+    const uint32_t size = len / sizeof(int16_t);
+    for (uint32_t i = 0; i < size; ++i) {
+        int32_t sample = pcmData[i] * volume_;
+        pcmData[i] = std::clamp(sample, INT16_MIN, INT16_MAX);
+    }
 }
 
 void AudioBufferDevice::clearQueue() {

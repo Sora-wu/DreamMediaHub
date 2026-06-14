@@ -81,10 +81,15 @@ bool FFmpegPlayer::open(const char* url) {
 }
 
 void FFmpegPlayer::play() {
-
+    clock_.resumeMasterClock();
+    videoDecodec_->setPause(false);
+    audioDecodec_->setPause(false);
 }
 
 void FFmpegPlayer::pause() {
+    clock_.pauseMasterClock();
+    videoDecodec_->setPause(true);
+    audioDecodec_->setPause(true);
 }
 
 void FFmpegPlayer::stop() {
@@ -130,14 +135,6 @@ double FFmpegPlayer::getCurrentTime() {
     }
 
     return std::min(cachedTime, duration);
-}
-
-void FFmpegPlayer::setVolume(uint32_t volume) {
-    volume_ = volume;
-}
-
-uint32_t FFmpegPlayer::getVolume() const {
-    return volume_;
 }
 
 void FFmpegPlayer::setSpeed(double speed) {

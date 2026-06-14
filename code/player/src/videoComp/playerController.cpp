@@ -9,6 +9,7 @@
 
 #include <QAudioSink>
 #include <QMediaDevices>
+#include <QFileInfo>
 #include <QDebug>
 
 #include <DreamPlayer/DreamContext.h>
@@ -38,10 +39,11 @@ PlayerController::PlayerController(QObject* parent) {
     player_ = DreamContext::createDreamPlayer();
     // TEST
 #ifdef PLATFORM_LINUX
-    player_->open("/home/sora/Videos/test.mp4");
+    open("/home/sora/Videos/test.mp4");
 #else
-    player_->open("D:/Desktop/Test/test31.mp4");
+    open("D:/Desktop/Test/test31.mp4");
 #endif
+    isPlaying_ = true;
 
     QAudioFormat format;
     format.setSampleRate(AudioBufferDevice::SAMPLE_RATE);
@@ -104,13 +106,7 @@ bool PlayerController::isPlaying() const
 
 uint32_t PlayerController::volume() const
 {
-    return player_->getVolume();
-}
-
-void PlayerController::setVolume(uint32_t newVolume)
-{
-    player_->setVolume(newVolume);
-    emit volumeChanged();
+    return volume_;
 }
 
 uint32_t PlayerController::duration() const
@@ -123,9 +119,20 @@ uint32_t PlayerController::currentProgress() const
     return (uint32_t)player_->getCurrentTime();
 }
 
+void PlayerController::open(const QString& path) {
+    if (player_) {
+        player_->open(path.toLocal8Bit().constData());
+        const QFileInfo fileInfo(path);
+        mediaName_ = fileInfo.fileName();
+
+        isPlaying_ = false;
+    }
+}
+
 void PlayerController::play() {
     if (player_) {
         player_->play();
+        audioBufferDevice_->play();
         isPlaying_ = true;
         emit isPlayingChanged();
     }
@@ -134,6 +141,7 @@ void PlayerController::play() {
 void PlayerController::pause() {
     if (player_) {
         player_->pause();
+        audioBufferDevice_->pause();
         isPlaying_ = false;
         emit isPlayingChanged();
     }
@@ -145,10 +153,21 @@ void PlayerController::togglePlay() {
 
 void PlayerController::seek(double targetPos, double seekRel) {
     if (player_) {
+        play();
         player_->seek(targetPos, seekRel);
         onTimerUpdate();
     }
 }
+
+void PlayerController::setVolume(uint32_t newVolume)
+{
+    if (!audioBufferDevice_ || volume_ == newVolume)
+        return;
+    audioBufferDevice_->setVolume((float)newVolume / 100);
+    volume_ = newVolume;
+    emit volumeChanged();
+}
+
 
 void PlayerController::setCurrentProgress(uint32_t newCurrentProgress)
 {

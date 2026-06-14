@@ -37,6 +37,7 @@ bool Decodec::openCodec(int streamIndex, AVStream* stream) {
 
     stream_ =  stream;
     streamIndex_ = streamIndex;
+    isPause_ = false;
 
     return true;
 }
@@ -69,6 +70,7 @@ void Decodec::cleanup() {
     }
 
     streamIndex_ = -1;
+    isPause_ = true;
 }
 
 

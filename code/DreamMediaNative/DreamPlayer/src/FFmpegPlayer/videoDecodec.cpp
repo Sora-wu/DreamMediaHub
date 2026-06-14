@@ -136,7 +136,7 @@ void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
         }
 
         // 没有到达新帧的播放时间，使用老帧
-        if (time < decodecTimer_ + delay) {
+        if (time < decodecTimer_ + delay || isPause_) {
             fillData(heldFrame_.frame, videoFrame);
             return;
         }
