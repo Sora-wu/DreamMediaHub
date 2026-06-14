@@ -97,3 +97,19 @@ void MediaClock::setVideoClock(double pts, uint32_t serial, double time) {
 void MediaClock::setAudioClock(double pts, uint32_t serial, double time) {
     audioClock_.setTime(pts, serial, time);
 }
+
+void MediaClock::pauseMasterClock() {
+    SyncType syncType = FFINSTANCE()->getSyncType();
+    Clock* masterClock = syncType == SyncType::VideoMaster ? &videoClock_ : &audioClock_;
+
+    double currentTime = masterClock->getTime();
+    if (!isnan(currentTime)) {
+        masterClock->setTime(currentTime, masterClock->getSerial(), CURRENT_TIME);
+    }
+    masterClock->paused = true;
+}
+
+void MediaClock::resumeMasterClock() {
+    videoClock_.paused = false;
+    audioClock_.paused = false;
+}

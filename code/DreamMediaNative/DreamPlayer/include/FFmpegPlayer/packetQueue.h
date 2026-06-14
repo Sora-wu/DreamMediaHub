@@ -28,7 +28,7 @@ public:
         serial_ = serial;
     }
 
-    [[nodiscard]] uint32_t getSerial() {
+    [[nodiscard]] uint32_t getSerial() const {
         std::lock_guard lk(mutex_);
         return serial_;
     }
@@ -49,5 +49,5 @@ private:
     uint64_t duration_ = 0;
     uint32_t packetSize_ = 0;
 
-    std::mutex mutex_{};
+    mutable std::mutex mutex_{};
 };

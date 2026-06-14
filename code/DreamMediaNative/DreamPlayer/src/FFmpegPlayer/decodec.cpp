@@ -50,6 +50,7 @@ void Decodec::reopen() {
     frameQue_.reopen();
 
     decodecSerial_ = 0;
+    finishedSerial_ = 0;
 }
 
 void Decodec::handle(void* data) {
@@ -85,6 +86,7 @@ bool Decodec::decodeFrame(AVFrame* frame) {
                     return true;
                 }
                 if (res == AVERROR_EOF) {
+                    finishedSerial_ = decodecSerial_;
                     avcodec_flush_buffers(codecCtx_);
                     return false;
                 }
@@ -113,8 +115,8 @@ bool Decodec::decodeFrame(AVFrame* frame) {
         } while (pktQue_.getSerial() != decodecSerial_);
 
         if (prePkt->data == FFINSTANCE()->getFlushPkt()->data) {
-            // 是flush包
             avcodec_flush_buffers(codecCtx_);
+            finishedSerial_ = 0;
             if (onSeekCallback_) {
                 onSeekCallback_();
             }
@@ -148,12 +150,12 @@ void Decodec::pushFrame(AVFrame* frame, double pts, double duration) {
 
 bool Decodec::acquireFrame(Frame& out) {
     while (true) {
-        std::optional<Frame> frameOpt = frameQue_.pop();
+        std::optional<Frame> frameOpt = frameQue_.try_pop();
         if (!frameOpt) {
             return false;
         }
 
-        if (frameOpt->serial != decodecSerial_) {
+        if (frameOpt->serial != pktQue_.getSerial()) {
             releaseFrame(*frameOpt);
             decodeTimerValid_ = false;
             continue;
@@ -172,4 +174,16 @@ void Decodec::releaseFrame(Frame& frame) {
     av_frame_unref(frame.frame);
     av_frame_free(&frame.frame);
     frame = {};
+}
+
+bool Decodec::isDecodeFinished() const {
+    if (finishedSerial_ == 0) {
+        return false;
+    }
+
+    return finishedSerial_ == pktQue_.getSerial();
+}
+
+bool Decodec::hasBufferedFrames() const {
+    return !frameQue_.empty();
 }

@@ -107,9 +107,6 @@ void VideoDecodec::resetSyncState() {
 }
 
 void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
-    videoFrame->frameWidth = 0;
-    videoFrame->frameHeight = 0;
-
     for (;;) {
         if (!heldFrame_.frame) {
             Frame frame{};

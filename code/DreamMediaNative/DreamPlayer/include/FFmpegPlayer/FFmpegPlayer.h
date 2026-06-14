@@ -45,17 +45,26 @@ public:
     void setOnAudioSeekCallback(const Dream::OnSeekCallback& cb) override;
     void setOnVideoSeekCallback(const Dream::OnSeekCallback& cb) override;
 
+    void setOnPlaybackCompletedCallback(const Dream::OnPlaybackCompletedCallback& cb) override;
+    [[nodiscard]] bool isPlaybackCompleted() const override;
+
     void setMasterMode(Dream::SyncType syncType) override;
     [[nodiscard]] Dream::SyncType getMasterMode() const override;
 
     void handle(void* data) override;
 private:
     void cleanup() const;
+    bool checkPlaybackCompleted();
+    void markPlaybackCompleted();
+    void resetPlaybackState();
 
 private:
     uint32_t volume_ = 100;
     double speed_ = 1.0;
     bool pause_ = false;
+    bool playbackCompleted_ = false;
+
+    Dream::OnPlaybackCompletedCallback onPlaybackCompletedCallback_ = nullptr;
 
     std::unique_ptr<Demuxer> demuxer_;
     std::unique_ptr<VideoDecodec> videoDecodec_;

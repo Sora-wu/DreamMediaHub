@@ -74,6 +74,10 @@ PlayerController::PlayerController(QObject* parent) {
 
     duration_ = player_->getDuration();
     progressText_ = QString("%1/%2").arg(formatTimeFromSeconds(0), formatTimeFromSeconds(duration_));
+
+    player_->setOnPlaybackCompletedCallback([this] {
+        QMetaObject::invokeMethod(this, &PlayerController::onPlaybackCompleted, Qt::QueuedConnection);
+    });
 }
 
 PlayerController::~PlayerController() {
@@ -141,8 +145,6 @@ void PlayerController::togglePlay() {
 
 void PlayerController::seek(double targetPos, double seekRel) {
     if (player_) {
-        // 立即清空音频缓冲，避免 seek 完成前继续播放旧数据导致音画不同步，优化体验
-        // audioBufferDevice_->clearQueue();
         player_->seek(targetPos, seekRel);
         onTimerUpdate();
     }
@@ -173,6 +175,15 @@ void PlayerController::onTimerUpdate() {
         currentProgress_ = cur;
         emit currentProgressChanged();
     }
+}
 
-    // emit durationChanged();
+void PlayerController::onPlaybackCompleted() {
+    if (!isPlaying_) {
+        onTimerUpdate();
+        return;
+    }
+
+    isPlaying_ = false;
+    emit isPlayingChanged();
+    onTimerUpdate();
 }

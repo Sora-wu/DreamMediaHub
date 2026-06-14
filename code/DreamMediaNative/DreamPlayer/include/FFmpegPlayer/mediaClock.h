@@ -37,6 +37,8 @@ public:
     void setMasterClock(double pts, uint32_t serial, double time);
     void setVideoClock(double pts, uint32_t serial, double time);
     void setAudioClock(double pts, uint32_t serial, double time);
+    void pauseMasterClock();
+    void resumeMasterClock();
 
 private:
     Clock videoClock_;

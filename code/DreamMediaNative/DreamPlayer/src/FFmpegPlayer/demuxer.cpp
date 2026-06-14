@@ -113,6 +113,7 @@ void Demuxer::pushNullPacket() {
     av_init_packet(&pkt);
     pkt.data = nullptr;
     pkt.size = 0;
+    pkt.duration = 0;
 
     for (auto steam : streams_) {
         pkt.stream_index = steam->index;

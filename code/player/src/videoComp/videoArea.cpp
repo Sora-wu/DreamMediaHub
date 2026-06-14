@@ -87,7 +87,7 @@ void OpenGLRender::render() {
     updateMVP();
 
     player_->getVideoFrame(&videoFrame);
-    if (!videoFrame.data[0] || !videoFrame.frameWidth || !videoFrame.frameHeight) {
+    if (!videoFrame.data[0]) {
         glBindVertexArray(0);
         glUseProgram(0);
         QQuickOpenGLUtils::resetOpenGLState();

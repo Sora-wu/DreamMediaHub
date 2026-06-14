@@ -107,7 +107,6 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     AudioSegment& currentSeg = segQue_.front();
     constexpr double bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * SAMPLE_SIZE;
     const double currentPTS = currentSeg.pts + ((double)(currentSeg.offset + readLen) / bytesPerSec);
-    qDebug() << "audio buffer read pts:" << currentPTS;
     player_->updateAudioClock(currentPTS);
 
     while (needReadLen) {
@@ -152,6 +151,4 @@ void AudioBufferDevice::clearQueue() {
     segQue_.clear();
     dataLen_ = 0;
     cv_.notify_all();
-
-    qDebug() << "audio buffer clear";
 }

@@ -12,6 +12,9 @@ void PacketQueue::push(AVPacket* pkt) {
         packet.packet = *pkt;
         ++serial_;
     }
+    else if (!pkt->data && pkt->size == 0) {
+        packet.packet = *pkt;
+    }
     else {
         av_packet_ref(&packet.packet, pkt);
     }
@@ -27,7 +30,7 @@ void PacketQueue::push(AVPacket* pkt) {
 }
 
 std::optional<Packet> PacketQueue::pop() {
-    std::optional<Packet> packetOpt = que_.pop();
+    std::optional<Packet> packetOpt = que_.try_pop();
     if (!packetOpt) {
         return std::nullopt;
     }

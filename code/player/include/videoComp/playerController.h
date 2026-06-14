@@ -58,6 +58,7 @@ signals:
 
 private slots:
     void onTimerUpdate();
+    void onPlaybackCompleted();
 
 private:
     QString mediaName_{};

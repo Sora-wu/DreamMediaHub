@@ -12,6 +12,7 @@
 
 namespace Dream {
     using OnSeekCallback = std::function<void()>;
+    using OnPlaybackCompletedCallback = std::function<void()>;
 
     enum class SyncType {
         AudioMaster,

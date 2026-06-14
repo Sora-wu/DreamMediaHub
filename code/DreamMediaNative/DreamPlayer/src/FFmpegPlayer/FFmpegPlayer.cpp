@@ -10,6 +10,8 @@
 #include <FFmpegPlayer/audioDecodec.h>
 #include <FFmpegPlayer/ffinstance.h>
 
+#include <algorithm>
+
 using namespace Dream;
 
 namespace {
@@ -73,6 +75,8 @@ bool FFmpegPlayer::open(const char* url) {
     videoDecodec_->setMediaClock(&clock_);
     audioDecodec_->setMediaClock(&clock_);
 
+    resetPlaybackState();
+
     return true;
 }
 
@@ -95,6 +99,8 @@ uint32_t FFmpegPlayer::getHeight() {
 }
 
 void FFmpegPlayer::seek(double targetPos, double seekRel) {
+    resetPlaybackState();
+
     uint32_t serial = audioDecodec_->getSerial();
     if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
         serial = videoDecodec_->getSerial();
@@ -108,9 +114,22 @@ uint32_t FFmpegPlayer::getDuration() const {
     return demuxer_->getDuration();
 }
 
+// 确保返回值不是nan或者大于duration
 double FFmpegPlayer::getCurrentTime() {
-    av_log(nullptr, AV_LOG_INFO, "currentTime: %lf\n", clock_.getMasterClock());
-    return clock_.getMasterClock();
+    checkPlaybackCompleted();
+
+    static double cachedTime = 0;
+    double currentTime = clock_.getMasterClock();
+    if (!isnan(currentTime)) {
+        cachedTime = currentTime;
+    }
+
+    const double duration = demuxer_->getDuration();
+    if (playbackCompleted_) {
+        return duration;
+    }
+
+    return std::min(cachedTime, duration);
 }
 
 void FFmpegPlayer::setVolume(uint32_t volume) {
@@ -127,15 +146,18 @@ void FFmpegPlayer::setSpeed(double speed) {
 
 void FFmpegPlayer::getVideoFrame(VideoFrame* videoFrame) {
     videoDecodec_->getVideoFrame(videoFrame);
+    checkPlaybackCompleted();
 }
 
 void FFmpegPlayer::getAudioFrame(AudioFrame* audioFrame) {
     audioDecodec_->getAudioFrame(audioFrame);
+    checkPlaybackCompleted();
 }
 
 void FFmpegPlayer::updateAudioClock(double pts) {
     uint32_t serial = audioDecodec_->getSerial();
     clock_.setAudioClock(pts, serial, CURRENT_TIME);
+    checkPlaybackCompleted();
 }
 
 void FFmpegPlayer::setOnAudioSeekCallback(const OnSeekCallback& cb) {
@@ -144,6 +166,14 @@ void FFmpegPlayer::setOnAudioSeekCallback(const OnSeekCallback& cb) {
 
 void FFmpegPlayer::setOnVideoSeekCallback(const OnSeekCallback& cb) {
     videoDecodec_->setOnSeekCallback(cb);
+}
+
+void FFmpegPlayer::setOnPlaybackCompletedCallback(const OnPlaybackCompletedCallback& cb) {
+    onPlaybackCompletedCallback_ = cb;
+}
+
+bool FFmpegPlayer::isPlaybackCompleted() const {
+    return playbackCompleted_;
 }
 
 void FFmpegPlayer::setMasterMode(SyncType syncType) {
@@ -172,4 +202,57 @@ void FFmpegPlayer::cleanup() const {
 
     videoDecodec_->shutdown();
     audioDecodec_->shutdown();
+}
+
+bool FFmpegPlayer::checkPlaybackCompleted() {
+    if (playbackCompleted_) {
+        return true;
+    }
+
+    if (!demuxer_->isEof()) {
+        return false;
+    }
+
+    auto isStreamDrained = [](Decodec* decodec) {
+        if (!decodec->isOpen()) {
+            return true;
+        }
+
+        return decodec->isDecodeFinished() && !decodec->hasBufferedFrames();
+    };
+
+    if (!isStreamDrained(videoDecodec_.get()) || !isStreamDrained(audioDecodec_.get())) {
+        return false;
+    }
+
+    markPlaybackCompleted();
+    return true;
+}
+
+void FFmpegPlayer::markPlaybackCompleted() {
+    if (playbackCompleted_) {
+        return;
+    }
+
+    playbackCompleted_ = true;
+    clock_.pauseMasterClock();
+
+    const double duration = demuxer_->getDuration();
+    const double currentTime = clock_.getMasterClock();
+    if (!isnan(currentTime) && currentTime > duration) {
+        uint32_t serial = audioDecodec_->getSerial();
+        if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
+            serial = videoDecodec_->getSerial();
+        }
+        clock_.setMasterClock(duration, serial, CURRENT_TIME);
+    }
+
+    if (onPlaybackCompletedCallback_) {
+        onPlaybackCompletedCallback_();
+    }
+}
+
+void FFmpegPlayer::resetPlaybackState() {
+    playbackCompleted_ = false;
+    clock_.resumeMasterClock();
 }

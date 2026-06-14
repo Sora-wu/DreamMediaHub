@@ -56,6 +56,9 @@ public:
         onSeekCallback_ = cb;
     }
 
+    [[nodiscard]] bool isDecodeFinished() const;
+    [[nodiscard]] bool hasBufferedFrames() const;
+
 protected:
     virtual void cleanup();
     [[nodiscard]] virtual bool decodeFrame(AVFrame* frame);
@@ -71,6 +74,7 @@ protected:
     AVStream* stream_ = nullptr;
     int streamIndex_ = -1;
     uint32_t decodecSerial_ = 0;
+    uint32_t finishedSerial_ = 0;
     double decodecTimer_ = 0;
     bool decodeTimerValid_ = false;
 

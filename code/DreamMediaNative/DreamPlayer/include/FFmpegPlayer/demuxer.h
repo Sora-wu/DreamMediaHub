@@ -29,6 +29,10 @@ public:
         return streams_;
     }
 
+    [[nodiscard]] bool isEof() const {
+        return isEof_;
+    }
+
     void run(std::stop_token st) override;
 
     void seekRequest(double targetPos, double seekRel);
