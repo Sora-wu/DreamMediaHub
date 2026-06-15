@@ -23,4 +23,6 @@ extern "C" {
 class FFUtils {
 public:
     static std::string getError(int errnum);
+    static bool isEqual(float a, float b);
+    static bool isEqual(double a, double b);
 };

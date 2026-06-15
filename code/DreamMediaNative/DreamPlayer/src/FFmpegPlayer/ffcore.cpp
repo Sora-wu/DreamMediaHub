@@ -15,3 +15,11 @@ std::string FFUtils::getError(int errnum) {
 
     return ret;
 }
+
+bool FFUtils::isEqual(float a, float b) {
+    return fabs(a - b) < 1e-6;
+}
+
+bool FFUtils::isEqual(double a, double b) {
+    return fabs(a - b) < 1e-6;
+}

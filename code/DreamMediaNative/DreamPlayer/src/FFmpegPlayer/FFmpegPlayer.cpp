@@ -143,6 +143,7 @@ float FFmpegPlayer::getSpeed() {
 
 void FFmpegPlayer::setSpeed(double speed) {
     clock_.setSpeed(speed);
+    audioDecodec_->setSpeed(speed);
 }
 
 void FFmpegPlayer::getVideoFrame(VideoFrame* videoFrame) {

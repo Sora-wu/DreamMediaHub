@@ -28,12 +28,12 @@ int AudioSpeedFilter::initFilter(float speed, uint32_t sampleRate, AVSampleForma
         return AVERROR(ENOMEM);
     }
 
-    char args[512]{};
-    snprintf(args, sizeof(args),
-             "time_base=1/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
-             sampleRate, sampleRate, av_get_sample_fmt_name(sampleFmt), channelLayout);
     int ret = 0;
     do {
+        char args[512]{};
+        snprintf(args, sizeof(args),
+                 "time_base=1/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
+                 sampleRate, sampleRate, av_get_sample_fmt_name(sampleFmt), channelLayout);
         ret = avfilter_graph_create_filter(&filterSrcCtx_, abufferSrcFilter, "in", args, nullptr, graph_);
         if (ret < 0) {
             av_log(nullptr, AV_LOG_ERROR, "Failed to parse filter graph\n");

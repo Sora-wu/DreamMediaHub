@@ -6,6 +6,7 @@
 #pragma once
 
 #include <FFmpegPlayer/decodec.h>
+#include <FFmpegPlayer/audioSpeedFilter.h>
 
 extern "C" {
     struct SwrContext;
@@ -15,16 +16,17 @@ namespace Dream {
     struct AudioFrame;
 }
 
-class AudioSpeedFilter;
-
 class AudioDecodec : public Decodec {
 public:
     explicit AudioDecodec(std::size_t frameQueueSize) : Decodec(frameQueueSize) {}
-    bool openCodec(int streamIndex, AVStream* stream) override;
 
+    bool openCodec(int streamIndex, AVStream* stream) override;
     void run(std::stop_token st) override;
+    void reopen() override;
 
     void getAudioFrame(Dream::AudioFrame* audioFrame);
+
+    void setSpeed(float speed);
 
 protected:
     void cleanup() override;
@@ -35,8 +37,12 @@ private:
     // 直接参考ffplay的实现
     int adjustSamples(int nbSamples);
 
+    void pushFrameToFilter(AVFrame* frame);
+    AVFrame* popFrameFromFilter();
+
 private:
     SwrContext* swrCtx_ = nullptr;
+    AVFrame* cachedFrame_ = nullptr;
     std::unique_ptr<AudioSpeedFilter> audioSpeedFilter_;
     float speed_ = 1.0f;
 

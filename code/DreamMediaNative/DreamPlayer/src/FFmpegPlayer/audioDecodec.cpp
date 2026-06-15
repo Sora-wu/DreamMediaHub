@@ -5,7 +5,6 @@
 
 #include <FFmpegPlayer/audioDecodec.h>
 #include <FFmpegPlayer/ffinstance.h>
-#include <FFmpegPlayer/audioSpeedFilter.h>
 #include <DreamPlayer/structs.h>
 #include <DreamPlayer/DreamContext.h>
 
@@ -51,8 +50,10 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
     int bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * av_get_bytes_per_sample(SAMPLE_FORMAT);
     int dummyHwBufSize = DreamContext::AUDIO_BUFFER_SIZE * CHANNEL_COUNT * av_get_bytes_per_sample(SAMPLE_FORMAT);
     audioDiffThreshold_ = (double)(dummyHwBufSize) / bytesPerSec;
-
     audioDiffThreshold_ = std::clamp(audioDiffThreshold_, AUDIO_DIFF_THRESHOLD_MIN, AUDIO_DIFF_THRESHOLD_MAX);
+
+    audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
+    audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, cachedChannelLayout);
 
     return true;
 }
@@ -84,15 +85,29 @@ void AudioDecodec::run(std::stop_token st) {
     av_log(nullptr, AV_LOG_INFO, "Finished decoding audio stream\n");
 }
 
+void AudioDecodec::reopen() {
+    Decodec::reopen();
+
+    cachedFrame_ = av_frame_alloc();
+}
+
 void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
     audioFrame->isUpdated = false;
+    AVFrame* frame = nullptr;
+    static Frame ap{};
 
-    Frame ap{};
-    if (!acquireFrame(ap)) {
-        return;
-    }
+    do {
+        frame = popFrameFromFilter();
+        if (frame) {
+            break;
+        }
 
-    AVFrame* frame = ap.frame;
+        if (!acquireFrame(ap)) {
+            return;
+        }
+        pushFrameToFilter(ap.frame);
+    } while (!frame);
+
     // 更新音频时钟
     decodecTimer_ = NAN;
     if (!isnan(ap.pts)) {
@@ -107,10 +122,28 @@ void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
     releaseFrame(ap);
 }
 
+void AudioDecodec::setSpeed(float speed) {
+    if (!FFUtils::isEqual(speed, speed_)) {
+        speed_ = speed;
+        audioSpeedFilter_.reset();
+
+        // 只有在速度不等于1.0时，才会产生滤镜
+        if (!FFUtils::isEqual(1.0f, speed_)) {
+            audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
+            audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, cachedChannelLayout);
+        }
+    }
+}
+
 void AudioDecodec::cleanup() {
     if (swrCtx_) {
         swr_free(&swrCtx_);
         swrCtx_ = nullptr;
+    }
+
+    if (cachedFrame_) {
+        av_frame_free(&cachedFrame_);
+        cachedFrame_ = nullptr;
     }
 
     Decodec::cleanup();
@@ -142,7 +175,7 @@ bool AudioDecodec::fillData(AVFrame* frame, AudioFrame* audioFrame) {
 
     if (frame->sample_rate != SAMPLE_RATE || frame->channels != CHANNEL_COUNT || frame->format != SAMPLE_FORMAT) {
         refreshSwr(frame);
-        if (nbSamples != frame->nb_samples) {
+        if (nbSamples != frame->nb_samples && FFUtils::isEqual(1.0f, speed_)) {
             const int sampleDelta = av_rescale_rnd(nbSamples - frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP);
             const  int compensationDistance = av_rescale_rnd(nbSamples, frame->sample_rate, SAMPLE_RATE, AV_ROUND_UP);
             if (swr_set_compensation(swrCtx_, sampleDelta, compensationDistance) < 0) {
@@ -179,7 +212,7 @@ bool AudioDecodec::fillData(AVFrame* frame, AudioFrame* audioFrame) {
 int AudioDecodec::adjustSamples(int nbSamples) {
     int wantedNbSamples = nbSamples;
 
-    if (FFINSTANCE()->getSyncType() != SyncType::AudioMaster) {
+    if (FFINSTANCE()->getSyncType() != SyncType::AudioMaster && FFUtils::isEqual(1.0f, speed_)) {
         double diff = mediaClock_->getAudioClock() - mediaClock_->getMasterClock();
 
         if (!std::isnan(diff) && std::fabs(diff) < AV_NOSYNC_THRESHOLD) {
@@ -218,4 +251,23 @@ int AudioDecodec::adjustSamples(int nbSamples) {
     }
 
     return wantedNbSamples;
+}
+
+void AudioDecodec::pushFrameToFilter(AVFrame* frame) {
+    if (audioSpeedFilter_->addFrame(frame) < 0) {
+        av_log(nullptr, AV_LOG_ERROR, "Error while feeding audio to the filter\n");
+    }
+}
+
+AVFrame* AudioDecodec::popFrameFromFilter() {
+    int res = audioSpeedFilter_->getFrame(cachedFrame_);
+    if (res == AVERROR(EAGAIN) || res == AVERROR_EOF) {
+        return nullptr;
+    }
+    if (res < 0) {
+        av_log(nullptr, AV_LOG_ERROR, "Error while receiving audio from the filter\n");
+        return nullptr;
+    }
+
+    return cachedFrame_;
 }

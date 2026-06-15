@@ -174,7 +174,7 @@ void AudioBufferDevice::scaleData(char* data, qint64 len) const {
     const uint32_t size = len / sizeof(int16_t);
     for (uint32_t i = 0; i < size; ++i) {
         int32_t sample = pcmData[i] * volume_;
-        pcmData[i] = std::clamp(sample, INT16_MIN, INT16_MAX);
+        pcmData[i] = std::clamp(sample, (int32_t)INT16_MIN, (int32_t)INT16_MAX);
     }
 }
 

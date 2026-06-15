@@ -28,6 +28,7 @@ namespace Dream {
         [[nodiscard]] virtual uint32_t getDuration() const = 0;
         [[nodiscard]] virtual double getCurrentTime() = 0;
 
+        // 速度0.5-2.0
         virtual float getSpeed() = 0;
         virtual void setSpeed(double speed) = 0;
 
