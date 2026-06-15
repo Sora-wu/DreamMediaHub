@@ -32,6 +32,7 @@ public:
     [[nodiscard]] uint32_t getDuration() const override;
     [[nodiscard]] double getCurrentTime() override;
 
+    float getSpeed() override;
     void setSpeed(double speed) override;
 
     void getVideoFrame(Dream::VideoFrame* videoFrame) override;
@@ -56,7 +57,6 @@ private:
     void resetPlaybackState();
 
 private:
-    double speed_ = 1.0;
     bool pause_ = false;
     bool playbackCompleted_ = false;
 

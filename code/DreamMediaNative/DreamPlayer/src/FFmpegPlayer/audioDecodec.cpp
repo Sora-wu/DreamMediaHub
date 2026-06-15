@@ -5,6 +5,7 @@
 
 #include <FFmpegPlayer/audioDecodec.h>
 #include <FFmpegPlayer/ffinstance.h>
+#include <FFmpegPlayer/audioSpeedFilter.h>
 #include <DreamPlayer/structs.h>
 #include <DreamPlayer/DreamContext.h>
 

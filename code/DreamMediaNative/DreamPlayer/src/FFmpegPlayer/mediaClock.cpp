@@ -98,6 +98,19 @@ void MediaClock::setAudioClock(double pts, uint32_t serial, double time) {
     audioClock_.setTime(pts, serial, time);
 }
 
+float MediaClock::getSpeed() const {
+    float speed = audioClock_.speed;
+    if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
+        speed = videoClock_.speed;
+    }
+    return speed;
+}
+
+void MediaClock::setSpeed(float speed) {
+    videoClock_.speed = speed;
+    audioClock_.speed = speed;
+}
+
 void MediaClock::pauseMasterClock() {
     SyncType syncType = FFINSTANCE()->getSyncType();
     Clock* masterClock = syncType == SyncType::VideoMaster ? &videoClock_ : &audioClock_;

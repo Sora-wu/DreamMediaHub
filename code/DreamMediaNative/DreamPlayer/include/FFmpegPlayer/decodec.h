@@ -10,8 +10,7 @@
 #include <FFmpegPlayer/packetQueue.h>
 #include <FFmpegPlayer/ffcore.h>
 #include <FFmpegPlayer/mediaClock.h>
-
-#include "DreamPlayer/structs.h"
+#include <DreamPlayer/structs.h>
 
 struct Frame {
     AVFrame* frame{};

@@ -37,6 +37,10 @@ public:
     void setMasterClock(double pts, uint32_t serial, double time);
     void setVideoClock(double pts, uint32_t serial, double time);
     void setAudioClock(double pts, uint32_t serial, double time);
+
+    float getSpeed() const;
+    void setSpeed(float speed);
+
     void pauseMasterClock();
     void resumeMasterClock();
 

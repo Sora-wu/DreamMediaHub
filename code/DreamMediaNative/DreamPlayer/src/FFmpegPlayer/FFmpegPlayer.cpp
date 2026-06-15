@@ -137,8 +137,12 @@ double FFmpegPlayer::getCurrentTime() {
     return std::min(cachedTime, duration);
 }
 
+float FFmpegPlayer::getSpeed() {
+    return clock_.getSpeed();
+}
+
 void FFmpegPlayer::setSpeed(double speed) {
-    speed_ = speed;
+    clock_.setSpeed(speed);
 }
 
 void FFmpegPlayer::getVideoFrame(VideoFrame* videoFrame) {

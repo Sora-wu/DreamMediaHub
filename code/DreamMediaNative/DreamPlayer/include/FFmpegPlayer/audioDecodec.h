@@ -15,6 +15,8 @@ namespace Dream {
     struct AudioFrame;
 }
 
+class AudioSpeedFilter;
+
 class AudioDecodec : public Decodec {
 public:
     explicit AudioDecodec(std::size_t frameQueueSize) : Decodec(frameQueueSize) {}
@@ -35,6 +37,9 @@ private:
 
 private:
     SwrContext* swrCtx_ = nullptr;
+    std::unique_ptr<AudioSpeedFilter> audioSpeedFilter_;
+    float speed_ = 1.0f;
+
     uint64_t cachedChannelLayout = 0;
     int cachedFormat = AV_SAMPLE_FMT_NONE;
     int cachedSampleRate = 0;
