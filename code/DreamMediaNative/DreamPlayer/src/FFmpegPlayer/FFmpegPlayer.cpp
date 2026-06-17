@@ -110,8 +110,8 @@ void FFmpegPlayer::seek(double targetPos, double seekRel) {
     if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
         serial = videoDecodec_->getSerial();
     }
-
     clock_.setMasterClock(targetPos, serial, CURRENT_TIME);
+
     demuxer_->seekRequest(targetPos, seekRel);
 }
 
@@ -142,6 +142,14 @@ float FFmpegPlayer::getSpeed() {
 }
 
 void FFmpegPlayer::setSpeed(double speed) {
+    uint32_t serial = audioDecodec_->getSerial();
+    double pts = clock_.getAudioPTS();
+    if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
+        serial = videoDecodec_->getSerial();
+        pts = clock_.getVideoPTS();
+    }
+    clock_.setMasterClock(pts, serial, CURRENT_TIME);
+
     clock_.setSpeed(speed);
     audioDecodec_->setSpeed(speed);
 }

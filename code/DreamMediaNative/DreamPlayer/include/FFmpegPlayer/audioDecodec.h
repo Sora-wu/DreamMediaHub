@@ -37,8 +37,7 @@ private:
     // 直接参考ffplay的实现
     int adjustSamples(int nbSamples);
 
-    void pushFrameToFilter(AVFrame* frame);
-    AVFrame* popFrameFromFilter();
+    std::vector<AVFrame*> processFrame(AVFrame* frame);
 
 private:
     SwrContext* swrCtx_ = nullptr;

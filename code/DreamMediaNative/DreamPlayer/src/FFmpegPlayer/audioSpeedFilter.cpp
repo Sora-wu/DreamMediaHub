@@ -9,6 +9,7 @@ extern "C" {
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersrc.h>
 #include <libavfilter/buffersink.h>
+#include <libavutil/opt.h>
 }
 
 AudioSpeedFilter::~AudioSpeedFilter() {
@@ -43,6 +44,27 @@ int AudioSpeedFilter::initFilter(float speed, uint32_t sampleRate, AVSampleForma
         ret = avfilter_graph_create_filter(&filterSinkCtx_, abufferSinkFilter, "out", nullptr, nullptr, graph_);
         if (ret < 0) {
             av_log(nullptr, AV_LOG_ERROR, "Failed to create audio buffer sink\n");
+            break;
+        }
+
+        const AVSampleFormat fmts[] = { sampleFmt, AV_SAMPLE_FMT_NONE };
+        ret = av_opt_set_int_list(filterSinkCtx_, "sample_fmts", fmts, AV_SAMPLE_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+        if (ret < 0) {
+            av_log(nullptr, AV_LOG_ERROR, "Failed to set sample_fmts on sink\n");
+            break;
+        }
+
+        const int rates[] = { (int)sampleRate, -1 };
+        ret = av_opt_set_int_list(filterSinkCtx_, "sample_rates", rates, -1, AV_OPT_SEARCH_CHILDREN);
+        if (ret < 0) {
+            av_log(nullptr, AV_LOG_ERROR, "Failed to set sample_rates on sink\n");
+            break;
+        }
+
+        const int64_t layouts[] = { (int64_t)channelLayout, -1 };
+        ret = av_opt_set_int_list(filterSinkCtx_, "channel_layouts", layouts, -1, AV_OPT_SEARCH_CHILDREN);
+        if (ret < 0) {
+            av_log(nullptr, AV_LOG_ERROR, "Failed to set channel_layouts on sink\n");
             break;
         }
 

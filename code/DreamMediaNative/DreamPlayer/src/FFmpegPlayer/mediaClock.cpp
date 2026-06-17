@@ -70,11 +70,19 @@ double MediaClock::getAudioClock() const {
 }
 
 uint32_t MediaClock::getVideoSerial() const {
-    return videoClock_.getSerial();
+    return videoClock_.serial;
 }
 
 uint32_t MediaClock::getAudioSerial() const {
-    return audioClock_.getSerial();
+    return audioClock_.serial;
+}
+
+double MediaClock::getVideoPTS() const {
+    return videoClock_.pts;
+}
+
+double MediaClock::getAudioPTS() const {
+    return audioClock_.pts;
 }
 
 void MediaClock::setMasterClock(double pts, uint32_t serial, double time) {

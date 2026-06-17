@@ -6,13 +6,12 @@
 
 #include <videoComp/playerController.h>
 #include <videoComp/audioBufferPlayer.h>
+#include <DreamPlayer/DreamContext.h>
 
 #include <QAudioSink>
 #include <QMediaDevices>
 #include <QFileInfo>
 #include <QDebug>
-
-#include <DreamPlayer/DreamContext.h>
 
 using namespace Dream;
 
@@ -38,6 +37,7 @@ namespace {
 PlayerController::PlayerController(QObject* parent) {
     player_ = DreamContext::createDreamPlayer();
     // TEST
+    player_->setSpeed(2.0f);
 #ifdef PLATFORM_LINUX
     open("/home/sora/Videos/test.mp4");
 #else

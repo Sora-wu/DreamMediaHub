@@ -34,6 +34,8 @@ public:
     [[nodiscard]] double getAudioClock() const;
     [[nodiscard]] uint32_t getVideoSerial() const;
     [[nodiscard]] uint32_t getAudioSerial() const;
+    [[nodiscard]] double getVideoPTS() const;
+    [[nodiscard]] double getAudioPTS() const;
     void setMasterClock(double pts, uint32_t serial, double time);
     void setVideoClock(double pts, uint32_t serial, double time);
     void setAudioClock(double pts, uint32_t serial, double time);

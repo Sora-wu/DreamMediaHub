@@ -53,7 +53,7 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
     audioDiffThreshold_ = std::clamp(audioDiffThreshold_, AUDIO_DIFF_THRESHOLD_MIN, AUDIO_DIFF_THRESHOLD_MAX);
 
     audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
-    audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, cachedChannelLayout);
+    audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, AV_SAMPLE_FMT_FLTP, AV_CH_LAYOUT_STEREO);
 
     return true;
 }
@@ -76,9 +76,12 @@ void AudioDecodec::run(std::stop_token st) {
             continue;
         }
 
+        std::vector<AVFrame*> frames = processFrame(frame);
         pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d({ 1, frame->sample_rate });
         duration = av_q2d({ frame->nb_samples, frame->sample_rate });
-        pushFrame(frame, pts, duration);
+        for (const auto f : frames) {
+            pushFrame(f, pts, duration);
+        }
     }
 
     av_frame_free(&frame);
@@ -93,21 +96,13 @@ void AudioDecodec::reopen() {
 
 void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
     audioFrame->isUpdated = false;
-    AVFrame* frame = nullptr;
-    static Frame ap{};
 
-    do {
-        frame = popFrameFromFilter();
-        if (frame) {
-            break;
-        }
+    Frame ap{};
+    if (!acquireFrame(ap)) {
+        return;
+    }
 
-        if (!acquireFrame(ap)) {
-            return;
-        }
-        pushFrameToFilter(ap.frame);
-    } while (!frame);
-
+    AVFrame* frame = ap.frame;
     // 更新音频时钟
     decodecTimer_ = NAN;
     if (!isnan(ap.pts)) {
@@ -130,7 +125,7 @@ void AudioDecodec::setSpeed(float speed) {
         // 只有在速度不等于1.0时，才会产生滤镜
         if (!FFUtils::isEqual(1.0f, speed_)) {
             audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
-            audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, cachedChannelLayout);
+            audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, AV_SAMPLE_FMT_FLTP, AV_CH_LAYOUT_STEREO);
         }
     }
 }
@@ -253,21 +248,26 @@ int AudioDecodec::adjustSamples(int nbSamples) {
     return wantedNbSamples;
 }
 
-void AudioDecodec::pushFrameToFilter(AVFrame* frame) {
+std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
+    std::vector<AVFrame*> frames{};
+
     if (audioSpeedFilter_->addFrame(frame) < 0) {
         av_log(nullptr, AV_LOG_ERROR, "Error while feeding audio to the filter\n");
-    }
-}
-
-AVFrame* AudioDecodec::popFrameFromFilter() {
-    int res = audioSpeedFilter_->getFrame(cachedFrame_);
-    if (res == AVERROR(EAGAIN) || res == AVERROR_EOF) {
-        return nullptr;
-    }
-    if (res < 0) {
-        av_log(nullptr, AV_LOG_ERROR, "Error while receiving audio from the filter\n");
-        return nullptr;
+        return { frame };
     }
 
-    return cachedFrame_;
+    while (true) {
+        int res = audioSpeedFilter_->getFrame(cachedFrame_);
+        if (res == AVERROR(EAGAIN) || res == AVERROR_EOF) {
+            break;
+        }
+        if (res < 0) {
+            av_log(nullptr, AV_LOG_ERROR, "Error while receiving audio from the filter\n");
+            break;
+        }
+
+        frames.push_back(cachedFrame_);
+    }
+
+    return frames;
 }
