@@ -35,25 +35,19 @@ private:
     void refreshSwr(AVFrame* frame);
     bool fillData(AVFrame* frame, Dream::AudioFrame* audioFrame);
     // 直接参考ffplay的实现
-    int adjustSamples(int nbSamples);
+    bool adjustSamples(AVFrame* frame);
 
     std::vector<AVFrame*> processFrame(AVFrame* frame);
-    AVFrame* convertFrameForFilter(AVFrame* frame);
-    void refreshFilterSwr(AVFrame* frame);
+    AVFrame* convertFrame(AVFrame* frame);
 
 private:
     SwrContext* swrCtx_ = nullptr;
-    SwrContext* filterSwrCtx_ = nullptr;
     std::unique_ptr<AudioSpeedFilter> audioSpeedFilter_;
     float speed_ = 1.0f;
 
     uint64_t cachedChannelLayout_ = 0;
     int cachedFormat_ = AV_SAMPLE_FMT_NONE;
     int cachedSampleRate_ = 0;
-
-    uint64_t filterCachedChannelLayout_ = 0;
-    int filterCachedFormat_ = AV_SAMPLE_FMT_NONE;
-    int filterCachedSampleRate_ = 0;
 
     double audioDiffCum_ = 0.0;         // 累计时钟差值
     double audioDiffAvgCoef_ = 0.0;     // 加权平均系数

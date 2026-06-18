@@ -16,6 +16,7 @@ namespace {
     constexpr int SAMPLE_RATE = 44100;
     constexpr int CHANNEL_COUNT = 2;
     constexpr AVSampleFormat SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
+    const uint64_t CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
 
     constexpr int AUDIO_DIFF_AVG_NB = 20;             // 用于移动平均的测量次数
     constexpr double AV_NOSYNC_THRESHOLD = 10.0;       // 超过10秒不进行同步，直接重置
@@ -54,7 +55,7 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
 
     audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
     if (!FFUtils::isEqual(1.0f, speed_)) {
-        audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, AV_SAMPLE_FMT_FLTP, AV_CH_LAYOUT_STEREO);
+        audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, CHANNEL_LAYOUT);
     }
 
     return true;
@@ -131,7 +132,7 @@ void AudioDecodec::setSpeed(float speed) {
         // 只有在速度不等于1.0时，才会产生滤镜
         if (!FFUtils::isEqual(1.0f, speed_)) {
             audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
-            audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, AV_SAMPLE_FMT_FLTP, AV_CH_LAYOUT_STEREO);
+            audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, CHANNEL_LAYOUT);
         }
     }
 }
@@ -142,14 +143,9 @@ void AudioDecodec::cleanup() {
         swrCtx_ = nullptr;
     }
 
-    if (filterSwrCtx_) {
-        swr_free(&filterSwrCtx_);
-        filterSwrCtx_ = nullptr;
-    }
-
-    filterCachedSampleRate_ = 0;
-    filterCachedChannelLayout_ = 0;
-    filterCachedFormat_ = AV_SAMPLE_FMT_NONE;
+    cachedSampleRate_ = 0;
+    cachedChannelLayout_ = 0;
+    cachedFormat_ = AV_SAMPLE_FMT_NONE;
 
     Decodec::cleanup();
 }
@@ -158,7 +154,7 @@ void AudioDecodec::refreshSwr(AVFrame* frame) {
     if (frame->sample_rate != cachedSampleRate_ || frame->channel_layout != cachedChannelLayout_ || frame->format != cachedFormat_) {
         swr_free(&swrCtx_);
         swrCtx_ = swr_alloc_set_opts(nullptr,
-                                     AV_CH_LAYOUT_STEREO, SAMPLE_FORMAT, SAMPLE_RATE,
+                                     CHANNEL_LAYOUT, SAMPLE_FORMAT, SAMPLE_RATE,
                                      frame->channel_layout, (AVSampleFormat)frame->format, frame->sample_rate,
                                      0, nullptr);
         if (!swrCtx_ || swr_init(swrCtx_) < 0) {
@@ -176,48 +172,26 @@ void AudioDecodec::refreshSwr(AVFrame* frame) {
 }
 
 bool AudioDecodec::fillData(AVFrame* frame, AudioFrame* audioFrame) {
-    const int nbSamples = adjustSamples(frame->nb_samples);
-
-    if (frame->sample_rate != SAMPLE_RATE || frame->channels != CHANNEL_COUNT || frame->format != SAMPLE_FORMAT) {
-        refreshSwr(frame);
-        if (nbSamples != frame->nb_samples && FFUtils::isEqual(1.0f, speed_)) {
-            const int sampleDelta = av_rescale_rnd(nbSamples - frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP);
-            const  int compensationDistance = av_rescale_rnd(nbSamples, frame->sample_rate, SAMPLE_RATE, AV_ROUND_UP);
-            if (swr_set_compensation(swrCtx_, sampleDelta, compensationDistance) < 0) {
-                av_log(nullptr, AV_LOG_ERROR, "swr_set_compensation() failed\n");
-                return false;
-            }
-        }
-
-        const uint8_t** in = (const uint8_t**)frame->extended_data;
-        // 简单推导：无论采样率怎么变，这段音频播放的物理时间长度是不变的，而time = nb_samples / sample_rate，分别带入双方变量即可
-        const int outSampleCount = av_rescale_rnd(nbSamples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP) + 256;
-        const int bufferSize = av_samples_get_buffer_size(nullptr, CHANNEL_COUNT, outSampleCount,
-                                                                SAMPLE_FORMAT, 1);
-        updateAudioFrameSize(audioFrame, bufferSize);
-        const int converted = swr_convert(swrCtx_, (uint8_t**)&audioFrame->data, outSampleCount, in, nbSamples);
-        if (converted <= 0) {
-            av_frame_unref(frame);
-            av_frame_free(&frame);
-            return false;
-        }
-        // 因为转换的采样数一定不会比outSampleCount大，所以这里可以不重新分配内存
-        audioFrame->len = av_samples_get_buffer_size(nullptr, CHANNEL_COUNT, converted, SAMPLE_FORMAT, 1);
+    if (!adjustSamples(frame)) {
+        return false;
     }
-    else {
-        const int bufferSize = av_samples_get_buffer_size(nullptr, frame->channels, nbSamples, (AVSampleFormat)frame->format, 1);
-        audioFrame->len = bufferSize;
-        updateAudioFrameSize(audioFrame, bufferSize);
-        memcpy(audioFrame->data, frame->data[0], bufferSize);
-    }
+
+    const int bufferSize = av_samples_get_buffer_size(nullptr, frame->channels, frame->nb_samples, (AVSampleFormat)frame->format, 1);
+    audioFrame->len = bufferSize;
+    updateAudioFrameSize(audioFrame, bufferSize);
+    memcpy(audioFrame->data, frame->data[0], bufferSize);
 
     return true;
 }
 
-int AudioDecodec::adjustSamples(int nbSamples) {
-    int wantedNbSamples = nbSamples;
+bool AudioDecodec::adjustSamples(AVFrame* frame) {
+    if (!FFUtils::isEqual(1.0f, speed_)) {
+        return true;
+    }
 
-    if (FFINSTANCE()->getSyncType() != SyncType::AudioMaster && FFUtils::isEqual(1.0f, speed_)) {
+    int nbSamples = frame->nb_samples;
+    int wantedNbSamples = 0;
+    if (FFINSTANCE()->getSyncType() != SyncType::AudioMaster) {
         double diff = mediaClock_->getAudioClock() - mediaClock_->getMasterClock();
 
         if (!std::isnan(diff) && std::fabs(diff) < AV_NOSYNC_THRESHOLD) {
@@ -253,9 +227,18 @@ int AudioDecodec::adjustSamples(int nbSamples) {
             audioDiffAvgCount_ = 0;
             audioDiffCum_ = 0;
         }
+
+        if (wantedNbSamples != frame->nb_samples) {
+            const int sampleDelta = av_rescale_rnd(nbSamples - frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP);
+            const  int compensationDistance = av_rescale_rnd(nbSamples, frame->sample_rate, SAMPLE_RATE, AV_ROUND_UP);
+            if (swr_set_compensation(swrCtx_, sampleDelta, compensationDistance) < 0) {
+                av_log(nullptr, AV_LOG_ERROR, "swr_set_compensation() failed\n");
+                return false;
+            }
+        }
     }
 
-    return wantedNbSamples;
+    return true;
 }
 
 std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
@@ -269,7 +252,7 @@ std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
         return frames;
     }
 
-    AVFrame* converted = convertFrameForFilter(frame);
+    AVFrame* converted = convertFrame(frame);
     if (!converted) {
         AVFrame* dup = av_frame_alloc();
         if (dup && av_frame_ref(dup, frame) >= 0) {
@@ -315,31 +298,10 @@ std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
     return frames;
 }
 
-void AudioDecodec::refreshFilterSwr(AVFrame* frame) {
-    if (frame->sample_rate != filterCachedSampleRate_
-        || frame->channel_layout != filterCachedChannelLayout_
-        || frame->format != filterCachedFormat_) {
-        swr_free(&filterSwrCtx_);
-        filterSwrCtx_ = swr_alloc_set_opts(nullptr,
-                                           AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_FLTP, SAMPLE_RATE,
-                                           frame->channel_layout, (AVSampleFormat)frame->format, frame->sample_rate,
-                                           0, nullptr);
-        if (!filterSwrCtx_ || swr_init(filterSwrCtx_) < 0) {
-            av_log(nullptr, AV_LOG_ERROR, "filter swr_alloc_set_opts failed\n");
-            swr_free(&filterSwrCtx_);
-            return;
-        }
-
-        filterCachedSampleRate_ = frame->sample_rate;
-        filterCachedChannelLayout_ = frame->channel_layout;
-        filterCachedFormat_ = frame->format;
-    }
-}
-
-AVFrame* AudioDecodec::convertFrameForFilter(AVFrame* frame) {
+AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
     if (frame->sample_rate == SAMPLE_RATE
-        && frame->format == AV_SAMPLE_FMT_FLTP
-        && frame->channel_layout == AV_CH_LAYOUT_STEREO) {
+        && frame->format == SAMPLE_FORMAT
+        && frame->channel_layout == CHANNEL_LAYOUT) {
         AVFrame* dup = av_frame_alloc();
         if (!dup || av_frame_ref(dup, frame) < 0) {
             av_frame_free(&dup);
@@ -348,8 +310,8 @@ AVFrame* AudioDecodec::convertFrameForFilter(AVFrame* frame) {
         return dup;
     }
 
-    refreshFilterSwr(frame);
-    if (!filterSwrCtx_) {
+    refreshSwr(frame);
+    if (!swrCtx_) {
         return nullptr;
     }
 
@@ -359,17 +321,16 @@ AVFrame* AudioDecodec::convertFrameForFilter(AVFrame* frame) {
         return nullptr;
     }
 
-    dst->format = AV_SAMPLE_FMT_FLTP;
+    dst->format = SAMPLE_FORMAT;
     dst->sample_rate = SAMPLE_RATE;
-    dst->channel_layout = AV_CH_LAYOUT_STEREO;
+    dst->channel_layout = CHANNEL_LAYOUT;
     dst->nb_samples = outSampleCount;
     if (av_frame_get_buffer(dst, 0) < 0) {
         av_frame_free(&dst);
         return nullptr;
     }
 
-    const int converted = swr_convert(filterSwrCtx_, dst->data, outSampleCount,
-                                      (const uint8_t**)frame->extended_data, frame->nb_samples);
+    const int converted = swr_convert(swrCtx_, dst->data, outSampleCount, (const uint8_t**)frame->extended_data, frame->nb_samples);
     if (converted <= 0) {
         av_frame_free(&dst);
         return nullptr;
@@ -377,5 +338,11 @@ AVFrame* AudioDecodec::convertFrameForFilter(AVFrame* frame) {
 
     dst->nb_samples = converted;
     av_frame_copy_props(dst, frame);
+
+    // 确保所需的属性正确
+    dst->format = SAMPLE_FORMAT;
+    dst->sample_rate = SAMPLE_RATE;
+    dst->channel_layout = CHANNEL_LAYOUT;
+
     return dst;
 }
