@@ -128,7 +128,8 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
 
     AudioSegment& currentSeg = segQue_.front();
     constexpr double bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * SAMPLE_SIZE;
-    const double currentPTS = currentSeg.pts + ((double)(currentSeg.offset + readLen) / bytesPerSec);
+    const double speed = player_->getSpeed();
+    const double currentPTS = currentSeg.pts + ((double)(currentSeg.offset + readLen) / bytesPerSec) * speed;
     player_->updateAudioClock(currentPTS);
 
     while (needReadLen) {

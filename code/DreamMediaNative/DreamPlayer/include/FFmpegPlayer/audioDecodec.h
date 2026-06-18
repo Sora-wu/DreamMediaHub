@@ -38,16 +38,22 @@ private:
     int adjustSamples(int nbSamples);
 
     std::vector<AVFrame*> processFrame(AVFrame* frame);
+    AVFrame* convertFrameForFilter(AVFrame* frame);
+    void refreshFilterSwr(AVFrame* frame);
 
 private:
     SwrContext* swrCtx_ = nullptr;
-    AVFrame* cachedFrame_ = nullptr;
+    SwrContext* filterSwrCtx_ = nullptr;
     std::unique_ptr<AudioSpeedFilter> audioSpeedFilter_;
     float speed_ = 1.0f;
 
-    uint64_t cachedChannelLayout = 0;
-    int cachedFormat = AV_SAMPLE_FMT_NONE;
-    int cachedSampleRate = 0;
+    uint64_t cachedChannelLayout_ = 0;
+    int cachedFormat_ = AV_SAMPLE_FMT_NONE;
+    int cachedSampleRate_ = 0;
+
+    uint64_t filterCachedChannelLayout_ = 0;
+    int filterCachedFormat_ = AV_SAMPLE_FMT_NONE;
+    int filterCachedSampleRate_ = 0;
 
     double audioDiffCum_ = 0.0;         // 累计时钟差值
     double audioDiffAvgCoef_ = 0.0;     // 加权平均系数

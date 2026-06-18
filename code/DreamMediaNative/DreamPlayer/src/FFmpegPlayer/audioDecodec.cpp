@@ -53,7 +53,9 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
     audioDiffThreshold_ = std::clamp(audioDiffThreshold_, AUDIO_DIFF_THRESHOLD_MIN, AUDIO_DIFF_THRESHOLD_MAX);
 
     audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
-    audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, AV_SAMPLE_FMT_FLTP, AV_CH_LAYOUT_STEREO);
+    if (!FFUtils::isEqual(1.0f, speed_)) {
+        audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, AV_SAMPLE_FMT_FLTP, AV_CH_LAYOUT_STEREO);
+    }
 
     return true;
 }
@@ -76,11 +78,17 @@ void AudioDecodec::run(std::stop_token st) {
             continue;
         }
 
+        // 经过滤镜处理可能有多个音频帧，需要累加pts
         std::vector<AVFrame*> frames = processFrame(frame);
         pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d({ 1, frame->sample_rate });
-        duration = av_q2d({ frame->nb_samples, frame->sample_rate });
-        for (const auto f : frames) {
-            pushFrame(f, pts, duration);
+        double outPts = pts;
+        for (AVFrame* f : frames) {
+            duration = (double)f->nb_samples / SAMPLE_RATE * speed_;
+            pushFrame(f, outPts, duration);
+            outPts += duration;
+
+            av_frame_unref(f);
+            av_frame_free(&f);
         }
     }
 
@@ -90,8 +98,6 @@ void AudioDecodec::run(std::stop_token st) {
 
 void AudioDecodec::reopen() {
     Decodec::reopen();
-
-    cachedFrame_ = av_frame_alloc();
 }
 
 void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
@@ -136,16 +142,20 @@ void AudioDecodec::cleanup() {
         swrCtx_ = nullptr;
     }
 
-    if (cachedFrame_) {
-        av_frame_free(&cachedFrame_);
-        cachedFrame_ = nullptr;
+    if (filterSwrCtx_) {
+        swr_free(&filterSwrCtx_);
+        filterSwrCtx_ = nullptr;
     }
+
+    filterCachedSampleRate_ = 0;
+    filterCachedChannelLayout_ = 0;
+    filterCachedFormat_ = AV_SAMPLE_FMT_NONE;
 
     Decodec::cleanup();
 }
 
 void AudioDecodec::refreshSwr(AVFrame* frame) {
-    if (frame->sample_rate != cachedSampleRate || frame->channel_layout != cachedChannelLayout || frame->format != cachedFormat) {
+    if (frame->sample_rate != cachedSampleRate_ || frame->channel_layout != cachedChannelLayout_ || frame->format != cachedFormat_) {
         swr_free(&swrCtx_);
         swrCtx_ = swr_alloc_set_opts(nullptr,
                                      AV_CH_LAYOUT_STEREO, SAMPLE_FORMAT, SAMPLE_RATE,
@@ -159,9 +169,9 @@ void AudioDecodec::refreshSwr(AVFrame* frame) {
             return;
         }
 
-        cachedSampleRate = frame->sample_rate;
-        cachedChannelLayout = frame->channel_layout;
-        cachedFormat = frame->format;
+        cachedSampleRate_ = frame->sample_rate;
+        cachedChannelLayout_ = frame->channel_layout;
+        cachedFormat_ = frame->format;
     }
 }
 
@@ -249,25 +259,123 @@ int AudioDecodec::adjustSamples(int nbSamples) {
 }
 
 std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
-    std::vector<AVFrame*> frames{};
+    std::vector<AVFrame*> frames;
 
-    if (audioSpeedFilter_->addFrame(frame) < 0) {
-        av_log(nullptr, AV_LOG_ERROR, "Error while feeding audio to the filter\n");
-        return { frame };
+    if (!audioSpeedFilter_ || FFUtils::isEqual(1.0f, speed_)) {
+        AVFrame* dup = av_frame_alloc();
+        if (dup && av_frame_ref(dup, frame) >= 0) {
+            frames.push_back(dup);
+        }
+        return frames;
     }
 
+    AVFrame* converted = convertFrameForFilter(frame);
+    if (!converted) {
+        AVFrame* dup = av_frame_alloc();
+        if (dup && av_frame_ref(dup, frame) >= 0) {
+            frames.push_back(dup);
+        }
+        return frames;
+    }
+
+    if (audioSpeedFilter_->addFrame(converted) < 0) {
+        av_frame_unref(converted);
+        av_frame_free(&converted);
+        AVFrame* dup = av_frame_alloc();
+        if (dup && av_frame_ref(dup, frame) >= 0) {
+            frames.push_back(dup);
+        }
+        return frames;
+    }
+    av_frame_unref(converted);
+    av_frame_free(&converted);
+
     while (true) {
-        int res = audioSpeedFilter_->getFrame(cachedFrame_);
+        AVFrame* out = av_frame_alloc();
+        if (!out) {
+            break;
+        }
+
+        const int res = audioSpeedFilter_->getFrame(out);
         if (res == AVERROR(EAGAIN) || res == AVERROR_EOF) {
+            av_frame_unref(out);
+            av_frame_free(&out);
             break;
         }
         if (res < 0) {
             av_log(nullptr, AV_LOG_ERROR, "Error while receiving audio from the filter\n");
+            av_frame_unref(out);
+            av_frame_free(&out);
             break;
         }
 
-        frames.push_back(cachedFrame_);
+        frames.push_back(out);
     }
 
     return frames;
+}
+
+void AudioDecodec::refreshFilterSwr(AVFrame* frame) {
+    if (frame->sample_rate != filterCachedSampleRate_
+        || frame->channel_layout != filterCachedChannelLayout_
+        || frame->format != filterCachedFormat_) {
+        swr_free(&filterSwrCtx_);
+        filterSwrCtx_ = swr_alloc_set_opts(nullptr,
+                                           AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_FLTP, SAMPLE_RATE,
+                                           frame->channel_layout, (AVSampleFormat)frame->format, frame->sample_rate,
+                                           0, nullptr);
+        if (!filterSwrCtx_ || swr_init(filterSwrCtx_) < 0) {
+            av_log(nullptr, AV_LOG_ERROR, "filter swr_alloc_set_opts failed\n");
+            swr_free(&filterSwrCtx_);
+            return;
+        }
+
+        filterCachedSampleRate_ = frame->sample_rate;
+        filterCachedChannelLayout_ = frame->channel_layout;
+        filterCachedFormat_ = frame->format;
+    }
+}
+
+AVFrame* AudioDecodec::convertFrameForFilter(AVFrame* frame) {
+    if (frame->sample_rate == SAMPLE_RATE
+        && frame->format == AV_SAMPLE_FMT_FLTP
+        && frame->channel_layout == AV_CH_LAYOUT_STEREO) {
+        AVFrame* dup = av_frame_alloc();
+        if (!dup || av_frame_ref(dup, frame) < 0) {
+            av_frame_free(&dup);
+            return nullptr;
+        }
+        return dup;
+    }
+
+    refreshFilterSwr(frame);
+    if (!filterSwrCtx_) {
+        return nullptr;
+    }
+
+    const int outSampleCount = av_rescale_rnd(frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP) + 256;
+    AVFrame* dst = av_frame_alloc();
+    if (!dst) {
+        return nullptr;
+    }
+
+    dst->format = AV_SAMPLE_FMT_FLTP;
+    dst->sample_rate = SAMPLE_RATE;
+    dst->channel_layout = AV_CH_LAYOUT_STEREO;
+    dst->nb_samples = outSampleCount;
+    if (av_frame_get_buffer(dst, 0) < 0) {
+        av_frame_free(&dst);
+        return nullptr;
+    }
+
+    const int converted = swr_convert(filterSwrCtx_, dst->data, outSampleCount,
+                                      (const uint8_t**)frame->extended_data, frame->nb_samples);
+    if (converted <= 0) {
+        av_frame_free(&dst);
+        return nullptr;
+    }
+
+    dst->nb_samples = converted;
+    av_frame_copy_props(dst, frame);
+    return dst;
 }
