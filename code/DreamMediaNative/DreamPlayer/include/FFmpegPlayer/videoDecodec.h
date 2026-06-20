@@ -20,6 +20,7 @@ public:
 
     bool openCodec(int streamIndex, AVStream* stream) override;
     void reopen() override;
+    void startDecode() override;
 
     uint32_t getWidth() const;
     uint32_t getHeight() const;

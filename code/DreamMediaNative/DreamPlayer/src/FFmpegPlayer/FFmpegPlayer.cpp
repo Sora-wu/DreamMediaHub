@@ -32,11 +32,11 @@ FFmpegPlayer::FFmpegPlayer() {
 }
 
 FFmpegPlayer::~FFmpegPlayer() {
-    cleanup();
+    shutdown();
 }
 
 bool FFmpegPlayer::open(const char* url) {
-    cleanup();
+    shutdown();
 
     if (!demuxer_->open(url)) {
         return false;
@@ -61,12 +61,14 @@ bool FFmpegPlayer::open(const char* url) {
         FFINSTANCE()->setSyncType(SyncType::VideoMaster);
     }
 
+    exit();
     videoDecodec_->reopen();
     audioDecodec_->reopen();
 
-    demuxer_->start();
-    videoDecodec_->start();
-    audioDecodec_->start();
+    start("monitor thread");
+    demuxer_->startDemux();
+    videoDecodec_->startDecode();
+    audioDecodec_->startDecode();
 
     uint32_t* videoPktQueSerial = &videoDecodec_->getSerial();
     uint32_t* audioPktQueSerial = &audioDecodec_->getSerial();
@@ -75,7 +77,7 @@ bool FFmpegPlayer::open(const char* url) {
     videoDecodec_->setMediaClock(&clock_);
     audioDecodec_->setMediaClock(&clock_);
 
-    resetPlaybackState();
+    // resetPlaybackState();
 
     return true;
 }
@@ -93,6 +95,13 @@ void FFmpegPlayer::pause() {
 }
 
 void FFmpegPlayer::stop() {
+    audioDecodec_->shutdown();
+    videoDecodec_->shutdown();
+
+    demuxer_->exit();
+    audioDecodec_->exit();
+    videoDecodec_->exit();
+    exit();
 }
 
 uint32_t FFmpegPlayer::getWidth() {
@@ -156,18 +165,15 @@ void FFmpegPlayer::setSpeed(double speed) {
 
 void FFmpegPlayer::getVideoFrame(VideoFrame* videoFrame) {
     videoDecodec_->getVideoFrame(videoFrame);
-    checkPlaybackCompleted();
 }
 
 void FFmpegPlayer::getAudioFrame(AudioFrame* audioFrame) {
     audioDecodec_->getAudioFrame(audioFrame);
-    checkPlaybackCompleted();
 }
 
 void FFmpegPlayer::updateAudioClock(double pts) {
     uint32_t serial = audioDecodec_->getSerial();
     clock_.setAudioClock(pts, serial, CURRENT_TIME);
-    checkPlaybackCompleted();
 }
 
 void FFmpegPlayer::setOnAudioSeekCallback(const OnSeekCallback& cb) {
@@ -205,11 +211,18 @@ void FFmpegPlayer::handle(void* data) {
     }
 }
 
-void FFmpegPlayer::cleanup() const {
-    demuxer_->exit();
-    videoDecodec_->exit();
-    audioDecodec_->exit();
+void FFmpegPlayer::run(std::stop_token st) {
+    while (!st.stop_requested()) {
+        {
+            std::lock_guard lock(mtx_);
+            checkPlaybackCompleted();
+        }
 
+        msleep(100);
+    }
+}
+
+void FFmpegPlayer::shutdown() const {
     videoDecodec_->shutdown();
     audioDecodec_->shutdown();
 }
@@ -257,6 +270,9 @@ void FFmpegPlayer::markPlaybackCompleted() {
         clock_.setMasterClock(duration, serial, CURRENT_TIME);
     }
 
+    shutdown();
+    av_log(nullptr, AV_LOG_INFO, "current media player completed\n");
+
     if (onPlaybackCompletedCallback_) {
         onPlaybackCompletedCallback_();
     }
@@ -265,4 +281,7 @@ void FFmpegPlayer::markPlaybackCompleted() {
 void FFmpegPlayer::resetPlaybackState() {
     playbackCompleted_ = false;
     clock_.resumeMasterClock();
+
+    audioDecodec_->reopen();
+    videoDecodec_->reopen();
 }

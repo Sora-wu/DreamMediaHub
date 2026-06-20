@@ -37,6 +37,10 @@ bool Demuxer::open(const char* url) {
     return true;
 }
 
+void Demuxer::startDemux() {
+    start("demux thread");
+}
+
 void Demuxer::run(std::stop_token st) {
     AVPacket pkt{};
     int res = 0;

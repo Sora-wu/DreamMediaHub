@@ -82,13 +82,6 @@ PlayerController::PlayerController(QObject* parent) {
     });
 }
 
-PlayerController::~PlayerController() {
-    delete audioBufferDevice_;
-    delete audioSink_;
-
-    DreamContext::destroyDreamPlayer(&player_);
-}
-
 QString PlayerController::mediaName() const
 {
     return mediaName_;
@@ -175,6 +168,29 @@ void PlayerController::setCurrentProgress(uint32_t newCurrentProgress)
         return;
     currentProgress_ = newCurrentProgress;
     emit currentProgressChanged();
+}
+
+void PlayerController::cleanup() {
+    player_->stop();
+
+    if (timer_) {
+        timer_->stop();
+        delete timer_;
+        timer_ = nullptr;
+    }
+
+    if (audioBufferDevice_) {
+        delete audioBufferDevice_;
+        audioBufferDevice_ = nullptr;
+    }
+
+    if (audioSink_) {
+        audioSink_->stop();
+        delete audioSink_;
+        audioSink_ = nullptr;
+    }
+
+    DreamContext::destroyDreamPlayer(&player_);
 }
 
 void PlayerController::onTimerUpdate() {

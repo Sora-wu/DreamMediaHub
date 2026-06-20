@@ -11,10 +11,19 @@ class DreamThread {
 public:
     virtual ~DreamThread() = default;
 
-    void start() {
+    void start(const std::string& threadName = {}) {
         thread_ = std::jthread([this](std::stop_token st) {
             run(st);
         });
+
+        if (!threadName.empty()) {
+            auto threadHandle = thread_.native_handle();
+#ifdef PLATFORM_LINUX
+            pthread_setname_np(threadHandle, threadName.c_str());
+#elif PLATFORM_WINDOWS
+            SetThreadDescription(threadHandle, threadName.c_str());
+#endif
+        }
     }
 
     void exit() {

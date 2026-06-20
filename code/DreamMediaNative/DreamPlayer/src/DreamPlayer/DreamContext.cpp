@@ -14,6 +14,8 @@ DreamPlayer* DreamContext::createDreamPlayer() {
 }
 
 void DreamContext::destroyDreamPlayer(DreamPlayer** player) {
-    delete *player;
-    *player = nullptr;
+    if (*player) {
+        delete *player;
+        *player = nullptr;
+    }
 }

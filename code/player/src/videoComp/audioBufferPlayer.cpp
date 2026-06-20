@@ -58,8 +58,8 @@ void AudioBufferDevice::pull(std::stop_token st) {
 
         {
             std::unique_lock lock(mtx_);
-            cv_.wait(lock, [&](){ return dataLen_ + audioFrame.len <= MAX_BUFFER_SIZE || st.stop_requested(); });
-            if (st.stop_requested()) {
+            cv_.wait(lock, [&](){ return dataLen_ + audioFrame.len <= MAX_BUFFER_SIZE || st.stop_requested() || isClose_; });
+            if (st.stop_requested() && isClose_) {
                 break;
             }
 
@@ -117,7 +117,7 @@ void AudioBufferDevice::clear() {
 qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     std::unique_lock lock(mtx_);
 
-    cv_.wait(lock, [this](){ return (dataLen_ > 0 && !segQue_.empty()) || !isClose_; });
+    cv_.wait(lock, [this](){ return (dataLen_ > 0 && !segQue_.empty()) || isClose_; });
     if ((dataLen_ == 0 && segQue_.empty() && isClose_) || isPause_) {
         return 0;
     }

@@ -50,8 +50,11 @@ void Decodec::reopen() {
     }
     frameQue_.reopen();
 
-    decodecSerial_ = 0;
     finishedSerial_ = 0;
+}
+
+void Decodec::startDecode() {
+    start();
 }
 
 void Decodec::handle(void* data) {
@@ -152,7 +155,7 @@ void Decodec::pushFrame(AVFrame* frame, double pts, double duration) {
 
 bool Decodec::acquireFrame(Frame& out) {
     while (true) {
-        std::optional<Frame> frameOpt = frameQue_.try_pop();
+        std::optional<Frame> frameOpt = frameQue_.pop();
         if (!frameOpt) {
             return false;
         }

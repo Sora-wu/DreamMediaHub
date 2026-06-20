@@ -28,6 +28,7 @@ public:
 
     virtual bool openCodec(int streamIndex, AVStream* stream);
     virtual void reopen();
+    virtual void startDecode();
     void setMediaClock(MediaClock* clock) {
         mediaClock_ = clock;
     }
@@ -57,7 +58,6 @@ public:
     void setPause(bool isPause) {
         isPause_ = isPause;
     }
-
 
     void setOnSeekCallback(const Dream::OnSeekCallback& cb) {
         onSeekCallback_ = cb;

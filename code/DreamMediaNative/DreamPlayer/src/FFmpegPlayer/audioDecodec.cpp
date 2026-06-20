@@ -101,6 +101,10 @@ void AudioDecodec::reopen() {
     Decodec::reopen();
 }
 
+void AudioDecodec::startDecode() {
+    start("audio thread");
+}
+
 void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
     audioFrame->isUpdated = false;
 
@@ -189,9 +193,9 @@ bool AudioDecodec::adjustSamples(AVFrame* frame) {
         return true;
     }
 
-    int nbSamples = frame->nb_samples;
-    int wantedNbSamples = 0;
+    const int nbSamples = frame->nb_samples;
     if (FFINSTANCE()->getSyncType() != SyncType::AudioMaster) {
+        int wantedNbSamples = 0;
         double diff = mediaClock_->getAudioClock() - mediaClock_->getMasterClock();
 
         if (!std::isnan(diff) && std::fabs(diff) < AV_NOSYNC_THRESHOLD) {

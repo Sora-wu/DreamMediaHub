@@ -195,4 +195,9 @@ Window {
 
         controller: playerCtrl
     }
+
+    onClosing: function(close) {
+        playerCtrl.cleanup();
+        close.accepted = true;
+    }
 }

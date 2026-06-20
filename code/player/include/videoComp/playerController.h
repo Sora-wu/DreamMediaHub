@@ -26,7 +26,7 @@ class PlayerController : public QObject {
 
 public:
     explicit PlayerController(QObject* parent = nullptr);
-    ~PlayerController();
+    ~PlayerController() override = default;
 
     [[nodiscard]] Dream::DreamPlayer* getPlayer() const {
         return player_;
@@ -46,6 +46,8 @@ public:
     Q_INVOKABLE void seek(double targetPos, double seekRel = 0);
     Q_INVOKABLE void setVolume(uint32_t newVolume);
     Q_INVOKABLE void setCurrentProgress(uint32_t newCurrentProgress);
+
+    Q_INVOKABLE void cleanup();
 
 signals:
     void mediaNameChanged();

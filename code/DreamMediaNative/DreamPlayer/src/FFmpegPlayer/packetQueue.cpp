@@ -30,7 +30,7 @@ void PacketQueue::push(AVPacket* pkt) {
 }
 
 std::optional<Packet> PacketQueue::pop() {
-    std::optional<Packet> packetOpt = que_.try_pop();
+    std::optional<Packet> packetOpt = que_.pop();
     if (!packetOpt) {
         return std::nullopt;
     }

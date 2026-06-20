@@ -23,6 +23,7 @@ public:
     bool openCodec(int streamIndex, AVStream* stream) override;
     void run(std::stop_token st) override;
     void reopen() override;
+    void startDecode() override;
 
     void getAudioFrame(Dream::AudioFrame* audioFrame);
 

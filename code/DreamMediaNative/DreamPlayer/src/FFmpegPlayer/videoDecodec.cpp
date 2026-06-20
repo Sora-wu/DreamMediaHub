@@ -62,6 +62,10 @@ void VideoDecodec::reopen() {
     Decodec::reopen();
 }
 
+void VideoDecodec::startDecode() {
+    start("video thread");
+}
+
 uint32_t VideoDecodec::getWidth() const {
     return codecCtx_->width;
 }
