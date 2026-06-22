@@ -21,7 +21,7 @@ class PlayerController : public QObject {
     Q_PROPERTY(QString progressText READ progressText NOTIFY progressTextChanged)
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY isPlayingChanged)
     Q_PROPERTY(uint32_t volume READ volume NOTIFY volumeChanged)
-    Q_PROPERTY(double speed READ speed NOTIFY speedChanged)
+    Q_PROPERTY(double speed READ speed WRITE setSpeed NOTIFY speedChanged)
     Q_PROPERTY(uint32_t duration READ duration NOTIFY durationChanged)
     Q_PROPERTY(uint32_t currentProgress READ currentProgress NOTIFY currentProgressChanged)
 
@@ -39,6 +39,7 @@ public:
     uint32_t volume() const;
     uint32_t duration() const;
     double speed() const;
+    void setSpeed(double speed);
     uint32_t currentProgress() const;
 
     Q_INVOKABLE void open(const QString& path);
@@ -47,7 +48,7 @@ public:
     Q_INVOKABLE void togglePlay();
     Q_INVOKABLE void seek(double targetPos, double seekRel = 0);
     Q_INVOKABLE void setVolume(uint32_t newVolume);
-    Q_INVOKABLE void setSpeed(double spped);
+    // Q_INVOKABLE void setSpeed(double spped);
     Q_INVOKABLE void setCurrentProgress(uint32_t newCurrentProgress);
 
     Q_INVOKABLE void cleanup();

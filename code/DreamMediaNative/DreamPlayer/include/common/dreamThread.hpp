@@ -6,6 +6,7 @@
 #pragma once
 
 #include <thread>
+#include <string>
 
 class DreamThread {
 public:
@@ -20,8 +21,6 @@ public:
             auto threadHandle = thread_.native_handle();
 #ifdef PLATFORM_LINUX
             pthread_setname_np(threadHandle, threadName.c_str());
-#elif PLATFORM_WINDOWS
-            SetThreadDescription(threadHandle, threadName.c_str());
 #endif
         }
     }

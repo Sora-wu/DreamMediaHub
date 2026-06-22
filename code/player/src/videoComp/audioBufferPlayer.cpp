@@ -114,6 +114,13 @@ void AudioBufferDevice::clear() {
     dataLen_ = 0;
 }
 
+void AudioBufferDevice::clearQueue() {
+    std::lock_guard lock(mtx_);
+    segQue_.clear();
+    dataLen_ = 0;
+    cv_.notify_all();
+}
+
 qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     std::unique_lock lock(mtx_);
 
@@ -177,11 +184,4 @@ void AudioBufferDevice::scaleData(char* data, qint64 len) const {
         int32_t sample = pcmData[i] * volume_;
         pcmData[i] = std::clamp(sample, (int32_t)INT16_MIN, (int32_t)INT16_MAX);
     }
-}
-
-void AudioBufferDevice::clearQueue() {
-    std::lock_guard lock(mtx_);
-    segQue_.clear();
-    dataLen_ = 0;
-    cv_.notify_all();
 }

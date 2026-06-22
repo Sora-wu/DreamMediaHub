@@ -110,6 +110,21 @@ double PlayerController::speed() const {
     return speed_;
 }
 
+void PlayerController::setSpeed(double speed) {
+    if (speed_ != speed) {
+        speed_ = speed;
+        player_->setSpeed(speed);
+
+        // 更新播放倍速，那么需要清空音频缓存并预缓存
+        audioBufferDevice_->clearQueue();
+        if (!audioBufferDevice_->waitForBuffered(std::chrono::milliseconds(800))) {
+            qWarning() << "prebuffer timeout";
+        }
+
+        emit speedChanged();
+    }
+}
+
 uint32_t PlayerController::currentProgress() const
 {
     return (uint32_t)player_->getCurrentTime();
@@ -163,16 +178,6 @@ void PlayerController::setVolume(uint32_t newVolume)
     volume_ = newVolume;
     emit volumeChanged();
 }
-
-void PlayerController::setSpeed(double spped) {
-    if (speed_ == spped) {
-        return;
-    }
-
-    player_->setSpeed(spped);
-    emit speedChanged();
-}
-
 
 void PlayerController::setCurrentProgress(uint32_t newCurrentProgress)
 {
