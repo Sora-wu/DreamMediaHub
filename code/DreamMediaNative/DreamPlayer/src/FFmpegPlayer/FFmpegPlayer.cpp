@@ -272,6 +272,7 @@ void FFmpegPlayer::markPlaybackCompleted() {
 
     shutdown();
     av_log(nullptr, AV_LOG_INFO, "current media player completed\n");
+    setSpeed(1.0f);     // 当前媒体播放完毕之后重置速度
 
     if (onPlaybackCompletedCallback_) {
         onPlaybackCompletedCallback_();

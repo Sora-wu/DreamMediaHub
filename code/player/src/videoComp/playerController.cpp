@@ -37,7 +37,6 @@ namespace {
 PlayerController::PlayerController(QObject* parent) {
     player_ = DreamContext::createDreamPlayer();
     // TEST
-    player_->setSpeed(2.0f);
 #ifdef PLATFORM_LINUX
     open("/home/sora/Videos/test.mp4");
 #else
@@ -107,6 +106,10 @@ uint32_t PlayerController::duration() const
     return duration_;
 }
 
+double PlayerController::speed() const {
+    return speed_;
+}
+
 uint32_t PlayerController::currentProgress() const
 {
     return (uint32_t)player_->getCurrentTime();
@@ -159,6 +162,15 @@ void PlayerController::setVolume(uint32_t newVolume)
     audioBufferDevice_->setVolume((float)newVolume / 100);
     volume_ = newVolume;
     emit volumeChanged();
+}
+
+void PlayerController::setSpeed(double spped) {
+    if (speed_ == spped) {
+        return;
+    }
+
+    player_->setSpeed(spped);
+    emit speedChanged();
 }
 
 

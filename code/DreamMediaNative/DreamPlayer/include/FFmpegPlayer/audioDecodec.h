@@ -7,6 +7,7 @@
 
 #include <FFmpegPlayer/decodec.h>
 #include <FFmpegPlayer/audioSpeedFilter.h>
+#include <FFmpegPlayer/avframePool.hpp>
 
 extern "C" {
     struct SwrContext;
@@ -54,4 +55,6 @@ private:
     double audioDiffAvgCoef_ = 0.0;     // 加权平均系数
     int audioDiffAvgCount_ = 0;         // 差值测量计数器
     double audioDiffThreshold_ = 0.0;   // 触发采点调整的阈值
+
+    AVFramePool framePool_;
 };

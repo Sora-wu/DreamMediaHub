@@ -54,9 +54,7 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
     audioDiffThreshold_ = std::clamp(audioDiffThreshold_, AUDIO_DIFF_THRESHOLD_MIN, AUDIO_DIFF_THRESHOLD_MAX);
 
     audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
-    if (!FFUtils::isEqual(1.0f, speed_)) {
-        audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, CHANNEL_LAYOUT);
-    }
+    audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, CHANNEL_LAYOUT);
 
     return true;
 }
@@ -88,8 +86,7 @@ void AudioDecodec::run(std::stop_token st) {
             pushFrame(f, outPts, duration);
             outPts += duration;
 
-            av_frame_unref(f);
-            av_frame_free(&f);
+            framePool_.put(f);
         }
     }
 
@@ -133,11 +130,8 @@ void AudioDecodec::setSpeed(float speed) {
         speed_ = speed;
         audioSpeedFilter_.reset();
 
-        // 只有在速度不等于1.0时，才会产生滤镜
-        if (!FFUtils::isEqual(1.0f, speed_)) {
-            audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
-            audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, CHANNEL_LAYOUT);
-        }
+        audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
+        audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, CHANNEL_LAYOUT);
     }
 }
 
@@ -248,8 +242,8 @@ bool AudioDecodec::adjustSamples(AVFrame* frame) {
 std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
     std::vector<AVFrame*> frames;
 
-    if (!audioSpeedFilter_ || FFUtils::isEqual(1.0f, speed_)) {
-        AVFrame* dup = av_frame_alloc();
+    if (!audioSpeedFilter_) {
+        AVFrame* dup = framePool_.get();
         if (dup && av_frame_ref(dup, frame) >= 0) {
             frames.push_back(dup);
         }
@@ -258,7 +252,7 @@ std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
 
     AVFrame* converted = convertFrame(frame);
     if (!converted) {
-        AVFrame* dup = av_frame_alloc();
+        AVFrame* dup = framePool_.get();
         if (dup && av_frame_ref(dup, frame) >= 0) {
             frames.push_back(dup);
         }
@@ -266,33 +260,29 @@ std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
     }
 
     if (audioSpeedFilter_->addFrame(converted) < 0) {
-        av_frame_unref(converted);
-        av_frame_free(&converted);
-        AVFrame* dup = av_frame_alloc();
+        framePool_.put(converted);
+        AVFrame* dup = framePool_.get();
         if (dup && av_frame_ref(dup, frame) >= 0) {
             frames.push_back(dup);
         }
         return frames;
     }
-    av_frame_unref(converted);
-    av_frame_free(&converted);
+    framePool_.put(converted);
 
     while (true) {
-        AVFrame* out = av_frame_alloc();
+        AVFrame* out = framePool_.get();
         if (!out) {
             break;
         }
 
         const int res = audioSpeedFilter_->getFrame(out);
         if (res == AVERROR(EAGAIN) || res == AVERROR_EOF) {
-            av_frame_unref(out);
-            av_frame_free(&out);
+            framePool_.put(out);
             break;
         }
         if (res < 0) {
             av_log(nullptr, AV_LOG_ERROR, "Error while receiving audio from the filter\n");
-            av_frame_unref(out);
-            av_frame_free(&out);
+            framePool_.put(out);
             break;
         }
 
@@ -306,9 +296,9 @@ AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
     if (frame->sample_rate == SAMPLE_RATE
         && frame->format == SAMPLE_FORMAT
         && frame->channel_layout == CHANNEL_LAYOUT) {
-        AVFrame* dup = av_frame_alloc();
+        AVFrame* dup = framePool_.get();
         if (!dup || av_frame_ref(dup, frame) < 0) {
-            av_frame_free(&dup);
+            framePool_.put(dup);
             return nullptr;
         }
         return dup;
@@ -320,7 +310,7 @@ AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
     }
 
     const int outSampleCount = av_rescale_rnd(frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP) + 256;
-    AVFrame* dst = av_frame_alloc();
+    AVFrame* dst = framePool_.get();
     if (!dst) {
         return nullptr;
     }
@@ -330,13 +320,13 @@ AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
     dst->channel_layout = CHANNEL_LAYOUT;
     dst->nb_samples = outSampleCount;
     if (av_frame_get_buffer(dst, 0) < 0) {
-        av_frame_free(&dst);
+        framePool_.put(dst);
         return nullptr;
     }
 
     const int converted = swr_convert(swrCtx_, dst->data, outSampleCount, (const uint8_t**)frame->extended_data, frame->nb_samples);
     if (converted <= 0) {
-        av_frame_free(&dst);
+        framePool_.put(dst);
         return nullptr;
     }
 

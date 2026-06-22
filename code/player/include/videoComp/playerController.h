@@ -21,6 +21,7 @@ class PlayerController : public QObject {
     Q_PROPERTY(QString progressText READ progressText NOTIFY progressTextChanged)
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY isPlayingChanged)
     Q_PROPERTY(uint32_t volume READ volume NOTIFY volumeChanged)
+    Q_PROPERTY(double speed READ speed NOTIFY speedChanged)
     Q_PROPERTY(uint32_t duration READ duration NOTIFY durationChanged)
     Q_PROPERTY(uint32_t currentProgress READ currentProgress NOTIFY currentProgressChanged)
 
@@ -37,6 +38,7 @@ public:
     bool isPlaying() const;
     uint32_t volume() const;
     uint32_t duration() const;
+    double speed() const;
     uint32_t currentProgress() const;
 
     Q_INVOKABLE void open(const QString& path);
@@ -45,6 +47,7 @@ public:
     Q_INVOKABLE void togglePlay();
     Q_INVOKABLE void seek(double targetPos, double seekRel = 0);
     Q_INVOKABLE void setVolume(uint32_t newVolume);
+    Q_INVOKABLE void setSpeed(double spped);
     Q_INVOKABLE void setCurrentProgress(uint32_t newCurrentProgress);
 
     Q_INVOKABLE void cleanup();
@@ -55,6 +58,7 @@ signals:
     void isPlayingChanged();
     void volumeChanged();
     void durationChanged();
+    void speedChanged();
     void currentProgressChanged();
 
 private slots:
@@ -70,6 +74,7 @@ private:
     Dream::DreamPlayer* player_ = nullptr;
     AudioBufferDevice* audioBufferDevice_ = nullptr;
     QAudioSink* audioSink_ = nullptr;
+    double speed_ = 1.0f;
     uint32_t currentProgress_ = 0;
     uint32_t duration_ = 0;
 

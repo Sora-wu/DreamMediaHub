@@ -39,6 +39,12 @@ Window {
                 playerCtrl.togglePlay();
                 event.accepted = true
             }
+            else if (event.key === Qt.Key_BracketLeft) {
+                console.log("speed: " + playerCtrl.speed);
+            }
+            else if (event.key === Qt.Key_BracketRight) {
+
+            }
         }
 
         Column {
