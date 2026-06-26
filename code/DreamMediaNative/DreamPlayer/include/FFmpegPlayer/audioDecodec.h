@@ -9,6 +9,9 @@
 #include <FFmpegPlayer/audioSpeedFilter.h>
 #include <FFmpegPlayer/avframePool.hpp>
 
+#include <atomic>
+#include <mutex>
+
 extern "C" {
     struct SwrContext;
 }
@@ -41,11 +44,15 @@ private:
 
     std::vector<AVFrame*> processFrame(AVFrame* frame);
     AVFrame* convertFrame(AVFrame* frame);
+    // 将重采样/过滤镜的输出结果推入队列
+    void pushFrames(const std::vector<AVFrame*>& frames, double pts);
 
 private:
     SwrContext* swrCtx_ = nullptr;
     std::unique_ptr<AudioSpeedFilter> audioSpeedFilter_;
-    float speed_ = 1.0f;
+    std::atomic<float> speed_ = 1.0f;
+    std::mutex mtx_{};
+    std::vector<AVFrame*> paddingFrames_;
 
     uint64_t cachedChannelLayout_ = 0;
     int cachedFormat_ = AV_SAMPLE_FMT_NONE;

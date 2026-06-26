@@ -32,6 +32,10 @@ namespace {
 
         return formattedTime;
     }
+
+    double roundToOneDecimal(double value) {
+        return std::round(value * 10.0) / 10.0;
+    }
 }
 
 PlayerController::PlayerController(QObject* parent) {
@@ -112,15 +116,9 @@ double PlayerController::speed() const {
 
 void PlayerController::setSpeed(double speed) {
     if (speed_ != speed) {
-        speed_ = speed;
+        speed_ = roundToOneDecimal(speed);
+        qInfo() << "speed:" << speed_;
         player_->setSpeed(speed);
-
-        // 更新播放倍速，那么需要清空音频缓存并预缓存
-        audioBufferDevice_->clearQueue();
-        if (!audioBufferDevice_->waitForBuffered(std::chrono::milliseconds(800))) {
-            qWarning() << "prebuffer timeout";
-        }
-
         emit speedChanged();
     }
 }
@@ -165,6 +163,7 @@ void PlayerController::togglePlay() {
 void PlayerController::seek(double targetPos, double seekRel) {
     if (player_) {
         play();
+        audioBufferDevice_->clearQueue();
         player_->seek(targetPos, seekRel);
         onTimerUpdate();
     }

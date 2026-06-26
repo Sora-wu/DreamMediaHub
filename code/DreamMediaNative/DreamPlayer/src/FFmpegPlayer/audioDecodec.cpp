@@ -66,10 +66,14 @@ void AudioDecodec::run(std::stop_token st) {
         return;
     }
 
-    double duration{};
     double pts{};
-
     while (!st.stop_requested()) {
+        {
+            std::lock_guard lock(mtx_);
+            pushFrames(paddingFrames_, decodecTimer_);
+            paddingFrames_.clear();
+        }
+
         if (!decodeFrame(frame)) {
             if (st.stop_requested()) {
                 break;
@@ -77,17 +81,9 @@ void AudioDecodec::run(std::stop_token st) {
             continue;
         }
 
-        // 经过滤镜处理可能有多个音频帧，需要累加pts
         std::vector<AVFrame*> frames = processFrame(frame);
-        pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d({ 1, frame->sample_rate });
-        double outPts = pts;
-        for (AVFrame* f : frames) {
-            duration = (double)f->nb_samples / SAMPLE_RATE * speed_;
-            pushFrame(f, outPts, duration);
-            outPts += duration;
-
-            framePool_.put(f);
-        }
+        pts = (double)frame->pts / SAMPLE_RATE;
+        pushFrames(frames, pts);
     }
 
     av_frame_free(&frame);
@@ -127,8 +123,24 @@ void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
 
 void AudioDecodec::setSpeed(float speed) {
     if (!FFUtils::isEqual(speed, speed_)) {
+        std::lock_guard lock(mtx_);
         speed_ = speed;
-        audioSpeedFilter_.reset();
+
+        // flush
+        audioSpeedFilter_->addFrame(nullptr);
+        while (true) {
+            AVFrame* out = framePool_.get();
+            int res = audioSpeedFilter_->getFrame(out);
+            if (res == AVERROR(EAGAIN) || res == AVERROR_EOF) {
+                break;
+            }
+            if (res < 0) {
+                av_log(nullptr, AV_LOG_ERROR, "Error occurred during filtering\n");
+                break;
+            }
+
+            paddingFrames_.push_back(out);
+        }
 
         audioSpeedFilter_ = std::make_unique<AudioSpeedFilter>();
         audioSpeedFilter_->initFilter(speed_, SAMPLE_RATE, SAMPLE_FORMAT, CHANNEL_LAYOUT);
@@ -242,6 +254,7 @@ bool AudioDecodec::adjustSamples(AVFrame* frame) {
 std::vector<AVFrame*> AudioDecodec::processFrame(AVFrame* frame) {
     std::vector<AVFrame*> frames;
 
+    std::lock_guard lock(mtx_);
     if (!audioSpeedFilter_) {
         AVFrame* dup = framePool_.get();
         if (dup && av_frame_ref(dup, frame) >= 0) {
@@ -333,10 +346,27 @@ AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
     dst->nb_samples = converted;
     av_frame_copy_props(dst, frame);
 
-    // 确保所需的属性正确
+    // 确保所需的属性正确，因为已经经过重采样
     dst->format = SAMPLE_FORMAT;
     dst->sample_rate = SAMPLE_RATE;
     dst->channel_layout = CHANNEL_LAYOUT;
 
     return dst;
+}
+
+void AudioDecodec::pushFrames(const std::vector<AVFrame*>& frames, double pts) {
+    if (frames.empty()) {
+        return;
+    }
+
+    double duration{};
+    // 经过滤镜处理可能有多个音频帧，需要累加pts
+    for (AVFrame* f : frames) {
+        duration = (double)f->nb_samples / SAMPLE_RATE * speed_;
+        pushFrame(f, pts, duration);
+        pts += duration;
+        decodecTimer_ = pts;
+
+        framePool_.put(f);
+    }
 }

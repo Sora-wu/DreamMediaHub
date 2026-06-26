@@ -16,7 +16,7 @@ using namespace Dream;
 
 namespace {
     constexpr std::size_t FRAME_VIDEO_SIZE = 3;
-    constexpr std::size_t FRAME_AUDIO_SIZE = 32;
+    constexpr std::size_t FRAME_AUDIO_SIZE = 16;
 }
 
 FFmpegPlayer::FFmpegPlayer() {
@@ -76,8 +76,6 @@ bool FFmpegPlayer::open(const char* url) {
     clock_.initClock(videoPktQueSerial, audioPktQueSerial);
     videoDecodec_->setMediaClock(&clock_);
     audioDecodec_->setMediaClock(&clock_);
-
-    // resetPlaybackState();
 
     return true;
 }
@@ -262,7 +260,10 @@ void FFmpegPlayer::markPlaybackCompleted() {
 
     const double duration = demuxer_->getDuration();
     const double currentTime = clock_.getMasterClock();
-    if (!isnan(currentTime) && currentTime > duration) {
+    if (isnan(currentTime)) {
+        return;
+    }
+    if (currentTime > duration) {
         uint32_t serial = audioDecodec_->getSerial();
         if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
             serial = videoDecodec_->getSerial();

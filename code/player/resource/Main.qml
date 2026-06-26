@@ -42,12 +42,10 @@ Window {
             else if (event.key === Qt.Key_BracketLeft) {
                 var speed = Math.max(playerCtrl.speed - 0.1, 0.5);
                 playerCtrl.speed = speed;
-                console.log("speed: " + playerCtrl.speed);
             }
             else if (event.key === Qt.Key_BracketRight) {
                 speed = Math.min(playerCtrl.speed + 0.1, 2.0);
                 playerCtrl.speed = speed;
-                console.log("speed: " + playerCtrl.speed);
             }
         }
 

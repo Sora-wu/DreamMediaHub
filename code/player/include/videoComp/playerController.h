@@ -48,7 +48,6 @@ public:
     Q_INVOKABLE void togglePlay();
     Q_INVOKABLE void seek(double targetPos, double seekRel = 0);
     Q_INVOKABLE void setVolume(uint32_t newVolume);
-    // Q_INVOKABLE void setSpeed(double spped);
     Q_INVOKABLE void setCurrentProgress(uint32_t newCurrentProgress);
 
     Q_INVOKABLE void cleanup();

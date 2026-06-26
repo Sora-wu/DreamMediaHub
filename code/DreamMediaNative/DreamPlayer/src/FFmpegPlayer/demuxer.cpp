@@ -51,6 +51,7 @@ void Demuxer::run(std::stop_token st) {
             if (hasSeekRequest_) {
                 seek();
                 hasSeekRequest_ = false;
+                continue;
             }
         }
 
@@ -61,7 +62,6 @@ void Demuxer::run(std::stop_token st) {
                 isEof_ = true;
             }
             if (fmtCtx_->pb && fmtCtx_->pb->error) {
-                exit();
                 break;
             }
 

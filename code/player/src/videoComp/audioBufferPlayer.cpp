@@ -12,7 +12,7 @@
 #include <algorithm>
 
 namespace {
-    constexpr uint32_t MAX_BUFFER_SIZE = 1024 * 1024 * 50;
+    constexpr uint32_t MAX_BUFFER_SIZE = 1024 * 20;
     constexpr float MAX_FLOAT_VOLUME = 2.0f;
 }
 
