@@ -121,8 +121,8 @@ void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
             heldFrame_ = frame;
             decodecTimer_ = CURRENT_TIME;
             decodeTimerValid_ = true;
-            if (mediaClock_ && !isnan(heldFrame_.pts)) {
-                mediaClock_->setVideoClock(heldFrame_.pts, heldFrame_.serial, decodecTimer_);
+            if (!isnan(heldFrame_.pts)) {
+                FFINSTANCE()->setVideoClock(heldFrame_.pts, heldFrame_.serial, decodecTimer_);
             }
             fillData(heldFrame_.frame, videoFrame);
             return;
@@ -172,8 +172,8 @@ void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
         }
 
         heldFrame_ = frame;
-        if (mediaClock_ && !isnan(heldFrame_.pts)) {
-            mediaClock_->setVideoClock(heldFrame_.pts, heldFrame_.serial, time);
+        if (!isnan(heldFrame_.pts)) {
+            FFINSTANCE()->setVideoClock(heldFrame_.pts, heldFrame_.serial, time);
         }
         fillData(heldFrame_.frame, videoFrame);
         return;
@@ -205,12 +205,8 @@ double VideoDecodec::calcDelay(double duration) const {
         return duration;
     }
 
-    if (!mediaClock_) {
-        return duration;
-    }
-
     double delay = duration;
-    const double diff = mediaClock_->getVideoClock() - mediaClock_->getMasterClock();
+    const double diff = FFINSTANCE()->getVideoClock() - FFINSTANCE()->getMasterClock();
     const double syncThreshold = std::clamp(delay, SYNC_THRESHOLD_MIN, SYNC_THRESHOLD_MAX);
     if (!isnan(diff) && std::fabs(diff) < maxFrameDuration_) {
         if (diff <= -syncThreshold) {

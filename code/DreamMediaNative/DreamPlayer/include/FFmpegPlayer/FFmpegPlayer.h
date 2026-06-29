@@ -6,7 +6,6 @@
 #pragma once
 
 #include <DreamPlayer/DreamPlayer.h>
-#include <FFmpegPlayer/mediaClock.h>
 #include <common/dataHandler.hpp>
 #include <common/dreamThread.hpp>
 
@@ -72,6 +71,4 @@ private:
     std::unique_ptr<VideoDecodec> videoDecodec_;
     std::unique_ptr<AudioDecodec> audioDecodec_;
     std::mutex mtx_{};
-
-    MediaClock clock_{};
 };

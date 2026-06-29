@@ -73,21 +73,19 @@ bool FFmpegPlayer::open(const char* url) {
     uint32_t* videoPktQueSerial = &videoDecodec_->getSerial();
     uint32_t* audioPktQueSerial = &audioDecodec_->getSerial();
 
-    clock_.initClock(videoPktQueSerial, audioPktQueSerial);
-    videoDecodec_->setMediaClock(&clock_);
-    audioDecodec_->setMediaClock(&clock_);
+    FFINSTANCE()->initClock(videoPktQueSerial, audioPktQueSerial);
 
     return true;
 }
 
 void FFmpegPlayer::play() {
-    clock_.resumeMasterClock();
+    FFINSTANCE()->resumeMasterClock();
     videoDecodec_->setPause(false);
     audioDecodec_->setPause(false);
 }
 
 void FFmpegPlayer::pause() {
-    clock_.pauseMasterClock();
+    FFINSTANCE()->pauseMasterClock();
     videoDecodec_->setPause(true);
     audioDecodec_->setPause(true);
 }
@@ -96,9 +94,9 @@ void FFmpegPlayer::stop() {
     audioDecodec_->shutdown();
     videoDecodec_->shutdown();
 
-    demuxer_->exit();
     audioDecodec_->exit();
     videoDecodec_->exit();
+    demuxer_->exit();
     exit();
 }
 
@@ -111,15 +109,10 @@ uint32_t FFmpegPlayer::getHeight() {
 }
 
 void FFmpegPlayer::seek(double targetPos, double seekRel) {
-    resetPlaybackState();
-
-    uint32_t serial = audioDecodec_->getSerial();
-    if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
-        serial = videoDecodec_->getSerial();
+    if (demuxer_->seekRequest(targetPos, seekRel)) {
+        av_log(nullptr, AV_LOG_INFO, "seek to %f\n", targetPos);
+        resetPlaybackState();
     }
-    clock_.setMasterClock(targetPos, serial, CURRENT_TIME);
-
-    demuxer_->seekRequest(targetPos, seekRel);
 }
 
 uint32_t FFmpegPlayer::getDuration() const {
@@ -131,7 +124,7 @@ double FFmpegPlayer::getCurrentTime() {
     checkPlaybackCompleted();
 
     static double cachedTime = 0;
-    double currentTime = clock_.getMasterClock();
+    double currentTime = FFINSTANCE()->getMasterClock();
     if (!isnan(currentTime)) {
         cachedTime = currentTime;
     }
@@ -145,19 +138,19 @@ double FFmpegPlayer::getCurrentTime() {
 }
 
 float FFmpegPlayer::getSpeed() {
-    return clock_.getSpeed();
+    return FFINSTANCE()->getSpeed();
 }
 
 void FFmpegPlayer::setSpeed(double speed) {
     uint32_t serial = audioDecodec_->getSerial();
-    double pts = clock_.getAudioPTS();
+    double pts = FFINSTANCE()->getAudioPTS();
     if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
         serial = videoDecodec_->getSerial();
-        pts = clock_.getVideoPTS();
+        pts = FFINSTANCE()->getAudioPTS();
     }
-    clock_.setMasterClock(pts, serial, CURRENT_TIME);
+    FFINSTANCE()->setMasterClock(pts, serial, CURRENT_TIME);
 
-    clock_.setSpeed(speed);
+    FFINSTANCE()->setSpeed(speed);
     audioDecodec_->setSpeed(speed);
 }
 
@@ -171,7 +164,7 @@ void FFmpegPlayer::getAudioFrame(AudioFrame* audioFrame) {
 
 void FFmpegPlayer::updateAudioClock(double pts) {
     uint32_t serial = audioDecodec_->getSerial();
-    clock_.setAudioClock(pts, serial, CURRENT_TIME);
+    FFINSTANCE()->setAudioClock(pts, serial, CURRENT_TIME);
 }
 
 void FFmpegPlayer::setOnAudioSeekCallback(const OnSeekCallback& cb) {
@@ -256,10 +249,10 @@ void FFmpegPlayer::markPlaybackCompleted() {
     }
 
     playbackCompleted_ = true;
-    clock_.pauseMasterClock();
+    FFINSTANCE()->pauseMasterClock();
 
     const double duration = demuxer_->getDuration();
-    const double currentTime = clock_.getMasterClock();
+    const double currentTime = FFINSTANCE()->getMasterClock();
     if (isnan(currentTime)) {
         return;
     }
@@ -268,7 +261,7 @@ void FFmpegPlayer::markPlaybackCompleted() {
         if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
             serial = videoDecodec_->getSerial();
         }
-        clock_.setMasterClock(duration, serial, CURRENT_TIME);
+        FFINSTANCE()->setMasterClock(duration, serial, CURRENT_TIME);
     }
 
     shutdown();
@@ -282,7 +275,7 @@ void FFmpegPlayer::markPlaybackCompleted() {
 
 void FFmpegPlayer::resetPlaybackState() {
     playbackCompleted_ = false;
-    clock_.resumeMasterClock();
+    FFINSTANCE()->resumeMasterClock();
 
     audioDecodec_->reopen();
     videoDecodec_->reopen();

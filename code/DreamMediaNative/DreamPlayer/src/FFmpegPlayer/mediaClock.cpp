@@ -48,19 +48,6 @@ void MediaClock::initClock(uint32_t* videoPktQueSerial, uint32_t* audioPktQueSer
     audioClock_.init(audioPktQueSerial);
 }
 
-double MediaClock::getMasterClock() const {
-    SyncType syncType = FFINSTANCE()->getSyncType();
-
-    switch (syncType) {
-    case SyncType::VideoMaster:
-        return videoClock_.getTime();
-    case SyncType::AudioMaster:
-        return audioClock_.getTime();
-    }
-
-    return 0;
-}
-
 double MediaClock::getVideoClock() const {
     return videoClock_.getTime();
 }
@@ -85,19 +72,6 @@ double MediaClock::getAudioPTS() const {
     return audioClock_.pts;
 }
 
-void MediaClock::setMasterClock(double pts, uint32_t serial, double time) {
-    SyncType syncType = FFINSTANCE()->getSyncType();
-
-    switch (syncType) {
-    case SyncType::VideoMaster:
-        videoClock_.setTime(pts, serial, time);
-        break;
-    case SyncType::AudioMaster:
-        audioClock_.setTime(pts, serial, time);
-        break;
-    }
-}
-
 void MediaClock::setVideoClock(double pts, uint32_t serial, double time) {
     videoClock_.setTime(pts, serial, time);
 }
@@ -119,18 +93,19 @@ void MediaClock::setSpeed(float speed) {
     audioClock_.speed = speed;
 }
 
-void MediaClock::pauseMasterClock() {
-    SyncType syncType = FFINSTANCE()->getSyncType();
-    Clock* masterClock = syncType == SyncType::VideoMaster ? &videoClock_ : &audioClock_;
-
-    double currentTime = masterClock->getTime();
-    if (!isnan(currentTime)) {
-        masterClock->setTime(currentTime, masterClock->getSerial(), CURRENT_TIME);
-    }
-    masterClock->paused = true;
+void MediaClock::pauseVideoClock() {
+    double currentPTS = videoClock_.getTime();
+    uint32_t serial = videoClock_.serial;
+    videoClock_.setTime(currentPTS, serial, CURRENT_TIME);
 }
 
-void MediaClock::resumeMasterClock() {
+void MediaClock::pauseAudioClock() {
+    double currentPTS = audioClock_.getTime();
+    uint32_t serial = audioClock_.serial;
+    audioClock_.setTime(currentPTS, serial, CURRENT_TIME);
+}
+
+void MediaClock::resumeClock() {
     videoClock_.paused = false;
     audioClock_.paused = false;
 }

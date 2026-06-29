@@ -215,6 +215,7 @@ void PlayerController::onTimerUpdate() {
     }
 
     uint32_t cur = (uint32_t)player_->getCurrentTime();
+    qDebug() << "current time" << cur;
     QString newText = QString("%1/%2").arg(formatTimeFromSeconds(cur), formatTimeFromSeconds(duration_));
 
     if (progressText_ != newText) {

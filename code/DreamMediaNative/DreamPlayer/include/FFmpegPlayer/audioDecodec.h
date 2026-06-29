@@ -10,7 +10,6 @@
 #include <FFmpegPlayer/avframePool.hpp>
 
 #include <atomic>
-#include <mutex>
 
 extern "C" {
     struct SwrContext;
@@ -51,7 +50,6 @@ private:
     SwrContext* swrCtx_ = nullptr;
     std::unique_ptr<AudioSpeedFilter> audioSpeedFilter_;
     std::atomic<float> speed_ = 1.0f;
-    std::mutex mtx_{};
     std::vector<AVFrame*> paddingFrames_;
 
     uint64_t cachedChannelLayout_ = 0;

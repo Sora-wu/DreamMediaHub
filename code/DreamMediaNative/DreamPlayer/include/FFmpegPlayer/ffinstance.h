@@ -7,6 +7,7 @@
 
 #include <FFmpegPlayer/ffcore.h>
 #include <DreamPlayer/structs.h>
+#include <FFmpegPlayer/mediaClock.h>
 
 #include <cassert>
 
@@ -35,6 +36,25 @@ public:
         return &flushPkt_;
     }
 
+    void initClock(uint32_t* videoPktQueSerial, uint32_t* audioPktQueSerial);
+    [[nodiscard]] double getMasterClock() const;
+    [[nodiscard]] double getVideoClock() const;
+    [[nodiscard]] double getAudioClock() const;
+    [[nodiscard]] double getMasterSerial() const;
+    [[nodiscard]] uint32_t getVideoSerial() const;
+    [[nodiscard]] uint32_t getAudioSerial() const;
+    [[nodiscard]] double getVideoPTS() const;
+    [[nodiscard]] double getAudioPTS() const;
+    void setMasterClock(double pts, uint32_t serial, double time);
+    void setVideoClock(double pts, uint32_t serial, double time);
+    void setAudioClock(double pts, uint32_t serial, double time);
+
+    float getSpeed() const;
+    void setSpeed(float speed);
+
+    void pauseMasterClock();
+    void resumeMasterClock();
+
 private:
     FFInstance();
 
@@ -45,6 +65,7 @@ private:
     AVPacket flushPkt_{};
 
     Dream::SyncType syncType_ = Dream::SyncType::AudioMaster;
+    MediaClock clock_{};
 };
 
 #define FFINSTANCE FFInstance::instance

@@ -3,14 +3,21 @@
 // Mail: sora-wu@foxmail.com
 //
 
-#include <mutex>
 #include <FFmpegPlayer/demuxer.h>
 #include <FFmpegPlayer/ffcore.h>
 #include <FFmpegPlayer/ffinstance.h>
 
+#include <mutex>
 #include <chrono>
 
 using namespace::std::literals;
+
+Demuxer::~Demuxer() {
+    if (fmtCtx_) {
+        avformat_close_input(&fmtCtx_);
+        fmtCtx_ = nullptr;
+    }
+}
 
 bool Demuxer::open(const char* url) {
     int res = avformat_open_input(&fmtCtx_, url, nullptr, nullptr);
@@ -33,6 +40,8 @@ bool Demuxer::open(const char* url) {
     duration_ = (double)fmtCtx_->duration / AV_TIME_BASE;
     isEof_ = false;
     FFINSTANCE()->setFormatContext(fmtCtx_);
+
+    av_dump_format(fmtCtx_, 0, url, 0);
 
     return true;
 }
@@ -80,11 +89,19 @@ void Demuxer::run(std::stop_token st) {
     av_log(nullptr, AV_LOG_INFO, "Demuxer exit\n");
 }
 
-void Demuxer::seekRequest(double targetPos, double seekRel) {
+bool Demuxer::seekRequest(double targetPos, double seekRel) {
     std::lock_guard lock(mtxRead_);
+
+    // 如果已经被请求过了，直接返回
+    if (hasSeekRequest_) {
+        return false;
+    }
+
     seekTargetPos_ = targetPos;
     seekRel_ = seekRel;
     hasSeekRequest_ = true;
+
+    return true;
 }
 
 void Demuxer::seek() {
@@ -107,6 +124,10 @@ void Demuxer::seek() {
             flushPkt->stream_index = stream->index;
             handle(flushPkt);
         }
+
+        // seek成功更新时钟
+        uint32_t serial = FFINSTANCE()->getMasterSerial();
+        FFINSTANCE()->setMasterClock(seekTargetPos_, serial, CURRENT_TIME);
 
         isEof_ = false;
     }

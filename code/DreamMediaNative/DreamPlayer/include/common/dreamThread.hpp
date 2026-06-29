@@ -25,11 +25,11 @@ public:
         }
     }
 
+    virtual void run(std::stop_token st) = 0;
+
     void exit() {
         thread_.request_stop();
     }
-
-    virtual void run(std::stop_token st) = 0;
 
     static void msleep(uint32_t ms) {
         std::this_thread::sleep_for(std::chrono::milliseconds(ms));

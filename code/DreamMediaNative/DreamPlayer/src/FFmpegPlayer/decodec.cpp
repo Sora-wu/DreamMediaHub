@@ -67,6 +67,8 @@ void Decodec::shutdown() {
 }
 
 void Decodec::cleanup() {
+    std::lock_guard lock(mtx_);
+
     if (codecCtx_) {
         avcodec_free_context(&codecCtx_);
         codecCtx_ = nullptr;
@@ -119,6 +121,7 @@ bool Decodec::decodeFrame(AVFrame* frame) {
             }
         } while (pktQue_.getSerial() != decodecSerial_);
 
+        std::lock_guard lock(mtx_);
         if (prePkt->data == FFINSTANCE()->getFlushPkt()->data) {
             avcodec_flush_buffers(codecCtx_);
             finishedSerial_ = 0;

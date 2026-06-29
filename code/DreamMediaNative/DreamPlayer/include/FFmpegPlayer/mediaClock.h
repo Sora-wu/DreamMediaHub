@@ -29,22 +29,22 @@ class MediaClock {
 
 public:
     void initClock(uint32_t* videoPktQueSerial, uint32_t* audioPktQueSerial);
-    [[nodiscard]] double getMasterClock() const;
     [[nodiscard]] double getVideoClock() const;
     [[nodiscard]] double getAudioClock() const;
     [[nodiscard]] uint32_t getVideoSerial() const;
     [[nodiscard]] uint32_t getAudioSerial() const;
     [[nodiscard]] double getVideoPTS() const;
     [[nodiscard]] double getAudioPTS() const;
-    void setMasterClock(double pts, uint32_t serial, double time);
     void setVideoClock(double pts, uint32_t serial, double time);
     void setAudioClock(double pts, uint32_t serial, double time);
 
     float getSpeed() const;
     void setSpeed(float speed);
 
-    void pauseMasterClock();
-    void resumeMasterClock();
+    void pauseVideoClock();
+    void pauseAudioClock();
+
+    void resumeClock();
 
 private:
     Clock videoClock_;

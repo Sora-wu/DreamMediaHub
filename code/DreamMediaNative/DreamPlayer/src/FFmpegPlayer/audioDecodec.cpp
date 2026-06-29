@@ -153,6 +153,8 @@ void AudioDecodec::cleanup() {
         swrCtx_ = nullptr;
     }
 
+    audioSpeedFilter_.reset();
+
     cachedSampleRate_ = 0;
     cachedChannelLayout_ = 0;
     cachedFormat_ = AV_SAMPLE_FMT_NONE;
@@ -202,7 +204,7 @@ bool AudioDecodec::adjustSamples(AVFrame* frame) {
     const int nbSamples = frame->nb_samples;
     if (FFINSTANCE()->getSyncType() != SyncType::AudioMaster) {
         int wantedNbSamples = 0;
-        double diff = mediaClock_->getAudioClock() - mediaClock_->getMasterClock();
+        const double diff = FFINSTANCE()->getAudioClock() - FFINSTANCE()->getMasterClock();
 
         if (!std::isnan(diff) && std::fabs(diff) < AV_NOSYNC_THRESHOLD) {
             audioDiffCum_ = diff + audioDiffAvgCoef_ * audioDiffCum_;

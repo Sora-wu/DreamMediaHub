@@ -7,6 +7,7 @@
 
 #include <common/dataHandler.hpp>
 #include <common/dreamThread.hpp>
+#include <FFmpegPlayer/mediaClock.h>
 
 #include <vector>
 #include <condition_variable>
@@ -18,7 +19,7 @@ extern "C" {
 
 class Demuxer : public DataHandler, public DreamThread {
 public:
-    ~Demuxer() override = default;
+    ~Demuxer() override;
 
     [[nodiscard]] bool open(const char* url);
     [[nodiscard]] uint32_t getDuration() const {
@@ -36,7 +37,7 @@ public:
     void startDemux();
     void run(std::stop_token st) override;
 
-    void seekRequest(double targetPos, double seekRel);
+    bool seekRequest(double targetPos, double seekRel);
 
 private:
     void seek();
@@ -54,4 +55,5 @@ private:
     double seekRel_ = 0;
     std::condition_variable cvRead_;
     std::mutex mtxRead_;
+    MediaClock* mediaClock_ = nullptr;
 };
