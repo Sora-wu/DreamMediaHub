@@ -28,9 +28,9 @@ public:
         serial_ = serial;
     }
 
-    [[nodiscard]] uint32_t getSerial() const {
+    [[nodiscard]] uint32_t* getSerial() {
         std::lock_guard lk(mutex_);
-        return serial_;
+        return &serial_;
     }
 
     [[nodiscard]] uint64_t getDuration() {

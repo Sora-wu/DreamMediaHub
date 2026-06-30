@@ -72,12 +72,43 @@ void FFInstance::setMasterClock(double pts, uint32_t serial, double time) {
     clock_.setAudioClock(pts, serial, time);
 }
 
+void FFInstance::setMasterClock(double pts, uint32_t serial) {
+    if (syncType_ == Dream::SyncType::VideoMaster) {
+        clock_.setVideoClock(pts, serial);
+    }
+
+    clock_.setAudioClock(pts, serial);
+}
+void FFInstance::setMasterClock(double pts, double time) {
+    if (syncType_ == Dream::SyncType::VideoMaster) {
+        clock_.setVideoClock(pts, time);
+    }
+
+    clock_.setAudioClock(pts, time);
+}
+
 void FFInstance::setVideoClock(double pts, uint32_t serial, double time) {
     clock_.setVideoClock(pts, serial, time);
 }
 
 void FFInstance::setAudioClock(double pts, uint32_t serial, double time) {
     clock_.setAudioClock(pts, serial, time);
+}
+
+void FFInstance::setVideoClock(double pts, uint32_t serial) {
+    clock_.setVideoClock(pts, serial);
+}
+
+void FFInstance::setAudioClock(double pts, uint32_t serial) {
+    clock_.setAudioClock(pts, serial);
+}
+
+void FFInstance::setVideoClock(double pts, double time) {
+    clock_.setVideoClock(pts, time);
+}
+
+void FFInstance::setAudioClock(double pts, double time) {
+    clock_.setAudioClock(pts, time);
 }
 
 float FFInstance::getSpeed() const {

@@ -85,7 +85,7 @@ bool Decodec::decodeFrame(AVFrame* frame) {
     int res = AVERROR(EAGAIN);
 
     while (true) {
-        if (pktQue_.getSerial() == decodecSerial_) {
+        if (*pktQue_.getSerial() == decodecSerial_) {
             do {
                 res = avcodec_receive_frame(codecCtx_, frame);
                 if (res >= 0) {
@@ -115,11 +115,11 @@ bool Decodec::decodeFrame(AVFrame* frame) {
                 decodecSerial_ = serial;
 
                 prePkt = &pkt;
-                if (pktQue_.getSerial() != decodecSerial_) {
+                if (*pktQue_.getSerial() != decodecSerial_) {
                     av_packet_unref(&pkt);
                 }
             }
-        } while (pktQue_.getSerial() != decodecSerial_);
+        } while (*pktQue_.getSerial() != decodecSerial_);
 
         std::lock_guard lock(mtx_);
         if (prePkt->data == FFINSTANCE()->getFlushPkt()->data) {
@@ -163,7 +163,7 @@ bool Decodec::acquireFrame(Frame& out) {
             return false;
         }
 
-        if (frameOpt->serial != pktQue_.getSerial()) {
+        if (frameOpt->serial != *pktQue_.getSerial()) {
             releaseFrame(*frameOpt);
             decodeTimerValid_ = false;
             continue;
@@ -184,12 +184,12 @@ void Decodec::releaseFrame(Frame& frame) {
     frame = {};
 }
 
-bool Decodec::isDecodeFinished() const {
+bool Decodec::isDecodeFinished() {
     if (finishedSerial_ == 0) {
         return false;
     }
 
-    return finishedSerial_ == pktQue_.getSerial();
+    return finishedSerial_ == *pktQue_.getSerial();
 }
 
 bool Decodec::hasBufferedFrames() const {

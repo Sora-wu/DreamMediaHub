@@ -125,9 +125,11 @@ void Demuxer::seek() {
             handle(flushPkt);
         }
 
+        av_log(nullptr, AV_LOG_INFO, "seek to %f\n", seekTargetPos_);
+        FFINSTANCE()->resumeMasterClock();
         // seek成功更新时钟
-        uint32_t serial = FFINSTANCE()->getMasterSerial();
-        FFINSTANCE()->setMasterClock(seekTargetPos_, serial, CURRENT_TIME);
+        FFINSTANCE()->setAudioClock(seekTargetPos_, CURRENT_TIME);
+        FFINSTANCE()->setVideoClock(seekTargetPos_, CURRENT_TIME);
 
         isEof_ = false;
     }

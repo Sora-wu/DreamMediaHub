@@ -42,6 +42,11 @@ void MediaClock::Clock::setTime(double pts, uint32_t serial, double time) {
     this->serial = serial;
 }
 
+void MediaClock::Clock::setTime(double pts, double time) {
+    this->pts = pts;
+    this->lastUpdatedTime = time;
+}
+
 //////////////////////////MediaClock///////////////////////////////////////
 void MediaClock::initClock(uint32_t* videoPktQueSerial, uint32_t* audioPktQueSerial) {
     videoClock_.init(videoPktQueSerial);
@@ -78,6 +83,22 @@ void MediaClock::setVideoClock(double pts, uint32_t serial, double time) {
 
 void MediaClock::setAudioClock(double pts, uint32_t serial, double time) {
     audioClock_.setTime(pts, serial, time);
+}
+
+void MediaClock::setVideoClock(double pts, uint32_t serial) {
+    videoClock_.setTime(pts, serial);
+}
+
+void MediaClock::setAudioClock(double pts, uint32_t serial) {
+    audioClock_.setTime(pts, serial);
+}
+
+void MediaClock::setVideoClock(double pts, double time) {
+    videoClock_.setTime(pts, time);
+}
+
+void MediaClock::setAudioClock(double pts, double time) {
+    videoClock_.setTime(pts, time);
 }
 
 float MediaClock::getSpeed() const {

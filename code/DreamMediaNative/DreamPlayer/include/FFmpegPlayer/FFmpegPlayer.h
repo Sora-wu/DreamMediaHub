@@ -50,6 +50,7 @@ public:
     void setMasterMode(Dream::SyncType syncType) override;
     [[nodiscard]] Dream::SyncType getMasterMode() const override;
 
+    // 处理来自解封装器的数据
     void handle(void* data) override;
 private:
     // 检测线程
@@ -59,7 +60,7 @@ private:
     // 仅检测线程
     bool checkPlaybackCompleted();
     void markPlaybackCompleted();
-    void resetPlaybackState();
+    // void resetPlaybackState();
 
 private:
     bool pause_ = false;

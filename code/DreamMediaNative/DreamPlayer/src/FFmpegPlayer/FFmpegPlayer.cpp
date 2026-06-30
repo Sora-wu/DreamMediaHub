@@ -70,9 +70,8 @@ bool FFmpegPlayer::open(const char* url) {
     videoDecodec_->startDecode();
     audioDecodec_->startDecode();
 
-    uint32_t* videoPktQueSerial = &videoDecodec_->getSerial();
-    uint32_t* audioPktQueSerial = &audioDecodec_->getSerial();
-
+    uint32_t* videoPktQueSerial = videoDecodec_->getPktQueSerial();
+    uint32_t* audioPktQueSerial = audioDecodec_->getPktQueSerial();
     FFINSTANCE()->initClock(videoPktQueSerial, audioPktQueSerial);
 
     return true;
@@ -110,8 +109,7 @@ uint32_t FFmpegPlayer::getHeight() {
 
 void FFmpegPlayer::seek(double targetPos, double seekRel) {
     if (demuxer_->seekRequest(targetPos, seekRel)) {
-        av_log(nullptr, AV_LOG_INFO, "seek to %f\n", targetPos);
-        resetPlaybackState();
+        playbackCompleted_ = false;
     }
 }
 
@@ -142,13 +140,8 @@ float FFmpegPlayer::getSpeed() {
 }
 
 void FFmpegPlayer::setSpeed(double speed) {
-    uint32_t serial = audioDecodec_->getSerial();
     double pts = FFINSTANCE()->getAudioPTS();
-    if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
-        serial = videoDecodec_->getSerial();
-        pts = FFINSTANCE()->getAudioPTS();
-    }
-    FFINSTANCE()->setMasterClock(pts, serial, CURRENT_TIME);
+    FFINSTANCE()->setMasterClock(pts, CURRENT_TIME);
 
     FFINSTANCE()->setSpeed(speed);
     audioDecodec_->setSpeed(speed);
@@ -163,8 +156,7 @@ void FFmpegPlayer::getAudioFrame(AudioFrame* audioFrame) {
 }
 
 void FFmpegPlayer::updateAudioClock(double pts) {
-    uint32_t serial = audioDecodec_->getSerial();
-    FFINSTANCE()->setAudioClock(pts, serial, CURRENT_TIME);
+    FFINSTANCE()->setAudioClock(pts, CURRENT_TIME);
 }
 
 void FFmpegPlayer::setOnAudioSeekCallback(const OnSeekCallback& cb) {
@@ -196,9 +188,15 @@ void FFmpegPlayer::handle(void* data) {
 
     if (pkt->stream_index == videoDecodec_->getStreamIndex()) {
         videoDecodec_->handle(pkt);
+        if (pkt == FFINSTANCE()->getFlushPkt()) {
+            videoDecodec_->reopen();
+        }
     }
     else if (pkt->stream_index == audioDecodec_->getStreamIndex()) {
         audioDecodec_->handle(pkt);
+        if (pkt == FFINSTANCE()->getFlushPkt()) {
+            audioDecodec_->reopen();
+        }
     }
 }
 
@@ -257,11 +255,7 @@ void FFmpegPlayer::markPlaybackCompleted() {
         return;
     }
     if (currentTime > duration) {
-        uint32_t serial = audioDecodec_->getSerial();
-        if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
-            serial = videoDecodec_->getSerial();
-        }
-        FFINSTANCE()->setMasterClock(duration, serial, CURRENT_TIME);
+        FFINSTANCE()->setMasterClock(duration, CURRENT_TIME);
     }
 
     shutdown();
@@ -273,10 +267,6 @@ void FFmpegPlayer::markPlaybackCompleted() {
     }
 }
 
-void FFmpegPlayer::resetPlaybackState() {
-    playbackCompleted_ = false;
-    FFINSTANCE()->resumeMasterClock();
-
-    audioDecodec_->reopen();
-    videoDecodec_->reopen();
-}
+// void FFmpegPlayer::resetPlaybackState() {
+    
+// }

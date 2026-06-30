@@ -40,8 +40,8 @@ public:
         return streamIndex_;
     }
 
-    [[nodiscard]] uint32_t& getSerial() {
-        return decodecSerial_;
+    [[nodiscard]] uint32_t* getPktQueSerial() {
+        return pktQue_.getSerial();
     }
 
     [[nodiscard]] uint64_t getTimer() const {
@@ -52,7 +52,7 @@ public:
 
     void shutdown();
 
-    [[nodiscard]] bool isDecodeFinished() const;
+    [[nodiscard]] bool isDecodeFinished();
     [[nodiscard]] bool hasBufferedFrames() const;
     void setPause(bool isPause) {
         isPause_ = isPause;

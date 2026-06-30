@@ -15,6 +15,7 @@ class MediaClock {
         double getTime() const;
         void setTime(double pts, uint32_t serial);
         void setTime(double pts, uint32_t serial, double time);
+        void setTime(double pts, double time);
         uint32_t getSerial() const {
             return serial;
         }
@@ -37,6 +38,10 @@ public:
     [[nodiscard]] double getAudioPTS() const;
     void setVideoClock(double pts, uint32_t serial, double time);
     void setAudioClock(double pts, uint32_t serial, double time);
+    void setVideoClock(double pts, uint32_t serial);
+    void setAudioClock(double pts, uint32_t serial);
+    void setVideoClock(double pts, double time);
+    void setAudioClock(double pts, double time);
 
     float getSpeed() const;
     void setSpeed(float speed);

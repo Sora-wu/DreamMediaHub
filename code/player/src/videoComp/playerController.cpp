@@ -44,7 +44,7 @@ PlayerController::PlayerController(QObject* parent) {
 #ifdef PLATFORM_LINUX
     open("/home/sora/Videos/test.mp4");
 #else
-    open("D:/Desktop/Test/test31.mp4");
+    open("D:/Desktop/Test/test56.mp4");
 #endif
     isPlaying_ = true;
 

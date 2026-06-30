@@ -46,8 +46,14 @@ public:
     [[nodiscard]] double getVideoPTS() const;
     [[nodiscard]] double getAudioPTS() const;
     void setMasterClock(double pts, uint32_t serial, double time);
+    void setMasterClock(double pts, uint32_t serial);
+    void setMasterClock(double pts, double time);
     void setVideoClock(double pts, uint32_t serial, double time);
     void setAudioClock(double pts, uint32_t serial, double time);
+    void setVideoClock(double pts, uint32_t serial);
+    void setAudioClock(double pts, uint32_t serial);
+    void setVideoClock(double pts, double time);
+    void setAudioClock(double pts, double time);
 
     float getSpeed() const;
     void setSpeed(float speed);
