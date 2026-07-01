@@ -15,6 +15,7 @@ namespace Dream {
         virtual bool open(const char* url) = 0;
         virtual void play() = 0;
         virtual void pause() = 0;
+        virtual bool isPlaying() const = 0;
         virtual void stop() = 0;
 
         [[nodiscard]] virtual uint32_t getWidth() = 0;
@@ -36,7 +37,7 @@ namespace Dream {
         virtual void getAudioFrame(AudioFrame* audioFrame) = 0;
 
         // 由于native只负责解码出帧，音频播放位置需要外部回传
-        virtual void updateAudioClock(double pts) = 0;
+        virtual void updateAudioClock(double pts, uint32_t serial) = 0;
 
         // 当有seek操作时，会调用回调
         // 由于native只负责解码出帧，清空外部缓存需要注册于此（比如外部音频缓存）

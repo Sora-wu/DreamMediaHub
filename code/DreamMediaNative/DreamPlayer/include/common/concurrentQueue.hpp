@@ -36,6 +36,8 @@ public:
     void reopen() {
         std::lock_guard lock(mutex_);
         closed_ = false;
+        cvEmpty_.notify_all();
+        cvFull_.notify_all();
     }
 
     [[nodiscard]] bool isClosed() const {

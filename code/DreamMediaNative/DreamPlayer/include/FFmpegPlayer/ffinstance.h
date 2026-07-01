@@ -59,6 +59,7 @@ public:
     void setSpeed(float speed);
 
     void pauseMasterClock();
+    bool getMasterClockPause();
     void resumeMasterClock();
 
 private:

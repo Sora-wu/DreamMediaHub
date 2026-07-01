@@ -6,8 +6,8 @@
 #pragma once
 
 #include <DreamPlayer/define.h>
-#include <functional>
 
+#include <functional>
 #include <cstdint>
 
 namespace Dream {
@@ -45,6 +45,7 @@ namespace Dream {
         int len{};
         uint32_t capacity = 0;
         double pts{};
+        uint32_t serial = 0;
         bool isUpdated = false;
 
         void clear() {

@@ -89,6 +89,10 @@ void FFmpegPlayer::pause() {
     audioDecodec_->setPause(true);
 }
 
+bool FFmpegPlayer::isPlaying() const {
+    return FFINSTANCE()->getMasterClockPause();
+}
+
 void FFmpegPlayer::stop() {
     audioDecodec_->shutdown();
     videoDecodec_->shutdown();
@@ -108,9 +112,7 @@ uint32_t FFmpegPlayer::getHeight() {
 }
 
 void FFmpegPlayer::seek(double targetPos, double seekRel) {
-    if (demuxer_->seekRequest(targetPos, seekRel)) {
-        playbackCompleted_ = false;
-    }
+    demuxer_->seekRequest(targetPos, seekRel);
 }
 
 uint32_t FFmpegPlayer::getDuration() const {
@@ -122,7 +124,7 @@ double FFmpegPlayer::getCurrentTime() {
     checkPlaybackCompleted();
 
     static double cachedTime = 0;
-    double currentTime = FFINSTANCE()->getMasterClock();
+        double currentTime = FFINSTANCE()->getMasterClock();
     if (!isnan(currentTime)) {
         cachedTime = currentTime;
     }
@@ -155,8 +157,8 @@ void FFmpegPlayer::getAudioFrame(AudioFrame* audioFrame) {
     audioDecodec_->getAudioFrame(audioFrame);
 }
 
-void FFmpegPlayer::updateAudioClock(double pts) {
-    FFINSTANCE()->setAudioClock(pts, CURRENT_TIME);
+void FFmpegPlayer::updateAudioClock(double pts, uint32_t serial) {
+    FFINSTANCE()->setAudioClock(pts, serial);
 }
 
 void FFmpegPlayer::setOnAudioSeekCallback(const OnSeekCallback& cb) {
@@ -190,12 +192,14 @@ void FFmpegPlayer::handle(void* data) {
         videoDecodec_->handle(pkt);
         if (pkt == FFINSTANCE()->getFlushPkt()) {
             videoDecodec_->reopen();
+            playbackCompleted_ = false;
         }
     }
     else if (pkt->stream_index == audioDecodec_->getStreamIndex()) {
         audioDecodec_->handle(pkt);
         if (pkt == FFINSTANCE()->getFlushPkt()) {
             audioDecodec_->reopen();
+            playbackCompleted_ = false;
         }
     }
 }

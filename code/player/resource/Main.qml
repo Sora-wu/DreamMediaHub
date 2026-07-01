@@ -26,13 +26,11 @@ Window {
 
         Keys.onPressed: (event)=> {
             if (event.key === Qt.Key_Left) {
-                var newPos = Math.max(0, playerCtrl.currentProgress - 5);
-                playerCtrl.seek(newPos, -5)
+                playerCtrl.seekRelative(-5)
                 event.accepted = true
             }
             else if (event.key === Qt.Key_Right) {
-                newPos = Math.min(playerCtrl.duration, playerCtrl.currentProgress + 5);
-                playerCtrl.seek(newPos, 5)
+                playerCtrl.seekRelative(5)
                 event.accepted = true
             }
             else if (event.key === Qt.Key_Space) {
@@ -40,12 +38,12 @@ Window {
                 event.accepted = true
             }
             else if (event.key === Qt.Key_BracketLeft) {
-                var speed = Math.max(playerCtrl.speed - 0.1, 0.5);
-                playerCtrl.speed = speed;
+                playerCtrl.speed = Math.max(playerCtrl.speed - 0.1, 0.5);
+                event.accepted = true
             }
             else if (event.key === Qt.Key_BracketRight) {
-                speed = Math.min(playerCtrl.speed + 0.1, 2.0);
-                playerCtrl.speed = speed;
+                playerCtrl.speed = Math.min(playerCtrl.speed + 0.1, 2.0);
+                event.accepted = true
             }
         }
 

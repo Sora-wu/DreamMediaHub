@@ -48,6 +48,8 @@ public:
 
     void pauseVideoClock();
     void pauseAudioClock();
+    bool getVideoClockPause();
+    bool getAudioClockPause();
 
     void resumeClock();
 

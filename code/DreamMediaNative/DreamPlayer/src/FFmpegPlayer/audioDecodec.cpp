@@ -113,6 +113,7 @@ void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
         decodecTimer_ = ap.pts + ap.duration;
     }
     audioFrame->pts = decodecTimer_;
+    audioFrame->serial = ap.serial;
 
     if (fillData(frame, audioFrame) && !isPause_) {
         audioFrame->isUpdated = true;

@@ -121,8 +121,18 @@ void FFInstance::setSpeed(float speed) {
 
 void FFInstance::pauseMasterClock() {
     if (syncType_ == Dream::SyncType::VideoMaster) {
-        
+        clock_.pauseVideoClock();
     }
+
+    clock_.pauseAudioClock();
+}
+
+bool FFInstance::getMasterClockPause() {
+    if (syncType_ == Dream::SyncType::VideoMaster) {
+        return clock_.getVideoClockPause();
+    }
+
+    return clock_.getAudioClockPause();
 }
 
 void FFInstance::resumeMasterClock() {

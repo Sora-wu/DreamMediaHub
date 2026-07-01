@@ -89,19 +89,12 @@ void Demuxer::run(std::stop_token st) {
     av_log(nullptr, AV_LOG_INFO, "Demuxer exit\n");
 }
 
-bool Demuxer::seekRequest(double targetPos, double seekRel) {
+void Demuxer::seekRequest(double targetPos, double seekRel) {
     std::lock_guard lock(mtxRead_);
-
-    // 如果已经被请求过了，直接返回
-    if (hasSeekRequest_) {
-        return false;
-    }
 
     seekTargetPos_ = targetPos;
     seekRel_ = seekRel;
     hasSeekRequest_ = true;
-
-    return true;
 }
 
 void Demuxer::seek() {
@@ -125,7 +118,7 @@ void Demuxer::seek() {
             handle(flushPkt);
         }
 
-        av_log(nullptr, AV_LOG_INFO, "seek to %f\n", seekTargetPos_);
+        av_log(nullptr, AV_LOG_INFO, "demuxer seek to %f\n", seekTargetPos_);
         FFINSTANCE()->resumeMasterClock();
         // seek成功更新时钟
         FFINSTANCE()->setAudioClock(seekTargetPos_, CURRENT_TIME);

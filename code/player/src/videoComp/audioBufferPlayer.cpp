@@ -65,6 +65,7 @@ void AudioBufferDevice::pull(std::stop_token st) {
 
             AudioSegment segment{};
             segment.pts = audioFrame.pts;
+            segment.serial = audioFrame.serial;
             segment.data.assign(audioFrame.data, audioFrame.data + audioFrame.len);
             segQue_.push_back(std::move(segment));
             dataLen_ += audioFrame.len;
@@ -137,7 +138,8 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     constexpr double bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * SAMPLE_SIZE;
     const double speed = player_->getSpeed();
     const double currentPTS = currentSeg.pts + ((double)(currentSeg.offset + readLen) / bytesPerSec) * speed;
-    player_->updateAudioClock(currentPTS);
+    // 回传
+    player_->updateAudioClock(currentPTS, currentSeg.serial);
 
     while (needReadLen) {
         AudioSegment& seg = segQue_.front();

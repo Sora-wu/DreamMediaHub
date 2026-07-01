@@ -21,6 +21,7 @@ class AudioBufferDevice final : public QIODevice {
     struct AudioSegment {
         std::vector<char> data;
         double pts{};
+        uint32_t serial{};
         uint32_t offset{};
     };
 

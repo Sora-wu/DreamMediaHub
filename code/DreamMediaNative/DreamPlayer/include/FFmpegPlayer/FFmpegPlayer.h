@@ -24,6 +24,7 @@ public:
     bool open(const char* url) override;
     void play() override;
     void pause() override;
+    bool isPlaying() const override;
     void stop() override;
 
     [[nodiscard]] uint32_t getWidth() override;
@@ -39,7 +40,7 @@ public:
     void getVideoFrame(Dream::VideoFrame* videoFrame) override;
     void getAudioFrame(Dream::AudioFrame* audioFrame) override;
 
-    void updateAudioClock(double pts) override;
+    void updateAudioClock(double pts, uint32_t serial) override;
 
     void setOnAudioSeekCallback(const Dream::OnSeekCallback& cb) override;
     void setOnVideoSeekCallback(const Dream::OnSeekCallback& cb) override;

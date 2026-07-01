@@ -37,7 +37,7 @@ public:
     void startDemux();
     void run(std::stop_token st) override;
 
-    bool seekRequest(double targetPos, double seekRel);
+    void seekRequest(double targetPos, double seekRel);
 
 private:
     void seek();

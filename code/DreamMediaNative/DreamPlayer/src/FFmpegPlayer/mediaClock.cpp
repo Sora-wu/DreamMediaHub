@@ -98,7 +98,7 @@ void MediaClock::setVideoClock(double pts, double time) {
 }
 
 void MediaClock::setAudioClock(double pts, double time) {
-    videoClock_.setTime(pts, time);
+    audioClock_.setTime(pts, time);
 }
 
 float MediaClock::getSpeed() const {
@@ -115,15 +115,19 @@ void MediaClock::setSpeed(float speed) {
 }
 
 void MediaClock::pauseVideoClock() {
-    double currentPTS = videoClock_.getTime();
-    uint32_t serial = videoClock_.serial;
-    videoClock_.setTime(currentPTS, serial, CURRENT_TIME);
+    videoClock_.paused = true;
 }
 
 void MediaClock::pauseAudioClock() {
-    double currentPTS = audioClock_.getTime();
-    uint32_t serial = audioClock_.serial;
-    audioClock_.setTime(currentPTS, serial, CURRENT_TIME);
+    audioClock_.paused = true;
+}
+
+bool MediaClock::getVideoClockPause() {
+    return videoClock_.paused;
+}
+
+bool MediaClock::getAudioClockPause() {
+    return audioClock_.paused;
 }
 
 void MediaClock::resumeClock() {
