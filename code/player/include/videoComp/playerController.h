@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <QTimer>
+#include <QObject>
 
 namespace Dream {
     class DreamPlayer;
@@ -13,6 +13,7 @@ namespace Dream {
 
 class AudioBufferDevice;
 class QAudioSink;
+class QTimer;
 
 class PlayerController : public QObject {
     Q_OBJECT
@@ -47,8 +48,8 @@ public:
     Q_INVOKABLE void play();
     Q_INVOKABLE void pause();
     Q_INVOKABLE void togglePlay();
-    Q_INVOKABLE void seek(double targetPos, double seekRel = 0);
-    Q_INVOKABLE void seekRelative(int deltaSeconds);
+    // isRelative是否为相对时间
+    Q_INVOKABLE void seek(int deltaSeconds, bool isRelative = true);
     Q_INVOKABLE void setVolume(uint32_t newVolume);
 
     Q_INVOKABLE void cleanup();
@@ -79,9 +80,9 @@ private:
     uint32_t currentProgress_ = 0;
     uint32_t duration_ = 0;
 
-    double keyboardSeekTarget_ = 0;
-    bool keyboardSeekActive_ = false;
+    double seekTarget_ = 0;
+    bool seekActive_ = false;
 
     QTimer* timer_ = nullptr;
-    QTimer* keyboardSeekTimer_ = nullptr;
+    QTimer* seekTimer_ = nullptr;
 };

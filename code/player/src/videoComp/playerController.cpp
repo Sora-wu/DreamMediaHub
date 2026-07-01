@@ -11,6 +11,7 @@
 #include <QAudioSink>
 #include <QMediaDevices>
 #include <QFileInfo>
+#include <QTimer>
 #include <QDebug>
 
 using namespace Dream;
@@ -169,54 +170,38 @@ void PlayerController::togglePlay() {
     isPlaying_ ? pause() : play();
 }
 
-void PlayerController::seek(double targetPos, double seekRel) {
-    if (player_) {
-        keyboardSeekActive_ = false;
-        keyboardSeekTarget_ = targetPos;
-
-        play();
-        audioBufferDevice_->clearQueue();
-        qInfo() << "seek to" << targetPos;
-        player_->seek(targetPos, seekRel);
-
-        const uint32_t targetProgress = (uint32_t)targetPos;
-        if (currentProgress_ != targetProgress) {
-            currentProgress_ = targetProgress;
-            emit currentProgressChanged();
-        }
-    }
-}
-
-void PlayerController::seekRelative(int deltaSeconds) {
+void PlayerController::seek(int second, bool isRelative) {
     if (!player_) {
         return;
     }
 
-    if (!keyboardSeekActive_) {
-        keyboardSeekTarget_ = player_->getCurrentTime();
+    if (!seekActive_) {
+        seekTarget_ = player_->getCurrentTime();
     }
-    keyboardSeekActive_ = true;
-    keyboardSeekTarget_ = std::clamp(keyboardSeekTarget_ + deltaSeconds, 0.0, (double)duration_);
+
+    seekActive_ = true;
+    seekTarget_ = isRelative ? std::clamp(seekTarget_ + second, 0.0, (double)duration_) : second;
 
     play();
     audioBufferDevice_->clearQueue();
-    player_->seek(keyboardSeekTarget_, deltaSeconds);
+    player_->seek(seekTarget_, second);
 
-    const uint32_t targetProgress = (uint32_t)keyboardSeekTarget_;
+    const uint32_t targetProgress = (uint32_t)seekTarget_;
     if (currentProgress_ != targetProgress) {
         currentProgress_ = targetProgress;
         emit currentProgressChanged();
     }
 
-    if (!keyboardSeekTimer_) {
-        keyboardSeekTimer_ = new QTimer(this);
-        keyboardSeekTimer_->setSingleShot(true);
-        keyboardSeekTimer_->setInterval(300);
-        connect(keyboardSeekTimer_, &QTimer::timeout, this, [this]() {
-            keyboardSeekActive_ = false;
+    if (!seekTimer_) {
+        seekTimer_ = new QTimer(this);
+        seekTimer_->setSingleShot(true);
+        seekTimer_->setInterval(300);
+        connect(seekTimer_, &QTimer::timeout, this, [this]() {
+            seekActive_ = false;
         });
     }
-    keyboardSeekTimer_->start();
+
+    seekTimer_->start();
 }
 
 void PlayerController::setVolume(uint32_t newVolume)
@@ -256,8 +241,7 @@ void PlayerController::onTimerUpdate() {
         return;
     }
 
-    const uint32_t cur = keyboardSeekActive_ ? (uint32_t)keyboardSeekTarget_ : (uint32_t)player_->getCurrentTime();
-    qInfo() << "currentTime" << cur;
+    const uint32_t cur = seekActive_ ? (uint32_t)seekTarget_ : (uint32_t)player_->getCurrentTime();
     QString newText = QString("%1/%2").arg(formatTimeFromSeconds(cur), formatTimeFromSeconds(duration_));
 
     if (progressText_ != newText) {
@@ -265,7 +249,7 @@ void PlayerController::onTimerUpdate() {
         emit progressTextChanged();
     }
 
-    if (!keyboardSeekActive_ && currentProgress_ != cur) {
+    if (!seekActive_ && currentProgress_ != cur) {
         currentProgress_ = cur;
         emit currentProgressChanged();
     }

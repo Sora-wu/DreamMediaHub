@@ -26,11 +26,11 @@ Window {
 
         Keys.onPressed: (event)=> {
             if (event.key === Qt.Key_Left) {
-                playerCtrl.seekRelative(-5)
+                playerCtrl.seek(-5)
                 event.accepted = true
             }
             else if (event.key === Qt.Key_Right) {
-                playerCtrl.seekRelative(5)
+                playerCtrl.seek(5)
                 event.accepted = true
             }
             else if (event.key === Qt.Key_Space) {
@@ -99,7 +99,7 @@ Window {
                         maxValue: playerCtrl.duration
 
                         onSliderRelease: function(value) {
-                            playerCtrl.seek(value)
+                            playerCtrl.seek(value, false)
                         }
                     }
 

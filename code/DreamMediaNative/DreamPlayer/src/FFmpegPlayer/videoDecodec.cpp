@@ -141,7 +141,7 @@ void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
 
         // 没有到达新帧的播放时间，使用老帧
         if (time < decodecTimer_ + delay || isPause_) {
-            fillData(heldFrame_.frame, videoFrame);
+            // fillData(heldFrame_.frame, videoFrame);
             return;
         }
 
@@ -207,6 +207,7 @@ double VideoDecodec::calcDelay(double duration) const {
 
     double delay = duration;
     const double diff = FFINSTANCE()->getVideoClock() - FFINSTANCE()->getMasterClock();
+    // av_log(nullptr, AV_LOG_INFO, "video: %f master: %f\n", FFINSTANCE()->getVideoClock(), FFINSTANCE()->getMasterClock());
     const double syncThreshold = std::clamp(delay, SYNC_THRESHOLD_MIN, SYNC_THRESHOLD_MAX);
     if (!isnan(diff) && std::fabs(diff) < maxFrameDuration_) {
         if (diff <= -syncThreshold) {
