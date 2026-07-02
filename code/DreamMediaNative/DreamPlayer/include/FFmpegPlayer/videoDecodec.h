@@ -27,7 +27,7 @@ public:
 
     void run(std::stop_token st) override;
 
-    void getVideoFrame(Dream::VideoFrame* videoFrame);
+    Dream::VideoFrame* getVideoFrame();
 
 protected:
     void cleanup() override;
@@ -37,11 +37,12 @@ private:
     bool shouldDropLateFrame(double time) const;
     double getFrameDuration(const Frame& frame, const Frame& nextFrame) const;
     double calcDelay(double duration) const;
-    void fillData(AVFrame* frame, Dream::VideoFrame* videoFrame);
+    void fillData(AVFrame* frame);
 
 private:
     SwsContext* swsCtx_ = nullptr;
 
     Frame heldFrame_{};
+    Dream::VideoFrame videoFrame_{};
     double maxFrameDuration_ = 3600.0;
 };

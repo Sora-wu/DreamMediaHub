@@ -47,35 +47,33 @@ void AudioBufferDevice::stopPull() {
 }
 
 void AudioBufferDevice::pull(std::stop_token st) {
-    Dream::AudioFrame audioFrame{};
     assert(player_);
 
     while (!st.stop_requested()) {
-        player_->getAudioFrame(&audioFrame);
-        if (!audioFrame.isUpdated) {
+        Dream::AudioFrame* audioFrame = player_->getAudioFrame();
+        if (!audioFrame->isUpdated) {
             continue;
         }
 
         {
             std::unique_lock lock(mtx_);
-            cv_.wait(lock, [&](){ return dataLen_ + audioFrame.len <= MAX_BUFFER_SIZE || st.stop_requested() || isClose_; });
+            cv_.wait(lock, [&](){ return dataLen_ + audioFrame->len <= MAX_BUFFER_SIZE || st.stop_requested() || isClose_; });
             if (st.stop_requested() && isClose_) {
                 break;
             }
 
             AudioSegment segment{};
-            segment.pts = audioFrame.pts;
-            segment.serial = audioFrame.serial;
-            segment.data.assign(audioFrame.data, audioFrame.data + audioFrame.len);
+            segment.pts = audioFrame->pts;
+            segment.serial = audioFrame->serial;
+            segment.data.assign(audioFrame->data, audioFrame->data + audioFrame->len);
             segQue_.push_back(std::move(segment));
-            dataLen_ += audioFrame.len;
+            dataLen_ += audioFrame->len;
 
             // 有数据唤醒消费者
             cv_.notify_one();
         }
     }
 
-    audioFrame.clear();
     qInfo() << "audio buffer end";
 }
 

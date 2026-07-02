@@ -106,7 +106,7 @@ void Demuxer::seek() {
 
     const int64_t seekMin = seekRel_ > 0 ? pts - offsetPts + 2 : INT64_MIN;
     const int64_t seekMax = seekRel_ < 0 ? pts - offsetPts - 2 : INT64_MAX;
-    int res = avformat_seek_file(fmtCtx_, -1, seekMin, pts, seekMax, AVSEEK_FLAG_BACKWARD);
+    int res = avformat_seek_file(fmtCtx_, -1, seekMin, pts, seekMax, 0);
     if (res < 0) {
         av_log(nullptr, AV_LOG_ERROR, "Seek failed\n");
     }

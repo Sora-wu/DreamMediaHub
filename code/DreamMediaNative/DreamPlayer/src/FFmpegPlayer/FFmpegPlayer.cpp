@@ -149,12 +149,12 @@ void FFmpegPlayer::setSpeed(double speed) {
     audioDecodec_->setSpeed(speed);
 }
 
-void FFmpegPlayer::getVideoFrame(VideoFrame* videoFrame) {
-    videoDecodec_->getVideoFrame(videoFrame);
+VideoFrame* FFmpegPlayer::getVideoFrame() {
+    return videoDecodec_->getVideoFrame();
 }
 
-void FFmpegPlayer::getAudioFrame(AudioFrame* audioFrame) {
-    audioDecodec_->getAudioFrame(audioFrame);
+AudioFrame* FFmpegPlayer::getAudioFrame() {
+    return audioDecodec_->getAudioFrame();
 }
 
 void FFmpegPlayer::updateAudioClock(double pts, uint32_t serial) {
@@ -171,10 +171,6 @@ void FFmpegPlayer::setOnVideoSeekCallback(const OnSeekCallback& cb) {
 
 void FFmpegPlayer::setOnPlaybackCompletedCallback(const OnPlaybackCompletedCallback& cb) {
     onPlaybackCompletedCallback_ = cb;
-}
-
-bool FFmpegPlayer::isPlaybackCompleted() const {
-    return playbackCompleted_;
 }
 
 void FFmpegPlayer::setMasterMode(SyncType syncType) {
@@ -235,7 +231,17 @@ bool FFmpegPlayer::checkPlaybackCompleted() {
         return decodec->isDecodeFinished() && !decodec->hasBufferedFrames();
     };
 
-    if (!isStreamDrained(videoDecodec_.get()) || !isStreamDrained(audioDecodec_.get())) {
+    // 播放完毕把对应的流关闭，避免后面继续解码
+    bool isVideoStreamDrained = isStreamDrained(videoDecodec_.get());
+    if (isVideoStreamDrained) {
+        videoDecodec_->shutdown();
+    }
+    bool isAudioStreamDrained = isStreamDrained(audioDecodec_.get());
+    if (isAudioStreamDrained) {
+        audioDecodec_->shutdown();
+    }
+
+    if (!isVideoStreamDrained || !isAudioStreamDrained) {
         return false;
     }
 

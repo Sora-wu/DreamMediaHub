@@ -15,7 +15,6 @@
 namespace {
     const double EPSILON = 1e-8;
     const char* textureUniformName[3] = { "textureY", "textureU", "textureV" };
-    Dream::VideoFrame videoFrame{};
 
     std::string readShaderFile(const QString& filePath) {
         QFile file(filePath);
@@ -60,8 +59,6 @@ OpenGLRender::OpenGLRender() {}
 
 OpenGLRender::~OpenGLRender() {
     cleanup();
-
-    videoFrame.clear();
 }
 
 void OpenGLRender::render() {
@@ -84,10 +81,10 @@ void OpenGLRender::render() {
 
     glUseProgram(program_);
 
-    updateMVP();
+    VideoFrame* videoFrame = player_->getVideoFrame();
+    updateMVP(videoFrame);
 
-    player_->getVideoFrame(&videoFrame);
-    if (!videoFrame.data[0]) {
+    if (!videoFrame->data[0]) {
         glBindVertexArray(0);
         glUseProgram(0);
         QQuickOpenGLUtils::resetOpenGLState();
@@ -97,7 +94,7 @@ void OpenGLRender::render() {
 
     for (uint32_t i = 0; i < 3; ++i) {
         uint32_t textureHandle = texture_[i];
-        updateTexture(textureHandle, i, videoFrame.frameWidth, videoFrame.frameHeight, videoFrame.stride[i], videoFrame.data[i]);
+        updateTexture(textureHandle, i, videoFrame->frameWidth, videoFrame->frameHeight, videoFrame->stride[i], videoFrame->data[i]);
     }
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
@@ -260,13 +257,13 @@ void OpenGLRender::initTexture(GLuint textureHandle, const char* uniformName, ui
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-QRect OpenGLRender::updateItemRect() const {
+QRect OpenGLRender::updateItemRect(VideoFrame* videoFrame) const {
     const uint32_t height = player_->getHeight();
     const uint32_t width = player_->getWidth();
 
     double aspectRatio = (double)width / height;
-    if (videoFrame.picWidthHeightRatio > EPSILON) {
-        aspectRatio *= videoFrame.picWidthHeightRatio;
+    if (videoFrame->picWidthHeightRatio > EPSILON) {
+        aspectRatio *= videoFrame->picWidthHeightRatio;
     }
 
     uint32_t rectHeight = itemHeight;
@@ -285,8 +282,8 @@ QRect OpenGLRender::updateItemRect() const {
     return itemRect;
 }
 
-void OpenGLRender::updateMVP() {
-    const QRect itemRect = updateItemRect();
+void OpenGLRender::updateMVP(VideoFrame* videoFrame) {
+    const QRect itemRect = updateItemRect(videoFrame);
     const float left = itemRect.left();
     const float right = left + itemRect.width();
     const float top = itemRect.top();

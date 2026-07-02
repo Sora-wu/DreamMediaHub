@@ -12,6 +12,7 @@
 
 namespace Dream {
     class DreamPlayer;
+    struct VideoFrame;
 }
 
 class OpenGLRender;
@@ -50,8 +51,8 @@ private:
     void initialize();
     void initTexture(GLuint textureHandle, const char* uniformName, uint32_t textureIndex);
 
-    QRect updateItemRect() const;
-    void updateMVP();
+    QRect updateItemRect(Dream::VideoFrame* videoFrame) const;
+    void updateMVP(Dream::VideoFrame* videoFrame);
     void updateTexture(GLuint textureHandle, uint32_t textureIndex, uint32_t frameWidth, uint32_t frameHeight, int stride, char* data);
 
 private:

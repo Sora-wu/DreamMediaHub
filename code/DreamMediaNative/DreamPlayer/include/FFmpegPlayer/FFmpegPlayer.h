@@ -37,8 +37,8 @@ public:
     float getSpeed() override;
     void setSpeed(double speed) override;
 
-    void getVideoFrame(Dream::VideoFrame* videoFrame) override;
-    void getAudioFrame(Dream::AudioFrame* audioFrame) override;
+    [[nodiscard]] Dream::VideoFrame* getVideoFrame() override;
+    [[nodiscard]] Dream::AudioFrame* getAudioFrame() override;
 
     void updateAudioClock(double pts, uint32_t serial) override;
 
@@ -46,7 +46,6 @@ public:
     void setOnVideoSeekCallback(const Dream::OnSeekCallback& cb) override;
 
     void setOnPlaybackCompletedCallback(const Dream::OnPlaybackCompletedCallback& cb) override;
-    [[nodiscard]] bool isPlaybackCompleted() const override;
 
     void setMasterMode(Dream::SyncType syncType) override;
     [[nodiscard]] Dream::SyncType getMasterMode() const override;

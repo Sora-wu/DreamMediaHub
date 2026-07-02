@@ -33,8 +33,8 @@ namespace Dream {
         virtual float getSpeed() = 0;
         virtual void setSpeed(double speed) = 0;
 
-        virtual void getVideoFrame(VideoFrame* videoFrame) = 0;
-        virtual void getAudioFrame(AudioFrame* audioFrame) = 0;
+        [[nodiscard]] virtual VideoFrame* getVideoFrame() = 0;
+        [[nodiscard]] virtual AudioFrame* getAudioFrame() = 0;
 
         // 由于native只负责解码出帧，音频播放位置需要外部回传
         virtual void updateAudioClock(double pts, uint32_t serial) = 0;
@@ -46,7 +46,6 @@ namespace Dream {
         virtual void setOnVideoSeekCallback(const OnSeekCallback& cb) = 0;
 
         virtual void setOnPlaybackCompletedCallback(const OnPlaybackCompletedCallback& cb) = 0;
-        [[nodiscard]] virtual bool isPlaybackCompleted() const = 0;
 
         virtual void setMasterMode(SyncType syncType) = 0;
         [[nodiscard]] virtual SyncType getMasterMode() const = 0;

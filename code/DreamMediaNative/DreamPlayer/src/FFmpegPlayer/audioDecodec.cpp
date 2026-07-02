@@ -38,6 +38,19 @@ namespace {
     }
 }
 
+AudioDecodec::~AudioDecodec() {
+    if (swrCtx_) {
+        swr_free(&swrCtx_);
+        swrCtx_ = nullptr;
+    }
+
+    if (audioFrame_.data) {
+        delete[] audioFrame_.data;
+        audioFrame_.data = nullptr;
+        audioFrame_.len = 0;
+    }
+}
+
 bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
     if (!Decodec::openCodec(streamIndex, stream)) {
         return false;
@@ -98,12 +111,12 @@ void AudioDecodec::startDecode() {
     start("audio thread");
 }
 
-void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
-    audioFrame->isUpdated = false;
+AudioFrame* AudioDecodec::getAudioFrame() {
+    audioFrame_.isUpdated = false;
 
     Frame ap{};
     if (!acquireFrame(ap)) {
-        return;
+        return &audioFrame_;
     }
 
     AVFrame* frame = ap.frame;
@@ -112,14 +125,15 @@ void AudioDecodec::getAudioFrame(AudioFrame* audioFrame) {
     if (!isnan(ap.pts)) {
         decodecTimer_ = ap.pts + ap.duration;
     }
-    audioFrame->pts = decodecTimer_;
-    audioFrame->serial = ap.serial;
+    audioFrame_.pts = decodecTimer_;
+    audioFrame_.serial = ap.serial;
 
-    if (fillData(frame, audioFrame) && !isPause_) {
-        audioFrame->isUpdated = true;
+    if (fillData(frame) && !isPause_) {
+        audioFrame_.isUpdated = true;
     }
 
     releaseFrame(ap);
+    return &audioFrame_;
 }
 
 void AudioDecodec::setSpeed(float speed) {
@@ -184,15 +198,15 @@ void AudioDecodec::refreshSwr(AVFrame* frame) {
     }
 }
 
-bool AudioDecodec::fillData(AVFrame* frame, AudioFrame* audioFrame) {
+bool AudioDecodec::fillData(AVFrame* frame) {
     if (!adjustSamples(frame)) {
         return false;
     }
 
     const int bufferSize = av_samples_get_buffer_size(nullptr, frame->channels, frame->nb_samples, (AVSampleFormat)frame->format, 1);
-    audioFrame->len = bufferSize;
-    updateAudioFrameSize(audioFrame, bufferSize);
-    memcpy(audioFrame->data, frame->data[0], bufferSize);
+    audioFrame_.len = bufferSize;
+    updateAudioFrameSize(&audioFrame_, bufferSize);
+    memcpy(audioFrame_.data, frame->data[0], bufferSize);
 
     return true;
 }

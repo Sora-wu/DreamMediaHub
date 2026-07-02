@@ -43,7 +43,7 @@ PlayerController::PlayerController(QObject* parent) {
     player_ = DreamContext::createDreamPlayer();
     // TEST
 #ifdef PLATFORM_LINUX
-    open("/home/sora/Videos/test.mp4");
+    open("/home/sora/Videos/test_bak.mp4");
 #else
     open("D:/Desktop/Test/test56.mp4");
 #endif

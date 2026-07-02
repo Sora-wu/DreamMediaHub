@@ -22,13 +22,14 @@ namespace Dream {
 class AudioDecodec : public Decodec {
 public:
     explicit AudioDecodec(std::size_t frameQueueSize) : Decodec(frameQueueSize) {}
+    ~AudioDecodec() override;
 
     bool openCodec(int streamIndex, AVStream* stream) override;
     void run(std::stop_token st) override;
     void reopen() override;
     void startDecode() override;
 
-    void getAudioFrame(Dream::AudioFrame* audioFrame);
+    Dream::AudioFrame* getAudioFrame();
 
     void setSpeed(float speed);
 
@@ -37,7 +38,7 @@ protected:
 
 private:
     void refreshSwr(AVFrame* frame);
-    bool fillData(AVFrame* frame, Dream::AudioFrame* audioFrame);
+    bool fillData(AVFrame* frame);
     // 直接参考ffplay的实现
     bool adjustSamples(AVFrame* frame);
 
@@ -62,4 +63,5 @@ private:
     double audioDiffThreshold_ = 0.0;   // 触发采点调整的阈值
 
     AVFramePool framePool_;
+    Dream::AudioFrame audioFrame_{};
 };

@@ -27,17 +27,6 @@ namespace Dream {
         char* data[3]{};
         int len[3]{};
         int stride[3]{};
-
-        void clear() {
-            for (uint32_t i = 0; i < 3; ++i) {
-                if (data[i]) {
-                    delete[] data[i];
-                    data[i] = nullptr;
-                    len[i] = 0;
-                    stride[i] = 0;
-                }
-            }
-        }
     };
 
     struct DREAM_PLAYER_API AudioFrame {
@@ -47,13 +36,5 @@ namespace Dream {
         double pts{};
         uint32_t serial = 0;
         bool isUpdated = false;
-
-        void clear() {
-            if (data) {
-                delete[] data;
-                data = nullptr;
-                len = 0;
-            }
-        }
     };
 }

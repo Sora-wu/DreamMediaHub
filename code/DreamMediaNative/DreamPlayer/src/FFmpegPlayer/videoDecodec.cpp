@@ -45,6 +45,15 @@ VideoDecodec::~VideoDecodec() {
         sws_freeContext(swsCtx_);
         swsCtx_ = nullptr;
     }
+
+    for (uint32_t i = 0; i < 3; ++i) {
+        if (videoFrame_.data[i]) {
+            delete[] videoFrame_.data[i];
+            videoFrame_.data[i] = nullptr;
+            videoFrame_.len[i] = 0;
+            videoFrame_.stride[i] = 0;
+        }
+    }
 }
 
 bool VideoDecodec::openCodec(int streamIndex, AVStream* stream) {
@@ -110,12 +119,12 @@ void VideoDecodec::resetSyncState() {
     decodeTimerValid_ = false;
 }
 
-void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
+VideoFrame* VideoDecodec::getVideoFrame() {
     for (;;) {
         if (!heldFrame_.frame) {
             Frame frame{};
             if (!acquireFrame(frame)) {
-                return;
+                return &videoFrame_;
             }
 
             heldFrame_ = frame;
@@ -124,8 +133,8 @@ void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
             if (!isnan(heldFrame_.pts)) {
                 FFINSTANCE()->setVideoClock(heldFrame_.pts, heldFrame_.serial, decodecTimer_);
             }
-            fillData(heldFrame_.frame, videoFrame);
-            return;
+            fillData(heldFrame_.frame);
+            return &videoFrame_;
         }
 
         double delay = 0;
@@ -142,7 +151,7 @@ void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
         // 没有到达新帧的播放时间，使用老帧
         if (time < decodecTimer_ + delay || isPause_) {
             // fillData(heldFrame_.frame, videoFrame);
-            return;
+            return &videoFrame_;
         }
 
         decodecTimer_ += delay;
@@ -168,15 +177,15 @@ void VideoDecodec::getVideoFrame(VideoFrame* videoFrame) {
         releaseFrame(heldFrame_);
         Frame frame{};
         if (!acquireFrame(frame)) {
-            return;
+            return &videoFrame_;
         }
 
         heldFrame_ = frame;
         if (!isnan(heldFrame_.pts)) {
             FFINSTANCE()->setVideoClock(heldFrame_.pts, heldFrame_.serial, time);
         }
-        fillData(heldFrame_.frame, videoFrame);
-        return;
+        fillData(heldFrame_.frame);
+        return &videoFrame_;
     }
 }
 
@@ -237,13 +246,13 @@ bool VideoDecodec::shouldDropLateFrame(double time) const {
     return drop;
 }
 
-void VideoDecodec::fillData(AVFrame* frame, VideoFrame* videoFrame) {
+void VideoDecodec::fillData(AVFrame* frame) {
     const int width = frame->width;
     const int height = frame->height;
 
-    videoFrame->frameWidth = width;
-    videoFrame->frameHeight = height;
-    videoFrame->picWidthHeightRatio = frame->sample_aspect_ratio.den == 0 ? 0 : av_q2d(frame->sample_aspect_ratio);
+    videoFrame_.frameWidth = width;
+    videoFrame_.frameHeight = height;
+    videoFrame_.picWidthHeightRatio = frame->sample_aspect_ratio.den == 0 ? 0 : av_q2d(frame->sample_aspect_ratio);
 
     if (frame->format != AV_PIX_FMT_YUV420P) {
         swsCtx_ = sws_getCachedContext(swsCtx_,
@@ -264,19 +273,19 @@ void VideoDecodec::fillData(AVFrame* frame, VideoFrame* videoFrame) {
             av_frame_free(&frame);
             return;
         }
-        updateVideoFrameSize(videoFrame, height, outLinesize);
-        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, (uint8_t* const*)videoFrame->data, videoFrame->len);
+        updateVideoFrameSize(&videoFrame_, height, outLinesize);
+        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, (uint8_t* const*)videoFrame_.data, videoFrame_.len);
     }
     else {
-        updateVideoFrameSize(videoFrame, height, frame->linesize);
+        updateVideoFrameSize(&videoFrame_, height, frame->linesize);
         const int planeHeights[3] = { height, height / 2, height / 2 };
         for (uint32_t i = 0; i < 3; ++i) {
             const int stride = frame->linesize[i];
             const int planeHeight = planeHeights[i];
             for (int row = 0; row < planeHeight; ++row) {
-                memcpy(videoFrame->data[i] + row * stride, frame->data[i] + row * stride, stride);
+                memcpy(videoFrame_.data[i] + row * stride, frame->data[i] + row * stride, stride);
             }
-            videoFrame->stride[i] = stride;
+            videoFrame_.stride[i] = stride;
         }
     }
 }
