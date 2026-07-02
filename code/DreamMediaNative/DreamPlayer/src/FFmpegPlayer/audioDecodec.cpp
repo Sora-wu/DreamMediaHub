@@ -82,7 +82,7 @@ void AudioDecodec::run(std::stop_token st) {
         }
 
         std::vector<AVFrame*> frames = processFrame(frame);
-        pts = (double)frame->pts / SAMPLE_RATE;
+        pts = (double)frame->pts / frame->sample_rate;
         pushFrames(frames, pts);
     }
 
@@ -365,7 +365,7 @@ void AudioDecodec::pushFrames(const std::vector<AVFrame*>& frames, double pts) {
     double duration{};
     // 经过滤镜处理可能有多个音频帧，需要累加pts
     for (AVFrame* f : frames) {
-        duration = (double)f->nb_samples / SAMPLE_RATE * speed_;
+        duration = (double)f->nb_samples / f->sample_rate * speed_;
         pushFrame(f, pts, duration);
         pts += duration;
         decodecTimer_ = pts;

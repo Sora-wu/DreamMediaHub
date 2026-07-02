@@ -188,19 +188,17 @@ SyncType FFmpegPlayer::getMasterMode() const {
 void FFmpegPlayer::handle(void* data) {
     AVPacket* pkt = (AVPacket*)data;
 
+    if (playbackCompleted_) {
+        videoDecodec_->reopen();
+        audioDecodec_->reopen();
+        playbackCompleted_ = false;
+    }
+
     if (pkt->stream_index == videoDecodec_->getStreamIndex()) {
         videoDecodec_->handle(pkt);
-        if (pkt == FFINSTANCE()->getFlushPkt()) {
-            videoDecodec_->reopen();
-            playbackCompleted_ = false;
-        }
     }
     else if (pkt->stream_index == audioDecodec_->getStreamIndex()) {
         audioDecodec_->handle(pkt);
-        if (pkt == FFINSTANCE()->getFlushPkt()) {
-            audioDecodec_->reopen();
-            playbackCompleted_ = false;
-        }
     }
 }
 
@@ -270,7 +268,3 @@ void FFmpegPlayer::markPlaybackCompleted() {
         onPlaybackCompletedCallback_();
     }
 }
-
-// void FFmpegPlayer::resetPlaybackState() {
-    
-// }

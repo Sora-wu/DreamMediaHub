@@ -207,7 +207,6 @@ double VideoDecodec::calcDelay(double duration) const {
 
     double delay = duration;
     const double diff = FFINSTANCE()->getVideoClock() - FFINSTANCE()->getMasterClock();
-    // av_log(nullptr, AV_LOG_INFO, "video: %f master: %f\n", FFINSTANCE()->getVideoClock(), FFINSTANCE()->getMasterClock());
     const double syncThreshold = std::clamp(delay, SYNC_THRESHOLD_MIN, SYNC_THRESHOLD_MAX);
     if (!isnan(diff) && std::fabs(diff) < maxFrameDuration_) {
         if (diff <= -syncThreshold) {

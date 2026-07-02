@@ -61,7 +61,6 @@ private:
     // 仅检测线程
     bool checkPlaybackCompleted();
     void markPlaybackCompleted();
-    // void resetPlaybackState();
 
 private:
     bool pause_ = false;

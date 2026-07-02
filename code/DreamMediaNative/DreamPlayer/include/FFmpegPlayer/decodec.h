@@ -9,7 +9,6 @@
 #include <common/dreamThread.hpp>
 #include <FFmpegPlayer/packetQueue.h>
 #include <FFmpegPlayer/ffcore.h>
-#include <FFmpegPlayer/mediaClock.h>
 #include <DreamPlayer/structs.h>
 
 #include <mutex>
