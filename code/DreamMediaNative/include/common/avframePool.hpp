@@ -5,9 +5,11 @@
 
 #pragma once
 
-#include <FFmpegPlayer/ffcore.h>
-
 #include <vector>
+
+extern "C" {
+#include <libavutil/frame.h>
+}
 
 class AVFramePool {
 public:

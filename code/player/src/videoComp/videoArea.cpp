@@ -10,7 +10,7 @@
 #include <QQuickOpenGLUtils>
 #include <QOpenGLDebugLogger>
 
-#include <DreamPlayer/DreamContext.h>
+#include <DreamPlayer/DreamPlayerContext.h>
 
 namespace {
     const double EPSILON = 1e-8;

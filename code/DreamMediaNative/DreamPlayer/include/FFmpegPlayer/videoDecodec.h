@@ -45,4 +45,5 @@ private:
     Frame heldFrame_{};
     Dream::VideoFrame videoFrame_{};
     double maxFrameDuration_ = 3600.0;
+    int cachedFormat_ = AV_PIX_FMT_NONE;
 };

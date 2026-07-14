@@ -6,7 +6,7 @@
 #include <FFmpegPlayer/audioDecodec.h>
 #include <FFmpegPlayer/ffinstance.h>
 #include <DreamPlayer/structs.h>
-#include <DreamPlayer/DreamContext.h>
+#include <DreamPlayer/DreamPlayerContext.h>
 
 #include <algorithm>
 
@@ -62,7 +62,7 @@ bool AudioDecodec::openCodec(int streamIndex, AVStream* stream) {
     audioDiffAvgCoef_ = std::exp(std::log(0.01) / AUDIO_DIFF_AVG_NB);
 
     int bytesPerSec = SAMPLE_RATE * CHANNEL_COUNT * av_get_bytes_per_sample(SAMPLE_FORMAT);
-    int dummyHwBufSize = DreamContext::AUDIO_BUFFER_SIZE * CHANNEL_COUNT * av_get_bytes_per_sample(SAMPLE_FORMAT);
+    int dummyHwBufSize = DreamPlayerContext::AUDIO_BUFFER_SIZE * CHANNEL_COUNT * av_get_bytes_per_sample(SAMPLE_FORMAT);
     audioDiffThreshold_ = (double)(dummyHwBufSize) / bytesPerSec;
     audioDiffThreshold_ = std::clamp(audioDiffThreshold_, AUDIO_DIFF_THRESHOLD_MIN, AUDIO_DIFF_THRESHOLD_MAX);
 

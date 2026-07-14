@@ -17,6 +17,7 @@ endif()
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/code/third/build/${PLATFORM_NAME})
 
 add_subdirectory(code/player)
+add_subdirectory(code/recorder)
 
 # 供调试用，后续删除
 add_subdirectory(code/DreamMediaNative)

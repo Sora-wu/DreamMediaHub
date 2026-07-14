@@ -6,7 +6,7 @@
 
 #include <videoComp/playerController.h>
 #include <videoComp/audioBufferPlayer.h>
-#include <DreamPlayer/DreamContext.h>
+#include <DreamPlayer/DreamPlayerContext.h>
 
 #include <QAudioSink>
 #include <QMediaDevices>
@@ -40,7 +40,7 @@ namespace {
 }
 
 PlayerController::PlayerController(QObject* parent) {
-    player_ = DreamContext::createDreamPlayer();
+    player_ = DreamPlayerContext::createDreamPlayer();
     // TEST
 #ifdef PLATFORM_LINUX
     open("/home/sora/Videos/test_bak.mp4");
@@ -70,7 +70,7 @@ PlayerController::PlayerController(QObject* parent) {
         if (!audioBufferDevice_->waitForBuffered(std::chrono::milliseconds(800))) {
             qWarning() << "prebuffer timeout";
         }
-        audioSink_->setBufferSize(DreamContext::AUDIO_BUFFER_SIZE);
+        audioSink_->setBufferSize(DreamPlayerContext::AUDIO_BUFFER_SIZE);
         audioSink_->start(audioBufferDevice_);
     }
 
@@ -233,7 +233,7 @@ void PlayerController::cleanup() {
         audioSink_ = nullptr;
     }
 
-    DreamContext::destroyDreamPlayer(&player_);
+    DreamPlayerContext::destroyDreamPlayer(&player_);
 }
 
 void PlayerController::onTimerUpdate() {

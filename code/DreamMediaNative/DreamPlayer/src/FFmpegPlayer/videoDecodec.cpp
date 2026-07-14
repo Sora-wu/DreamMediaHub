@@ -254,7 +254,7 @@ void VideoDecodec::fillData(AVFrame* frame) {
     videoFrame_.frameHeight = height;
     videoFrame_.picWidthHeightRatio = frame->sample_aspect_ratio.den == 0 ? 0 : av_q2d(frame->sample_aspect_ratio);
 
-    if (frame->format != AV_PIX_FMT_YUV420P) {
+    if (frame->format != cachedFormat_) {
         swsCtx_ = sws_getCachedContext(swsCtx_,
             width, height, (AVPixelFormat)frame->format,
             width, height, AV_PIX_FMT_YUV420P,
@@ -265,6 +265,7 @@ void VideoDecodec::fillData(AVFrame* frame) {
             av_frame_free(&frame);
             return;
         }
+        cachedFormat_ = frame->format;
 
         int outLinesize[4]{};
         if (av_image_fill_linesizes(outLinesize, AV_PIX_FMT_YUV420P, width) < 0) {

@@ -3,17 +3,16 @@
 // Mail: sora-wu@foxmail.com
 //
 
-#include <DreamPlayer/DreamContext.h>
-
+#include <DreamPlayer/DreamPlayerContext.h>
 #include <FFmpegPlayer/FFmpegPlayer.h>
 
 using namespace Dream;
 
-DreamPlayer* DreamContext::createDreamPlayer() {
+DreamPlayer* DreamPlayerContext::createDreamPlayer() {
     return new FFmpegPlayer;
 }
 
-void DreamContext::destroyDreamPlayer(DreamPlayer** player) {
+void DreamPlayerContext::destroyDreamPlayer(DreamPlayer** player) {
     if (*player) {
         delete *player;
         *player = nullptr;

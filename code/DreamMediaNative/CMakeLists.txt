@@ -45,4 +45,6 @@ install(
     DESTINATION ${Dream_INSTALL_CMAKEDIR}
 )
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_subdirectory(DreamPlayer)
+add_subdirectory(DreamRecorder)
