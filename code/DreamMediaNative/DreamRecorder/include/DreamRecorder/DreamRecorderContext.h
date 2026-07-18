@@ -9,6 +9,7 @@
 
 namespace Dream {
     class DreamRecorderContext {
+    public:
         static DreamRecorder* createDreamRecorder();
         static void destroyDreamRecorder(DreamRecorder** recorder);
     };

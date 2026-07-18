@@ -62,8 +62,8 @@ PlayerController::PlayerController(QObject* parent) {
         player_->setMasterMode(SyncType::VideoMaster);
     }
     else {
-        audioBufferDevice_ = new AudioBufferDevice;
-        audioSink_ = new QAudioSink(audioDevice, format);
+        audioBufferDevice_ = new AudioBufferDevice(parent);
+        audioSink_ = new QAudioSink(audioDevice, format, parent);
         audioBufferDevice_->setPlayer(player_);
         audioBufferDevice_->startPull();
         // 预缓存

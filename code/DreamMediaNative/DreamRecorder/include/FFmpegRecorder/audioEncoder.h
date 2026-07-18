@@ -17,5 +17,5 @@ public:
     void initCodecContext(AVCodecID codecID) override;
 
 private:
-    const Dream::AudioParam& param_;
+    Dream::AudioParam param_;
 };

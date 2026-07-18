@@ -9,8 +9,8 @@
 
 namespace Dream {
     enum class PixelFormat {
-        RGBA = 26,
-        BGRA = 28,
+        RGB = 2,
+        BGR = 3,
     };
 
     enum class SampleFormat {
@@ -23,7 +23,7 @@ namespace Dream {
         uint32_t height = 1080;
         uint32_t fps = 30;
         uint32_t bitRate = 4000000;
-        PixelFormat pixelFormat = PixelFormat::RGBA;
+        PixelFormat pixelFormat = PixelFormat::RGB;
         bool enable = true;
     };
 
@@ -32,7 +32,7 @@ namespace Dream {
         uint32_t channels = 2;
         uint32_t bitRate = 64000;
         SampleFormat sampleFormat = SampleFormat::FLTP;
-        bool enable = true;
+        bool enable = false;                // 暂时屏蔽
     };
 
     struct DREAM_RECORDER_API VideoFrameBuffer {

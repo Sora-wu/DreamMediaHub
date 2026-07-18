@@ -26,7 +26,7 @@ public:
     void run(std::stop_token st) override;
 
 private:
-    const Dream::VideoParam& param_{};
+    Dream::VideoParam param_{};
     SwsContext* swsCtx_ = nullptr;
     AVFramePool framePool_{};
 };

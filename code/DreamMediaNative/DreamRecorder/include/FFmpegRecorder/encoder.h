@@ -17,6 +17,7 @@ extern "C" {
 
 extern "C" {
     struct AVFrame;
+    struct AVPacket;
     struct AVCodecContext;
     struct AVStream;
 }
@@ -29,9 +30,15 @@ public:
     virtual void addStream(AVCodecID codecID);
     virtual void initCodecContext(AVCodecID codecID) = 0;
 
+    void run(std::stop_token st) override;
+
+protected:
+    bool encodePacket(AVPacket* pkt);
+
 protected:
     ConcurrentQueue<AVFrame*> frameQue_;
     AVCodecContext* codecCtx_ = nullptr;
     AVStream* stream_ = nullptr;
     std::mutex mtx_{};
+    int64_t pts_ = 0;
 };

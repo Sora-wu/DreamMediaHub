@@ -4,8 +4,11 @@
 //
 
 
+#include <recorderComp/recorderController.h>
+
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
+#include <QMetaType>
 
 int main(int argc, char *argv[])
 {
@@ -20,6 +23,8 @@ int main(int argc, char *argv[])
     QSurfaceFormat::setDefaultFormat(format);
 
     QGuiApplication app(argc, argv);
+
+    qmlRegisterType<RecorderController>("Dream.recorder", 1, 0, "RecorderController");
 
     QQmlApplicationEngine engine;
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,

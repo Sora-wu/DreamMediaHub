@@ -7,17 +7,15 @@ import QtCore
 Window {
     id: recorder
     width: 640
-    height: 400
+    height: 320
     visible: true
     color: "#101010"
 
     property bool isRecording: false
 
-    // 存储选区坐标的属性
-    property int areaX: 0
-    property int areaY: 0
-    property int areaW: 1920
-    property int areaH: 1080
+    RecorderController {
+        id: recorderCtrl
+    }
 
     FolderDialog {
         id: fd
@@ -41,7 +39,6 @@ Window {
             anchors.fill: parent
             spacing: 15
 
-            // 第一行：Url
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -61,7 +58,6 @@ Window {
                 }
             }
 
-            // 第二行：恒定码率
             RowLayout {
                 Layout.fillWidth: true
                 Label { text: "开启恒定码率:"; color: "#b1b1b1"; font.pixelSize: 18 }
@@ -71,51 +67,11 @@ Window {
                 }
             }
 
-            // 第三行：坐标及宽高
-            RowLayout {
-                id: coordsLayout
-                Layout.fillWidth: true
-                spacing: 10
-                enabled: !recorder.isRecording // 录制时禁用
-
-                // 定义一个复用的输入框组件样式
-                component CoordInput : TextField {
-                    Layout.preferredWidth: 60
-                    color: "#b1b1b1"
-                    validator: IntValidator { bottom: 0 }
-                    background: Rectangle { color: "#222"; radius: 4; border.color: "#444" }
-                }
-
-                Label { text: "X:"; color: "#b1b1b1" }
-                CoordInput { id: xInput; text: recorder.areaX.toString(); onTextChanged: recorder.areaX = parseInt(text) }
-
-                Label { text: "Y:"; color: "#b1b1b1" }
-                CoordInput { id: yInput; text: recorder.areaY.toString(); onTextChanged: recorder.areaY = parseInt(text) }
-
-                Label { text: "W:"; color: "#b1b1b1" }
-                CoordInput { id: wInput; text: recorder.areaW.toString(); onTextChanged: recorder.areaW = parseInt(text) }
-
-                Label { text: "H:"; color: "#b1b1b1" }
-                CoordInput { id: hInput; text: recorder.areaH.toString(); onTextChanged: recorder.areaH = parseInt(text) }
-            }
-
             Item { Layout.fillHeight: true }
 
-            // 第四行：功能按钮（手动选区 + 开始录制）
             RowLayout {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 20
-
-                Button {
-                    id: selectAreaButton
-                    text: "手动选区"
-                    Layout.preferredWidth: 120
-                    Layout.preferredHeight: 40
-                    enabled: !recorder.isRecording
-                    onClicked: {
-                        screenShotWidgetLoader.source = "ScreenShotWidget.qml"
-                    }
-                }
 
                 Button {
                     id: recordButton
@@ -139,8 +95,10 @@ Window {
                     onClicked: {
                         recorder.isRecording = !recorder.isRecording;
                         if (recorder.isRecording) {
-                            console.log("开始录制:", recorder.areaX, recorder.areaY, recorder.areaW, recorder.areaH);
-                            // 这里调用你的 C++ 录制接口，传入 recorder.areaX 等属性
+                            recorderCtrl.start(fd.currentFolder + "recording.mp4",)
+                        }
+                        else {
+                            recorderCtrl.stop();
                         }
                     }
                 }
@@ -169,6 +127,12 @@ Window {
             item.closing.connect(function () {
                 screenShotWidgetLoader.source = "";
             })
+        }
+    }
+
+    Component.onDestruction: {
+        if (recorder.isRecording) {
+            recorderCtrl.stop();
         }
     }
 }

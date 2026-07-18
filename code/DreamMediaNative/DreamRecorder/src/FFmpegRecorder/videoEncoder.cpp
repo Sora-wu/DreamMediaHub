@@ -66,5 +66,7 @@ void VideoEncoder::commitVideoBuffer(const VideoFrameBuffer& buffer, uint64_t pt
 }
 
 void VideoEncoder::run(std::stop_token st) {
+    Encoder::run(st);
+    av_log(nullptr, AV_LOG_INFO, "VideoEncoder::run exit\n");
 }
 
