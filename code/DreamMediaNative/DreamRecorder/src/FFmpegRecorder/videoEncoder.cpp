@@ -16,6 +16,7 @@ using namespace Dream;
 
 void VideoEncoder::addStream(AVCodecID codecID) {
     Encoder::addStream(codecID);
+    stream_->time_base = (AVRational){ 1, 90000 };
 
     swsCtx_ = sws_getCachedContext(swsCtx_,
         param_.width, param_.height, (AVPixelFormat)param_.pixelFormat,
@@ -33,7 +34,7 @@ void VideoEncoder::initCodecContext(AVCodecID codecID) {
     codecCtx_->height = param_.height;
     codecCtx_->max_b_frames = 0;
     codecCtx_->gop_size = GOP_SIZE;
-    codecCtx_->time_base = (AVRational){1, (int)param_.fps};
+    codecCtx_->time_base = (AVRational){ 1, 1000 }; // 毫秒
     codecCtx_->framerate = (AVRational){(int)param_.fps, 1};
     codecCtx_->pix_fmt = PIXEL_FORMAT;
     codecCtx_->codec_id = codecID;
@@ -41,13 +42,19 @@ void VideoEncoder::initCodecContext(AVCodecID codecID) {
 }
 
 VideoFrameBuffer VideoEncoder::getVideoBuffer() {
-    AVFrame* frame = framePool_.get();
+    AVFrame* frame = userFramePool_.get();
     if (frame->format != (AVPixelFormat)param_.pixelFormat || frame->width != param_.width || frame->height != param_.height) {
-        // 没有被分配过内存，分配内存设置参数
+        // 如果不一致，先清掉内存，重新申请
+        av_frame_unref(frame);
+
         frame->format = (AVPixelFormat)param_.pixelFormat;
         frame->width = param_.width;
         frame->height = param_.height;
         av_frame_get_buffer(frame, 32);
+    }
+    else {
+        // 如果一致，仅需要保证当前帧可用
+        av_frame_make_writable(frame);
     }
 
     VideoFrameBuffer buffer{};
@@ -62,17 +69,27 @@ void VideoEncoder::commitVideoBuffer(const VideoFrameBuffer& buffer, uint64_t pt
     AVFrame* frame = (AVFrame*)buffer.opaque;
     frame->pts = pts;
 
-    // 拿到数据之后，转为yuv420p
+    // 拿到数据之后，转为PIXEL_FORMAT
     AVFrame* convertedFrame = framePool_.get();
-    convertedFrame->format = AV_PIX_FMT_YUV420P;
-    convertedFrame->width = frame->width;
-    convertedFrame->height = frame->height;
-    av_frame_get_buffer(convertedFrame, 32);
+    if (convertedFrame->format == PIXEL_FORMAT && convertedFrame->width == frame->width && convertedFrame->height == frame->height) {
+        av_frame_make_writable(convertedFrame);
+    }
+    else {
+        // 如果不一致，先清掉内存，重新申请
+        av_frame_unref(convertedFrame);
+
+        convertedFrame->format = PIXEL_FORMAT;
+        convertedFrame->width = frame->width;
+        convertedFrame->height = frame->height;
+        av_frame_get_buffer(convertedFrame, 32);
+    }
+
     sws_scale(swsCtx_, frame->data, frame->linesize,
         0, frame->height, convertedFrame->data, convertedFrame->linesize);
+    convertedFrame->pts = av_rescale_q(pts, AV_TIME_BASE_Q, codecCtx_->time_base);
     frameQue_.push(convertedFrame);
     // 前面的老帧，回收
-    framePool_.put(frame);
+    userFramePool_.put(frame);
 }
 
 void VideoEncoder::run(std::stop_token st) {

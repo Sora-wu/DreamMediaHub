@@ -22,7 +22,7 @@ public:
     [[nodiscard]] QSize getCameraResolution() const;
 
 signals:
-    void imageCaptured(const QImage& image);
+    void imageCaptured(const QImage& image, qint64 pts);
 
 private slots:
     void onFrameChanged(const QVideoFrame& frame);

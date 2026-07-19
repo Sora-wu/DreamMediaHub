@@ -14,7 +14,7 @@ RecorderWorker::~RecorderWorker() {
     stopRecording();
 }
 
-void RecorderWorker::onImageCaptured(const QImage& image) {
+void RecorderWorker::onImageCaptured(const QImage& image, qint64 pts) {
     if (!isRecording_) {
         return;
     }
@@ -38,8 +38,6 @@ void RecorderWorker::onImageCaptured(const QImage& image) {
     }
 
     // 提交
-    const uint32_t FRAME_DURATION = 1e6 / fps_;
-    const int64_t pts = frameCount_ * FRAME_DURATION;
     recorder_->commitVideoBuffer(buffer, pts);
 }
 

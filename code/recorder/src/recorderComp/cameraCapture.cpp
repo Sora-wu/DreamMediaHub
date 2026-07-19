@@ -33,6 +33,18 @@ CameraCapture::CameraCapture(QObject* parent, uint32_t fps) : QObject(parent), f
 CameraCapture::~CameraCapture() {
     if (camera_) {
         camera_->stop();
+        delete camera_;
+        camera_ = nullptr;
+    }
+
+    if (captureSession_) {
+        delete captureSession_;
+        captureSession_ = nullptr;
+    }
+
+    if (videoSink_) {
+        delete videoSink_;
+        videoSink_ = nullptr;
     }
 
     lastEmitTime_ = 0;
@@ -48,7 +60,7 @@ QSize CameraCapture::getCameraResolution() const {
 
 void CameraCapture::onFrameChanged(const QVideoFrame& frame) {
     const qint64 interval = 1000 / fps_;
-    qint64 now = elapsedTimer_.elapsed();
+    qint64 now = elapsedTimer_.nsecsElapsed() / 1000;
 
     if (lastEmitTime_ && now - lastEmitTime_ < interval) {
         return;
@@ -68,7 +80,7 @@ void CameraCapture::onFrameChanged(const QVideoFrame& frame) {
         }
 
         QImage result = image.copy();
-        emit imageCaptured(result);
+        emit imageCaptured(result, now);
     }
 
     cloneFrame.unmap();

@@ -27,4 +27,5 @@ public:
 private:
     Dream::VideoParam param_{};
     SwsContext* swsCtx_ = nullptr;
+    AVFramePool userFramePool_;
 };

@@ -8,6 +8,7 @@
 #include <common/dreamThread.hpp>
 #include <common/dataHandler.hpp>
 #include <common/concurrentQueue.hpp>
+#include <common/FFmpegPool.hpp>
 
 extern "C" {
     struct AVFormatContext;
@@ -33,4 +34,5 @@ private:
     AVFormatContext* fmtCtx_ = nullptr;
     ConcurrentQueue<AVPacket*> videoPktQue_;
     ConcurrentQueue<AVPacket*> audioPktQue_;
+    AVPacketPool pktPool_;
 };

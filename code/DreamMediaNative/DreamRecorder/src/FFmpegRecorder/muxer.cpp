@@ -113,11 +113,14 @@ void Muxer::close() {
 
 void Muxer::handle(void* data) {
     AVPacket* pkt = (AVPacket*)(data);
+    AVPacket* pushPkt =  pktPool_.get();
+    av_packet_ref(pushPkt, pkt);
+
     if (pkt->stream_index == VIDEO_STREAM_INDEX) {
-        videoPktQue_.push(pkt);
+        videoPktQue_.push(pushPkt);
     }
     if (pkt->stream_index == AUDIO_STREAM_INDEX) {
-        audioPktQue_.push(pkt);
+        audioPktQue_.push(pushPkt);
     }
 }
 

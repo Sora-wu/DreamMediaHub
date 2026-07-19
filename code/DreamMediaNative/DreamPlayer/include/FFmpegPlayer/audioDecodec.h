@@ -7,7 +7,7 @@
 
 #include <FFmpegPlayer/decodec.h>
 #include <FFmpegPlayer/audioSpeedFilter.h>
-#include <common/avframePool.hpp>
+#include <common/FFmpegPool.hpp>
 
 #include <atomic>
 

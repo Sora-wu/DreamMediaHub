@@ -19,7 +19,7 @@ public:
     ~RecorderWorker() override;
 
 public slots:
-    void onImageCaptured(const QImage &image);
+    void onImageCaptured(const QImage &image, qint64 pts);
     void stopRecording();
 
 signals:

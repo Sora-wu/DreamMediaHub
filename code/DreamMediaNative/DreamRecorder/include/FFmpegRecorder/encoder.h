@@ -8,7 +8,7 @@
 #include <common/dreamThread.hpp>
 #include <common/dataHandler.hpp>
 #include <common/concurrentQueue.hpp>
-#include <common/avframePool.hpp>
+#include <common/FFmpegPool.hpp>
 
 #include <mutex>
 
@@ -42,6 +42,5 @@ protected:
     AVCodecContext* codecCtx_ = nullptr;
     AVStream* stream_ = nullptr;
     std::mutex mtx_{};
-    int64_t pts_ = 0;
     AVFramePool framePool_{};
 };
