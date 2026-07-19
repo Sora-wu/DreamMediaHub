@@ -61,7 +61,17 @@ VideoFrameBuffer VideoEncoder::getVideoBuffer() {
 void VideoEncoder::commitVideoBuffer(const VideoFrameBuffer& buffer, uint64_t pts) {
     AVFrame* frame = (AVFrame*)buffer.opaque;
     frame->pts = pts;
-    frameQue_.push(frame);
+
+    // 拿到数据之后，转为yuv420p
+    AVFrame* convertedFrame = framePool_.get();
+    convertedFrame->format = AV_PIX_FMT_YUV420P;
+    convertedFrame->width = frame->width;
+    convertedFrame->height = frame->height;
+    av_frame_get_buffer(convertedFrame, 32);
+    sws_scale(swsCtx_, frame->data, frame->linesize,
+        0, frame->height, convertedFrame->data, convertedFrame->linesize);
+    frameQue_.push(convertedFrame);
+    // 前面的老帧，回收
     framePool_.put(frame);
 }
 

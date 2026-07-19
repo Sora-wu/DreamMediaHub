@@ -22,6 +22,7 @@ public:
     void init(const char* path);
     void cleanup();
     void run(std::stop_token st) override;
+    void close();
 
     void handle(void* data) override;
 

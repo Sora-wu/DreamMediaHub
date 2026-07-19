@@ -86,6 +86,8 @@ void Muxer::run(std::stop_token st) {
             av_log(nullptr, AV_LOG_ERROR, "av_interleaved_write_frame failed error: %s\n", av_err2str(res));
             break;
         }
+
+        av_packet_free(&pkt);
     }
 
     // 线程结束
@@ -100,6 +102,13 @@ void Muxer::run(std::stop_token st) {
         av_log(nullptr, AV_LOG_ERROR, "avio_closep failed\n");
         ::exit(1);
     }
+
+    av_log(nullptr, AV_LOG_INFO, "muxer thread end\n");
+}
+
+void Muxer::close() {
+    videoPktQue_.close();
+    audioPktQue_.close();
 }
 
 void Muxer::handle(void* data) {

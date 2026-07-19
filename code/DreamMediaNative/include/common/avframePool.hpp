@@ -17,7 +17,7 @@ public:
         clear();
     }
 
-    AVFrame* get() {
+    [[nodiscard]] AVFrame* get() {
         if (!pool_.empty()) {
             AVFrame* frame = pool_.back();
             pool_.pop_back();

@@ -8,6 +8,7 @@
 #include <common/dreamThread.hpp>
 #include <common/dataHandler.hpp>
 #include <common/concurrentQueue.hpp>
+#include <common/avframePool.hpp>
 
 #include <mutex>
 
@@ -31,6 +32,7 @@ public:
     virtual void initCodecContext(AVCodecID codecID) = 0;
 
     void run(std::stop_token st) override;
+    void close();
 
 protected:
     bool encodePacket(AVPacket* pkt);
@@ -41,4 +43,5 @@ protected:
     AVStream* stream_ = nullptr;
     std::mutex mtx_{};
     int64_t pts_ = 0;
+    AVFramePool framePool_{};
 };

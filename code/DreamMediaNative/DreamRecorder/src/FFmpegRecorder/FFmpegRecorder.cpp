@@ -35,14 +35,21 @@ void FFmpegRecorder::start(const char* path, const VideoParam& videoParam, const
 }
 
 void FFmpegRecorder::stop() {
-    videoEncoder_->exit();
-    audioEncoder_->exit();
-    mux_->exit();
+    if (videoEncoder_) {
+        videoEncoder_->exit();
+        videoEncoder_->close();
+        videoEncoder_ = nullptr;
+    }
 
-    // reset
+    if (audioEncoder_) {
+        audioEncoder_->exit();
+        audioEncoder_->close();
+        audioEncoder_ = nullptr;
+    }
+
+    mux_->exit();
+    mux_->close();
     mux_ = nullptr;
-    videoEncoder_ = nullptr;
-    audioEncoder_ = nullptr;
 }
 
 VideoFrameBuffer FFmpegRecorder::getVideoBuffer() {

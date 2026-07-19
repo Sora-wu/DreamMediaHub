@@ -34,4 +34,5 @@ void RecorderController::stop() {
     workThread_->wait();
 
     recorder_->stop();
+    DreamRecorderContext::destroyDreamRecorder(&recorder_);
 }

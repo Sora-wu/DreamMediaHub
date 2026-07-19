@@ -7,7 +7,6 @@
 
 #include <DreamRecorder/structs.h>
 #include <FFmpegRecorder/encoder.h>
-#include <common/avframePool.hpp>
 
 extern "C" {
     struct SwsContext;
@@ -28,5 +27,4 @@ public:
 private:
     Dream::VideoParam param_{};
     SwsContext* swsCtx_ = nullptr;
-    AVFramePool framePool_{};
 };
