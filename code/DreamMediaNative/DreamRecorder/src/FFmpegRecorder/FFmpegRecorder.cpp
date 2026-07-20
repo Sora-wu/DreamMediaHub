@@ -24,13 +24,21 @@ void FFmpegRecorder::start(const char* path, const VideoParam& videoParam, const
         videoEncoder_->start("video encoder thread");
     }
 
-    if (audioParam.enable) {
-        audioEncoder_ = std::make_unique<AudioEncoder>(audioParam, AUDIO_QUE_SIZE);
-        audioEncoder_->addStream(AV_CODEC_ID_AAC);
-        audioEncoder_->setNextHandler(mux_.get());
-        audioEncoder_->start("audio encoder thread");
-    }
+    do {
+        if (audioParam.enable) {
+            if (audioParam.sampleFormat == SampleFormat::NONE) {
+                av_log(nullptr, AV_LOG_ERROR, "unsupported audio format type, will output without audio stream!\n");
+                break;
+            }
+            audioEncoder_ = std::make_unique<AudioEncoder>(audioParam, AUDIO_QUE_SIZE);
+            audioEncoder_->addStream(AV_CODEC_ID_AAC);
+            audioEncoder_->setNextHandler(mux_.get());
+            audioEncoder_->start("audio encoder thread");
+        }
+    } while (false);
 
+    AVFormatContext* fmtCtx = FFINSTANCE()->getFormatContext();
+    av_dump_format(fmtCtx, 0, nullptr, true);
     mux_->start("muxer thread");
 }
 
@@ -60,5 +68,6 @@ void FFmpegRecorder::commitVideoBuffer(const VideoFrameBuffer& buffer, uint64_t 
     videoEncoder_->commitVideoBuffer(buffer, pts);
 }
 
-void FFmpegRecorder::pushAudioData(char* data, uint32_t size, uint64_t pts) {
+void FFmpegRecorder::pushAudioData(const char* data, uint32_t size, uint64_t pts) {
+    audioEncoder_->pushData(data, size, pts);
 }

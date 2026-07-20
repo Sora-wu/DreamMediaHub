@@ -87,7 +87,7 @@ void Muxer::run(std::stop_token st) {
             break;
         }
 
-        av_packet_free(&pkt);
+        pktPool_.put(pkt, false);
     }
 
     // 线程结束

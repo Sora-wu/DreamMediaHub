@@ -46,8 +46,6 @@ void Encoder::addStream(AVCodecID codecID) {
         av_log(nullptr, AV_LOG_ERROR, "avcodec_parameters_from_context fail!\n");
         return;
     }
-
-    av_dump_format(fmtCtx, 0, nullptr, true);
 }
 
 void Encoder::run(std::stop_token st) {

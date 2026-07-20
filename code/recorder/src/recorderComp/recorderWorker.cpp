@@ -10,11 +10,11 @@
 
 using namespace Dream;
 
-RecorderWorker::~RecorderWorker() {
+VideoWorker::~VideoWorker() {
     stopRecording();
 }
 
-void RecorderWorker::onImageCaptured(const QImage& image, qint64 pts) {
+void VideoWorker::onImageCaptured(const QImage& image, qint64 pts) {
     if (!isRecording_) {
         return;
     }
@@ -41,6 +41,19 @@ void RecorderWorker::onImageCaptured(const QImage& image, qint64 pts) {
     recorder_->commitVideoBuffer(buffer, pts);
 }
 
-void RecorderWorker::stopRecording() {
+void VideoWorker::stopRecording() {
+    isRecording_ = false;
+}
+
+//////////////////////////////////VideoWorker end//////////////////////////////////////////////
+AudioWorker::~AudioWorker() {
+    stopRecording();
+}
+
+void AudioWorker::onAudioDataCaptured(const char* data, uint32_t size, uint64_t pts) const {
+    recorder_->pushAudioData(data, size, pts);
+}
+
+void AudioWorker::stopRecording() {
     isRecording_ = false;
 }

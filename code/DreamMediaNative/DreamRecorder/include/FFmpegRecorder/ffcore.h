@@ -13,5 +13,5 @@ extern "C" {
 #include <libavutil/avutil.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
-
+#include <libavutil/audio_fifo.h>
 }

@@ -8,8 +8,6 @@
 #include <QCamera>
 #include <QMediaCaptureSession>
 #include <QMediaDevices>
-#include <QDebug>
-
 
 CameraCapture::CameraCapture(QObject* parent, uint32_t fps) : QObject(parent), fps_(fps) {
     QCameraDevice defaultDevice = QMediaDevices::defaultVideoInput();

@@ -8,13 +8,17 @@
 #include <DreamRecorder/define.h>
 
 namespace Dream {
-    enum class PixelFormat {
+    enum class DREAM_RECORDER_API PixelFormat {
         RGB = 2,
         BGR = 3,
     };
 
-    enum class SampleFormat {
+    enum class DREAM_RECORDER_API SampleFormat {
+        NONE,
+        U8 = 0,
         S16 = 1,
+        S32 = 2,
+        FLT = 3,
         FLTP = 8
     };
 
@@ -32,7 +36,7 @@ namespace Dream {
         uint32_t channels = 2;
         uint32_t bitRate = 64000;
         SampleFormat sampleFormat = SampleFormat::FLTP;
-        bool enable = false;                // 暂时屏蔽
+        bool enable = true;
     };
 
     struct DREAM_RECORDER_API VideoFrameBuffer {

@@ -19,8 +19,8 @@ namespace Dream {
         // 零拷贝
         virtual VideoFrameBuffer getVideoBuffer() = 0;
 
-        // 下面两个pts但是都是微秒
+        // 下面两个pts都是微秒
         virtual void commitVideoBuffer(const VideoFrameBuffer& buffer, uint64_t pts) = 0;
-        virtual void pushAudioData(char* data, uint32_t size, uint64_t pts) = 0;
+        virtual void pushAudioData(const char* data, uint32_t size, uint64_t pts) = 0;
     };
 }

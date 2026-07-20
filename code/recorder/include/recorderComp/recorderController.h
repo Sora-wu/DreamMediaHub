@@ -5,14 +5,17 @@
 
 #pragma once
 
-#include <recorderComp/cameraCapture.h>
+#include <QObject>
 
 namespace Dream {
     class DreamRecorder;
 }
 
 class QThread;
-class RecorderWorker;
+class CameraCapture;
+class VideoWorker;
+class AudioCapture;
+class AudioWorker;
 
 class RecorderController : public QObject {
     Q_OBJECT
@@ -25,7 +28,12 @@ public:
 
 private:
     Dream::DreamRecorder* recorder_ = nullptr;
-    CameraCapture* screenCapture_ = nullptr;
-    RecorderWorker* recorderWorker_ = nullptr;
-    QThread* workThread_ = nullptr;
+
+    CameraCapture* cameraCapture_ = nullptr;
+    VideoWorker* videoWorker_ = nullptr;
+    QThread* videoThread_ = nullptr;
+
+    AudioCapture* audioCapture_ = nullptr;
+    AudioWorker* audioWorker_ = nullptr;
+    QThread* audioThread_ = nullptr;
 };

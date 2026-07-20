@@ -21,7 +21,7 @@ public:
 
     Dream::VideoFrameBuffer getVideoBuffer() override;
     void commitVideoBuffer(const Dream::VideoFrameBuffer& buffer, uint64_t pts) override;
-    void pushAudioData(char* data, uint32_t size, uint64_t pts) override;
+    void pushAudioData(const char* data, uint32_t size, uint64_t pts) override;
 
 private:
 

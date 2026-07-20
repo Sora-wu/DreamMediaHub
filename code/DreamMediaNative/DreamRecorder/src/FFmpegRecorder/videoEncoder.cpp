@@ -14,6 +14,13 @@ namespace {
 
 using namespace Dream;
 
+VideoEncoder::~VideoEncoder() {
+    if (swsCtx_) {
+        sws_freeContext(swsCtx_);
+        swsCtx_ = nullptr;
+    }
+}
+
 void VideoEncoder::addStream(AVCodecID codecID) {
     Encoder::addStream(codecID);
     stream_->time_base = (AVRational){ 1, 90000 };
