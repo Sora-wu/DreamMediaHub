@@ -4,10 +4,14 @@
 //
 
 #include <recorderComp/audioCapture.h>
+#include <DreamRecorder/DreamRecorderContext.h>
+
 #include <QAudioSource>
 #include <QAudioDevice>
 #include <QMediaDevices>
 #include <QDebug>
+
+using namespace Dream;
 
 AudioCapture::AudioCapture(QObject* parent) : QObject(parent) {
     QAudioDevice defaultDevice = QMediaDevices::defaultAudioInput();
@@ -44,11 +48,16 @@ void AudioCapture::onReadyRead() {
         return;
     }
 
-    QByteArray data = audioDevice_->readAll();
+    QByteArray data = audioDevice_->read(DreamRecorderContext::AUDIO_BUFFER_SIZE);
     if (data.isEmpty()) {
         return;
     }
-
-    qint64 now = elapsedTimer_.nsecsElapsed() / 1000;
-    emit audioDataCaptured(data.constData(), static_cast<uint32_t>(data.size()), now);
+    audioBuffer_.append(data);
+    const uint32_t frameSize = format_.bytesPerFrame() / format_.channelCount();
+    const uint32_t validBytes = (audioBuffer_.size() / frameSize) * frameSize;       // 取出采样的完整数据帧，避免杂音、噪音
+    if (validBytes > 0) {
+        qint64 now = elapsedTimer_.nsecsElapsed() / 1000;
+        emit audioDataCaptured(audioBuffer_.constData(), validBytes, now);
+        audioBuffer_.remove(0, validBytes);
+    }
 }

@@ -23,6 +23,8 @@ int main(int argc, char *argv[])
     QSurfaceFormat::setDefaultFormat(format);
 
     QGuiApplication app(argc, argv);
+    QGuiApplication::setOrganizationName("config");
+    QGuiApplication::setApplicationName("recorder");
 
     qmlRegisterType<RecorderController>("Dream.recorder", 1, 0, "RecorderController");
 

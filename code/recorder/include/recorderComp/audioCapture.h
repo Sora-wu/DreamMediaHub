@@ -33,4 +33,5 @@ private:
     QIODevice* audioDevice_ = nullptr;
     QElapsedTimer elapsedTimer_;
     QAudioFormat format_{};
+    QByteArray audioBuffer_;
 };

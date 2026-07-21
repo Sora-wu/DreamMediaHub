@@ -5,6 +5,9 @@
 
 #include <FFmpegRecorder/audioEncoder.h>
 #include <FFmpegRecorder/ffcore.h>
+#include <DreamRecorder/DreamRecorderContext.h>
+
+using namespace Dream;
 
 namespace {
     constexpr AVSampleFormat SAMPLER_FORMAT = AV_SAMPLE_FMT_FLTP;
@@ -39,7 +42,8 @@ void AudioEncoder::addStream(AVCodecID codecID) {
     audioFifo_ = av_audio_fifo_alloc(codecCtx_->sample_fmt, codecCtx_->channels, 1);
 
     int outLinesize = 0;
-    av_samples_alloc(converted_, &outLinesize, codecCtx_->channels, codecCtx_->sample_rate, SAMPLER_FORMAT, 0);
+    convertedSampleCount_ = DreamRecorderContext::AUDIO_BUFFER_SIZE / (param_.channels * av_get_bytes_per_sample((AVSampleFormat)param_.sampleFormat));
+    av_samples_alloc(converted_, &outLinesize, codecCtx_->channels, convertedSampleCount_, SAMPLER_FORMAT, 0);
 }
 
 void AudioEncoder::initCodecContext(AVCodecID codecID) {
@@ -65,7 +69,7 @@ void AudioEncoder::pushData(const char* data, uint32_t size, uint64_t pts) {
 
     uint8_t* inBuf[1] = { (uint8_t*)data };
     const int convertedSampleCount = swr_convert(swrCtx_,
-        converted_, inSampleCount + 256,
+        converted_, convertedSampleCount_,
         (const uint8_t**)inBuf, inSampleCount);
     if (convertedSampleCount > 0) {
         if (av_audio_fifo_realloc(audioFifo_, av_audio_fifo_size(audioFifo_) + convertedSampleCount) != 0) {

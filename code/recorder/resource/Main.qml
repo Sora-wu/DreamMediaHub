@@ -13,6 +13,37 @@ Window {
 
     property bool isRecording: false
 
+    function urlToLocalPath(url) {
+        let path = url.toString();
+        if (path.startsWith("file://")) {
+            path = path.substring(7);
+        }
+
+        // 兼容 Windows 系统
+        if (path.length > 2 && path.charAt(0) === '/' && path.charAt(2) === ':') {
+            path = path.substring(1);
+        }
+        return path;
+    }
+
+    function generateFilePath(extension) {
+        let folderStr = fd.currentFolder.toString();
+        folderStr = urlToLocalPath(folderStr);
+
+        if (!folderStr.endsWith("/")) {
+            folderStr += "/";
+        }
+
+        // 格式化当前时间
+        let timestamp = Qt.formatDateTime(new Date(), "yyyy-MM-dd_hh-mm-ss");
+        return folderStr + "DreamRecorder_" + timestamp + "." + extension;
+    }
+
+    Settings {
+        id: appSettings
+        property string lastFolder: ""
+    }
+
     RecorderController {
         id: recorderCtrl
     }
@@ -21,9 +52,10 @@ Window {
         id: fd
         acceptLabel: qsTr("确定")
         rejectLabel: qsTr("取消")
-        currentFolder: "/home/sora/Videos/"
+        currentFolder: appSettings.lastFolder ? appSettings.lastFolder : StandardPaths.writableLocation(StandardPaths.MoviesLocation)
         onAccepted: {
             fd.currentFolder = selectedFolder;
+            appSettings.lastFolder = selectedFolder.toString();
             urlInput.text = selectedFolder
         }
     }
@@ -95,7 +127,9 @@ Window {
                     onClicked: {
                         recorder.isRecording = !recorder.isRecording;
                         if (recorder.isRecording) {
-                            recorderCtrl.start(fd.currentFolder + "recording.mp4",)
+                            let filePath = recorder.generateFilePath("mp4");
+                            console.log("Saving recording to:", filePath);
+                            recorderCtrl.start(filePath);
                         }
                         else {
                             recorderCtrl.stop();
@@ -110,20 +144,6 @@ Window {
         id: screenShotWidgetLoader
         onLoaded: {
             item.filePath = fd.currentFolder;
-
-            // 关键：连接选区完成信号
-            item.regionAccepted.connect(function(x, y, w, h) {
-                recorder.areaX = x;
-                recorder.areaY = y;
-                recorder.areaW = w;
-                recorder.areaH = h;
-                // 自动更新输入框的文本
-                xInput.text = x.toString();
-                yInput.text = y.toString();
-                wInput.text = w.toString();
-                hInput.text = h.toString();
-            });
-
             item.closing.connect(function () {
                 screenShotWidgetLoader.source = "";
             })
