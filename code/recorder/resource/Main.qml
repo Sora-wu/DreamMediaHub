@@ -26,17 +26,40 @@ Window {
         return path;
     }
 
-    function generateFilePath(extension) {
-        let folderStr = fd.currentFolder.toString();
-        folderStr = urlToLocalPath(folderStr);
+    function isLocalPath(path) {
+        if (!path || typeof path !== "string") return false
 
+        var p = path.replace(/\\/g, "/")
+        var match = p.match(/^([a-zA-Z][a-zA-Z0-9+\-.]*):/)
+        var scheme = match ? match[1].toLowerCase() : ""
+
+        if (scheme === "") return true
+        if (scheme === "file" || scheme === "qrc") return true
+
+        var remoteSchemes = ["http", "https", "ftp", "rtmp", "rtsp", "mms", "udp", "tcp"]
+        if (remoteSchemes.indexOf(scheme) !== -1) return false
+
+        // 其他不认识的 scheme，保守视为远程
+        return false
+    }
+
+    function generateFileName(path) {
+        let folderStr = path;
+
+        if (!isLocalPath(folderStr)) {
+            // 如果不是本地路径，可能是流媒体，直接返回
+            return folderStr;
+        }
+
+        // 如果是本地文件，则加上文件名
+        folderStr = urlToLocalPath(folderStr);
         if (!folderStr.endsWith("/")) {
             folderStr += "/";
         }
 
         // 格式化当前时间
         let timestamp = Qt.formatDateTime(new Date(), "yyyy-MM-dd_hh-mm-ss");
-        return folderStr + "DreamRecorder_" + timestamp + "." + extension;
+        return folderStr + "DreamRecorder_" + timestamp + ".mp4";
     }
 
     Settings {
@@ -55,7 +78,6 @@ Window {
         currentFolder: appSettings.lastFolder ? appSettings.lastFolder : StandardPaths.writableLocation(StandardPaths.MoviesLocation)
         onAccepted: {
             fd.currentFolder = selectedFolder;
-            appSettings.lastFolder = selectedFolder.toString();
             urlInput.text = selectedFolder
         }
     }
@@ -127,9 +149,11 @@ Window {
                     onClicked: {
                         recorder.isRecording = !recorder.isRecording;
                         if (recorder.isRecording) {
-                            let filePath = recorder.generateFilePath("mp4");
-                            console.log("Saving recording to:", filePath);
-                            recorderCtrl.start(filePath);
+                            let path = urlInput.text;
+                            appSettings.lastFolder = path;
+                            path = generateFileName(path);
+                            console.log("url:", path);
+                            recorderCtrl.start(path);
                         }
                         else {
                             recorderCtrl.stop();
