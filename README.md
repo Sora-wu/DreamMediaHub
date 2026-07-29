@@ -1,4 +1,4 @@
-# DearmMediaHub
+# DreamMediaHub
 一个轻量级、前后端分离的3D渲染引擎，后端`DreamMediaNative`基于FFmpeg实现；基于C++23。
 ## 📋 编译
 ### 🐧 Linux
@@ -13,7 +13,6 @@ cd code/DreamMediaNative
 cd code/DreamMediaNative
 ...(FFmpeg自行在Windows上编译)
 ```
-双击`build_dep.bat`
 
 ## 🚀 编译项目
 ⚠️确保你的编译器支持C++23
