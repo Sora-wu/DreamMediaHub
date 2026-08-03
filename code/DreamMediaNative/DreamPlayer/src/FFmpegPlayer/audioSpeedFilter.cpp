@@ -101,11 +101,9 @@ int AudioSpeedFilter::initFilter(float speed, uint32_t sampleRate, AVSampleForma
 }
 
 int AudioSpeedFilter::addFrame(AVFrame* frame) {
-    av_log(nullptr, AV_LOG_INFO, "add frame\n");
     return av_buffersrc_add_frame_flags(filterSrcCtx_, frame, AV_BUFFERSRC_FLAG_KEEP_REF);
 }
 
 int AudioSpeedFilter::getFrame(AVFrame* frame) {
-    av_log(nullptr, AV_LOG_INFO, "get frame\n");
     return av_buffersink_get_frame(filterSinkCtx_, frame);
 }

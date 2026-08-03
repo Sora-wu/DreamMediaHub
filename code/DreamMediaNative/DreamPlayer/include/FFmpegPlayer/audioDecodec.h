@@ -37,7 +37,7 @@ protected:
     void cleanup() override;
 
 private:
-    void refreshSwr(AVFrame* frame);
+    bool refreshSwr(AVFrame* frame);
     bool fillData(AVFrame* frame);
     // 直接参考ffplay的实现
     bool adjustSamples(AVFrame* frame);

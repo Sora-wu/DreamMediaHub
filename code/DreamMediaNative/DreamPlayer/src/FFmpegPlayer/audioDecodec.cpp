@@ -177,7 +177,7 @@ void AudioDecodec::cleanup() {
     Decodec::cleanup();
 }
 
-void AudioDecodec::refreshSwr(AVFrame* frame) {
+bool AudioDecodec::refreshSwr(AVFrame* frame) {
     if (frame->sample_rate != cachedSampleRate_ || frame->channel_layout != cachedChannelLayout_ || frame->format != cachedFormat_) {
         swr_free(&swrCtx_);
         swrCtx_ = swr_alloc_set_opts(nullptr,
@@ -187,15 +187,18 @@ void AudioDecodec::refreshSwr(AVFrame* frame) {
         if (!swrCtx_ || swr_init(swrCtx_) < 0) {
             av_log(nullptr, AV_LOG_ERROR, "swr_alloc_set_opts failed\n");
             swr_free(&swrCtx_);
-            av_frame_unref(frame);
-            av_frame_free(&frame);
-            return;
+            cachedSampleRate_ = 0;
+            cachedChannelLayout_ = 0;
+            cachedFormat_ = 0;
+            return false;
         }
 
         cachedSampleRate_ = frame->sample_rate;
         cachedChannelLayout_ = frame->channel_layout;
         cachedFormat_ = frame->format;
     }
+
+    return true;
 }
 
 bool AudioDecodec::fillData(AVFrame* frame) {
@@ -334,12 +337,12 @@ AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
         return dup;
     }
 
-    refreshSwr(frame);
-    if (!swrCtx_) {
+    if (!refreshSwr(frame) || !swrCtx_) {
         return nullptr;
     }
 
-    const int outSampleCount = av_rescale_rnd(frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP) + 256;
+    const int64_t delay = swr_get_delay(swrCtx_, frame->sample_rate);
+    const int outSampleCount = av_rescale_rnd(frame->nb_samples + delay, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP);
     AVFrame* dst = framePool_.get();
     if (!dst) {
         return nullptr;
@@ -348,8 +351,10 @@ AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
     dst->format = SAMPLE_FORMAT;
     dst->sample_rate = SAMPLE_RATE;
     dst->channel_layout = CHANNEL_LAYOUT;
+    dst->channels = CHANNEL_COUNT;
     dst->nb_samples = outSampleCount;
     if (av_frame_get_buffer(dst, 0) < 0) {
+        av_log(nullptr, AV_LOG_ERROR, "av_frame_get_buffer failed in convertFrame\n");
         framePool_.put(dst);
         return nullptr;
     }
@@ -362,11 +367,15 @@ AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
 
     dst->nb_samples = converted;
     av_frame_copy_props(dst, frame);
+    if (frame->pts != AV_NOPTS_VALUE) {
+        dst->pts = av_rescale_q(frame->pts, {1, frame->sample_rate}, {1, SAMPLE_RATE});
+    }
 
     // 确保所需的属性正确，因为已经经过重采样
     dst->format = SAMPLE_FORMAT;
     dst->sample_rate = SAMPLE_RATE;
     dst->channel_layout = CHANNEL_LAYOUT;
+    dst->channels = CHANNEL_COUNT;
 
     return dst;
 }

@@ -9,6 +9,7 @@
 #include <DreamPlayer/DreamPlayerContext.h>
 
 #include <QAudioSink>
+#include <qcoreapplication.h>
 #include <QMediaDevices>
 #include <QFileInfo>
 #include <QTimer>
@@ -41,13 +42,9 @@ namespace {
 
 PlayerController::PlayerController(QObject* parent) {
     player_ = DreamPlayerContext::createDreamPlayer();
-    // TEST
-#ifdef PLATFORM_LINUX
-    open("/home/sora/Videos/test.mp4");
-    // open("rtmp://192.168.1.218/live/test");
-#else
-    open("D:/Desktop/Test/test56.mp4");
-#endif
+
+    const QString& url = QCoreApplication::arguments()[1];
+    open(url);
     isPlaying_ = true;
 
     QAudioFormat format;

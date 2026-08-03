@@ -12,6 +12,10 @@
 
 int main(int argc, char *argv[])
 {
+    if (argc < 2) {
+        qCritical() << "Usage: playerApp <video_file>";
+    }
+
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Floor);
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
 

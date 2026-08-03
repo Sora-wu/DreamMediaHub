@@ -56,6 +56,9 @@ public:
         if (!pool_.empty()) {
             T* frame = pool_.back();
             pool_.pop_back();
+
+            // 给出去的时候，unref一下，避免上次使用的脏数据
+            FFmpegTraits<T>::unref(frame);
             return frame;
         }
 
