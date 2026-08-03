@@ -26,7 +26,6 @@ FFmpegPlayer::FFmpegPlayer() {
     demuxer_ = std::make_unique<Demuxer>();
     demuxer_->setNextHandler(this);
 
-
     videoDecodec_ = std::make_unique<VideoDecodec>(FRAME_VIDEO_SIZE);
     audioDecodec_ = std::make_unique<AudioDecodec>(FRAME_AUDIO_SIZE);
 }
@@ -121,10 +120,8 @@ uint32_t FFmpegPlayer::getDuration() const {
 
 // 确保返回值不是nan或者大于duration
 double FFmpegPlayer::getCurrentTime() {
-    checkPlaybackCompleted();
-
     static double cachedTime = 0;
-        double currentTime = FFINSTANCE()->getMasterClock();
+    double currentTime = FFINSTANCE()->getMasterClock();
     if (!isnan(currentTime)) {
         cachedTime = currentTime;
     }
@@ -200,11 +197,7 @@ void FFmpegPlayer::handle(void* data) {
 
 void FFmpegPlayer::run(std::stop_token st) {
     while (!st.stop_requested()) {
-        {
-            std::lock_guard lock(mtx_);
-            checkPlaybackCompleted();
-        }
-
+        checkPlaybackCompleted();
         msleep(100);
     }
 }

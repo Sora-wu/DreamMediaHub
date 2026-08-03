@@ -12,12 +12,13 @@
 using namespace Dream;
 
 namespace {
+    constexpr AVPixelFormat PIXEL_FORMAT = AV_PIX_FMT_YUV420P;
     constexpr double SYNC_THRESHOLD_MIN = 0.04;
     constexpr double SYNC_THRESHOLD_MAX = 0.1;
     constexpr double SYNC_FRAMEDUP_THRESHOLD = 0.1;
     constexpr double SYNC_THRESHOLD_MAX_DRIFT = 0.1;
 
-    void updateVideoFrameSize(VideoFrame* videoFrame, int height, const int linesize[3]) {
+    void updateVideoFrameSize(VideoFrame* videoFrame, int height, const int linesize[4]) {
         const int planeHeights[3] = { height, height / 2, height / 2 };
         for (uint32_t i = 0; i < 3; ++i) {
             if (!linesize[i]) {
@@ -36,6 +37,7 @@ namespace {
 
             videoFrame->data[i] = new char[bufSize]{};
             videoFrame->len[i] = bufSize;
+            videoFrame->stride[i] = linesize[i];
         }
     }
 }
@@ -133,8 +135,13 @@ VideoFrame* VideoDecodec::getVideoFrame() {
             if (!isnan(heldFrame_.pts)) {
                 FFINSTANCE()->setVideoClock(heldFrame_.pts, heldFrame_.serial, decodecTimer_);
             }
-            fillData(heldFrame_.frame);
-            return &videoFrame_;
+
+            if (fillData(heldFrame_.frame)) {
+                return &videoFrame_;
+            }
+            // fillData返回false，释放当前帧 取下一帧
+            releaseFrame(heldFrame_);
+            continue;
         }
 
         double delay = 0;
@@ -175,17 +182,6 @@ VideoFrame* VideoDecodec::getVideoFrame() {
 
         // 当前帧已经播放完毕，释放
         releaseFrame(heldFrame_);
-        Frame frame{};
-        if (!acquireFrame(frame)) {
-            return &videoFrame_;
-        }
-
-        heldFrame_ = frame;
-        if (!isnan(heldFrame_.pts)) {
-            FFINSTANCE()->setVideoClock(heldFrame_.pts, heldFrame_.serial, time);
-        }
-        fillData(heldFrame_.frame);
-        return &videoFrame_;
     }
 }
 
@@ -246,7 +242,7 @@ bool VideoDecodec::shouldDropLateFrame(double time) const {
     return drop;
 }
 
-void VideoDecodec::fillData(AVFrame* frame) {
+bool VideoDecodec::fillData(AVFrame* frame) {
     const int width = frame->width;
     const int height = frame->height;
 
@@ -254,28 +250,26 @@ void VideoDecodec::fillData(AVFrame* frame) {
     videoFrame_.frameHeight = height;
     videoFrame_.picWidthHeightRatio = frame->sample_aspect_ratio.den == 0 ? 0 : av_q2d(frame->sample_aspect_ratio);
 
-    if (frame->format != cachedFormat_) {
-        swsCtx_ = sws_getCachedContext(swsCtx_,
-            width, height, (AVPixelFormat)frame->format,
-            width, height, AV_PIX_FMT_YUV420P,
-            SWS_BICUBIC, nullptr, nullptr, nullptr);
-        if (!swsCtx_) {
-            av_log(nullptr, AV_LOG_ERROR, "Cannot initialize the conversion context\n");
-            av_frame_unref(frame);
-            av_frame_free(&frame);
-            return;
+    if (frame->format != PIXEL_FORMAT) {
+        if (frame->format != cachedFormat_) {
+            swsCtx_ = sws_getCachedContext(swsCtx_,
+                width, height, (AVPixelFormat)frame->format,
+                width, height, PIXEL_FORMAT,
+                SWS_BICUBIC, nullptr, nullptr, nullptr);
+            if (!swsCtx_) {
+                av_log(nullptr, AV_LOG_ERROR, "Cannot initialize the conversion context\n");
+                return false;
+            }
+            cachedFormat_ = frame->format;
         }
-        cachedFormat_ = frame->format;
 
         int outLinesize[4]{};
-        if (av_image_fill_linesizes(outLinesize, AV_PIX_FMT_YUV420P, width) < 0) {
+        if (av_image_fill_linesizes(outLinesize, PIXEL_FORMAT, width) < 0) {
             av_log(nullptr, AV_LOG_ERROR, "Cannot fill linesize\n");
-            av_frame_unref(frame);
-            av_frame_free(&frame);
-            return;
+            return false;
         }
         updateVideoFrameSize(&videoFrame_, height, outLinesize);
-        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, (uint8_t* const*)videoFrame_.data, videoFrame_.len);
+        sws_scale(swsCtx_, frame->data, frame->linesize, 0, height, (uint8_t* const*)videoFrame_.data, videoFrame_.stride);
     }
     else {
         updateVideoFrameSize(&videoFrame_, height, frame->linesize);
@@ -286,7 +280,8 @@ void VideoDecodec::fillData(AVFrame* frame) {
             for (int row = 0; row < planeHeight; ++row) {
                 memcpy(videoFrame_.data[i] + row * stride, frame->data[i] + row * stride, stride);
             }
-            videoFrame_.stride[i] = stride;
         }
     }
+
+    return true;
 }

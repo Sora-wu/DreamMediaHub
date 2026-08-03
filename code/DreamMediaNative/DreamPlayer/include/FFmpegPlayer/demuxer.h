@@ -54,6 +54,6 @@ private:
     double seekTargetPos_ = 0;
     double seekRel_ = 0;
     std::condition_variable cvRead_;
-    std::mutex mtxRead_;
+    std::mutex mtx_;
     MediaClock* mediaClock_ = nullptr;
 };

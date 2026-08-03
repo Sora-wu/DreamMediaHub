@@ -141,19 +141,20 @@ bool Decodec::decodeFrame(AVFrame* frame) {
 }
 
 void Decodec::pushFrame(AVFrame* frame, double pts, double duration) {
+    // TODO: 对象池优化
     AVFrame* dup = av_frame_alloc();
     if (!dup || av_frame_ref(dup, frame) < 0) {
         av_frame_free(&dup);
         return;
     }
 
-    Frame vp{};
-    vp.frame = dup;
-    vp.serial = decodecSerial_;
-    vp.pts = pts;
-    vp.duration = duration;
+    Frame f{};
+    f.frame = dup;
+    f.serial = decodecSerial_;
+    f.pts = pts;
+    f.duration = duration;
 
-    frameQue_.push(vp);
+    frameQue_.push(f);
 }
 
 bool Decodec::acquireFrame(Frame& out) {

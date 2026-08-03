@@ -37,7 +37,7 @@ private:
     bool shouldDropLateFrame(double time) const;
     double getFrameDuration(const Frame& frame, const Frame& nextFrame) const;
     double calcDelay(double duration) const;
-    void fillData(AVFrame* frame);
+    bool fillData(AVFrame* frame);
 
 private:
     SwsContext* swsCtx_ = nullptr;

@@ -56,7 +56,7 @@ void Demuxer::run(std::stop_token st) {
 
     while (!st.stop_requested()) {
         {
-            std::lock_guard lock(mtxRead_);
+            std::lock_guard lock(mtx_);
             if (hasSeekRequest_) {
                 seek();
                 hasSeekRequest_ = false;
@@ -74,7 +74,7 @@ void Demuxer::run(std::stop_token st) {
                 break;
             }
 
-            std::unique_lock lock(mtxRead_);
+            std::unique_lock lock(mtx_);
             cvRead_.wait_for(lock, 10ms);
             continue;
         }
@@ -90,7 +90,7 @@ void Demuxer::run(std::stop_token st) {
 }
 
 void Demuxer::seekRequest(double targetPos, double seekRel) {
-    std::lock_guard lock(mtxRead_);
+    std::lock_guard lock(mtx_);
 
     seekTargetPos_ = targetPos;
     seekRel_ = seekRel;

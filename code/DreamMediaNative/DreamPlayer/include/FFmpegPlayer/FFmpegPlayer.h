@@ -70,5 +70,4 @@ private:
     std::unique_ptr<Demuxer> demuxer_;
     std::unique_ptr<VideoDecodec> videoDecodec_;
     std::unique_ptr<AudioDecodec> audioDecodec_;
-    std::mutex mtx_{};
 };
