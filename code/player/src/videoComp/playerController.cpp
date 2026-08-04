@@ -43,7 +43,8 @@ namespace {
 PlayerController::PlayerController(QObject* parent) {
     player_ = DreamPlayerContext::createDreamPlayer();
 
-    const QString& url = QCoreApplication::arguments()[1];
+    const QStringList argsList  = QCoreApplication::arguments();
+    const QString& url = argsList[1];
     open(url);
     isPlaying_ = true;
 
