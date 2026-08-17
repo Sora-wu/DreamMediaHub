@@ -26,7 +26,7 @@ endif()
 
 install(
     TARGETS DreamPlayer
-    EXPORT DreamPlayerTargets
+    EXPORT DreamMediaNativeTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -34,11 +34,4 @@ install(
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/DreamPlayer
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-install(
-    EXPORT DreamPlayerTargets
-    FILE DreamPlayerTargets.cmake
-    NAMESPACE Dream::
-    DESTINATION ${Dream_INSTALL_CMAKEDIR}
 )

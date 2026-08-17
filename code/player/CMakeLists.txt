@@ -1,7 +1,6 @@
 find_package(Qt6 COMPONENTS OpenGL Core Multimedia Quick Gui REQUIRED)
 qt_standard_project_setup(REQUIRES 6.8)
 
-message(STATUS ${CMAKE_PREFIX_PATH})
 find_package(Dream COMPONENTS Player REQUIRED)
 
 function(get_resource_paths out_var base_path)

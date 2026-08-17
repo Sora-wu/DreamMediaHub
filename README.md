@@ -1,5 +1,5 @@
 # DreamMediaHub
-一个轻量级、前后端分离的3D渲染引擎，后端`DreamMediaNative`基于FFmpeg实现；基于C++23。
+一个轻量级、前后端分离的音视频功能合集，后端`DreamMediaNative`基于FFmpeg实现；基于C++23。
 ## 📋 编译
 ### 🐧 Linux
 安装依赖：

@@ -48,3 +48,10 @@ install(
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_subdirectory(DreamPlayer)
 add_subdirectory(DreamRecorder)
+
+install(
+    EXPORT DreamMediaNativeTargets
+    FILE DreamMediaNativeTargets.cmake
+    NAMESPACE Dream::
+    DESTINATION ${Dream_INSTALL_CMAKEDIR}
+)

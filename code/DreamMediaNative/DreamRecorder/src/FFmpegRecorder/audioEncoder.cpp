@@ -84,8 +84,6 @@ void AudioEncoder::pushData(const char* data, uint32_t size, uint64_t pts) {
         AVFrame* frame = framePool_.get();
         if (frame->channels != param_.channels || frame->sample_rate != param_.sampleRate || frame->format != SAMPLER_FORMAT
                 || frame->channel_layout != codecCtx_->channel_layout || frame->nb_samples != frameSize) {
-            av_frame_unref(frame);
-
             frame->channels = param_.channels;
             frame->sample_rate = param_.sampleRate;
             frame->format = SAMPLER_FORMAT;
@@ -98,7 +96,7 @@ void AudioEncoder::pushData(const char* data, uint32_t size, uint64_t pts) {
         }
 
         av_audio_fifo_read(audioFifo_, (void**)frame->data, frameSize);
-        // 如果是第一次赋值，去pts换时间基
+        // 如果是第一次赋值，取pts换时间基
         if (currentPts_ == AV_NOPTS_VALUE) {
             currentPts_ = av_rescale_q(pts, AV_TIME_BASE_Q, codecCtx_->time_base);
         }
