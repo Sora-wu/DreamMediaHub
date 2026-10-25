@@ -23,7 +23,7 @@ VideoEncoder::~VideoEncoder() {
 
 void VideoEncoder::addStream(AVCodecID codecID) {
     Encoder::addStream(codecID);
-    stream_->time_base = (AVRational){ 1, 90000 };
+    stream_->time_base = AVRational{1, 90000};
 
     swsCtx_ = sws_getCachedContext(swsCtx_,
         param_.width, param_.height, (AVPixelFormat)param_.pixelFormat,
@@ -41,8 +41,8 @@ void VideoEncoder::initCodecContext(AVCodecID codecID) {
     codecCtx_->height = param_.height;
     codecCtx_->max_b_frames = 0;
     codecCtx_->gop_size = GOP_SIZE;
-    codecCtx_->time_base = (AVRational){ 1, 1000 }; // 毫秒
-    codecCtx_->framerate = (AVRational){(int)param_.fps, 1};
+    codecCtx_->time_base = AVRational{1, 1000}; // 毫秒
+    codecCtx_->framerate = AVRational{static_cast<int32_t>(param_.fps), 1};
     codecCtx_->pix_fmt = PIXEL_FORMAT;
     codecCtx_->codec_id = codecID;
     codecCtx_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;

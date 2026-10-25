@@ -33,11 +33,11 @@ bool Demuxer::open(const char* url) {
         return false;
     }
 
-    for (int i = 0; i < fmtCtx_->nb_streams; ++i) {
+    for (uint32_t i = 0; i < fmtCtx_->nb_streams; ++i) {
         streams_.push_back(fmtCtx_->streams[i]);
     }
 
-    duration_ = (double)fmtCtx_->duration / AV_TIME_BASE;
+    duration_ = static_cast<uint32_t>(static_cast<double>(fmtCtx_->duration) / AV_TIME_BASE);
     isEof_ = false;
     FFINSTANCE()->setFormatContext(fmtCtx_);
 

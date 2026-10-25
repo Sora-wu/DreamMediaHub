@@ -179,7 +179,7 @@ qint64 AudioBufferDevice::bytesAvailable() const {
 
 void AudioBufferDevice::scaleData(char* data, qint64 len) const {
     int16_t* pcmData = reinterpret_cast<int16_t*>(data);
-    const uint32_t size = len / sizeof(int16_t);
+    const uint32_t size = static_cast<uint32_t>(len / sizeof(int16_t));
     for (uint32_t i = 0; i < size; ++i) {
         int32_t sample = pcmData[i] * volume_;
         pcmData[i] = std::clamp(sample, (int32_t)INT16_MIN, (int32_t)INT16_MAX);

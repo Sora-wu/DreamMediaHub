@@ -31,7 +31,7 @@ AudioEncoder::~AudioEncoder() {
 
 void AudioEncoder::addStream(AVCodecID codecID) {
     Encoder::addStream(codecID);
-    stream_->time_base = (AVRational){1, (int)param_.sampleRate};
+    stream_->time_base = AVRational{1, static_cast<int32_t>(param_.sampleRate)};
 
     swrCtx_ = swr_alloc_set_opts(nullptr,
         codecCtx_->channel_layout, SAMPLER_FORMAT, codecCtx_->sample_rate,
@@ -101,7 +101,7 @@ void AudioEncoder::pushData(const char* data, uint32_t size, uint64_t pts) {
             currentPts_ = av_rescale_q(pts, AV_TIME_BASE_Q, codecCtx_->time_base);
         }
         frame->pts = currentPts_;
-        // 由于stream_->time_base = (AVRational){1, (int)param_.sampleRate}; 可以直接加采样数
+        // time_base uses the sample rate, so the sample count is also the PTS increment.
         currentPts_ += frameSize;
         frameQue_.push(frame);
     }

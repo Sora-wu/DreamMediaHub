@@ -15,3 +15,10 @@ extern "C" {
 #include <libswresample/swresample.h>
 #include <libavutil/audio_fifo.h>
 }
+
+// FFmpeg 4.x uses a C99 compound literal here. Preserve the macro's meaning
+// while providing the equivalent C++ initializer for MSVC.
+#if defined(PLATFORM_WINDOWS) && defined(_MSC_VER)
+#undef AV_TIME_BASE_Q
+#define AV_TIME_BASE_Q AVRational{1, AV_TIME_BASE}
+#endif

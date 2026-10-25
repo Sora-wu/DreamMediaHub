@@ -78,11 +78,11 @@ void VideoDecodec::startDecode() {
 }
 
 uint32_t VideoDecodec::getWidth() const {
-    return codecCtx_->width;
+    return codecCtx_ ? codecCtx_->width : 0;
 }
 
 uint32_t VideoDecodec::getHeight() const {
-    return codecCtx_->height;
+    return codecCtx_ ? codecCtx_->height : 0;
 }
 
 void VideoDecodec::run(std::stop_token st) {

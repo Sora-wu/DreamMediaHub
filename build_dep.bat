@@ -1,12 +1,11 @@
 @echo off
-chdir /D "code"
-if exist "third\build\win" rmdir /s /q "third\build\win"
+setlocal
+set "BUILD_CONFIG=%~1"
+if not defined BUILD_CONFIG set "BUILD_CONFIG=Debug"
 
-chdir /D "DreamMediaNative"
-if exist "build" rmdir /s /q "build"
-
-cmake -B build -DCMAKE_INSTALL_PREFIX=..\third\build\win
-cmake --build build -j --config Debug
-cmake --install build --config Debug
-
-pause
+cmake -S "%~dp0code\DreamMediaNative" -B "%~dp0build\native-windows" -A x64 -T v143 "-DCMAKE_INSTALL_PREFIX=%~dp0code\third\build\win"
+if errorlevel 1 exit /b 1
+cmake --build "%~dp0build\native-windows" --parallel --config "%BUILD_CONFIG%"
+if errorlevel 1 exit /b 1
+cmake --install "%~dp0build\native-windows" --config "%BUILD_CONFIG%"
+if errorlevel 1 exit /b 1

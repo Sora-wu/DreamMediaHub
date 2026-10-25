@@ -102,9 +102,9 @@ void MediaClock::setAudioClock(double pts, double time) {
 }
 
 float MediaClock::getSpeed() const {
-    float speed = audioClock_.speed;
+    float speed = static_cast<float>(audioClock_.speed);
     if (FFINSTANCE()->getSyncType() == SyncType::VideoMaster) {
-        speed = videoClock_.speed;
+        speed = static_cast<float>(videoClock_.speed);
     }
     return speed;
 }

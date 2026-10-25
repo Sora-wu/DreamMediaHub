@@ -142,8 +142,8 @@ void FFmpegPlayer::setSpeed(double speed) {
     double pts = FFINSTANCE()->getAudioPTS();
     FFINSTANCE()->setMasterClock(pts, CURRENT_TIME);
 
-    FFINSTANCE()->setSpeed(speed);
-    audioDecodec_->setSpeed(speed);
+    FFINSTANCE()->setSpeed(static_cast<float>(speed));
+    audioDecodec_->setSpeed(static_cast<float>(speed));
 }
 
 VideoFrame* FFmpegPlayer::getVideoFrame() {

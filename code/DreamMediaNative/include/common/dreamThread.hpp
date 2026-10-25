@@ -7,6 +7,8 @@
 
 #include <thread>
 #include <string>
+#include <cstdint>
+#include <chrono>
 
 class DreamThread {
 public:
@@ -18,8 +20,8 @@ public:
         });
 
         if (!threadName.empty()) {
-            auto threadHandle = thread_.native_handle();
 #ifdef PLATFORM_LINUX
+            auto threadHandle = thread_.native_handle();
             pthread_setname_np(threadHandle, threadName.c_str());
 #endif
         }

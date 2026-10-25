@@ -8,7 +8,7 @@
 #include <DreamRecorder/DreamRecorder.h>
 
 namespace Dream {
-    class DreamRecorderContext {
+    class DREAM_RECORDER_API DreamRecorderContext {
     public:
         static DreamRecorder* createDreamRecorder();
         static void destroyDreamRecorder(DreamRecorder** recorder);

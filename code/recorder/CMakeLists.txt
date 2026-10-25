@@ -26,12 +26,19 @@ qt_add_executable(recorderApp ${SRC})
 
 qt_add_qml_module(recorderApp
         URI Dream.recorder
-        RESOURCE_PREFIX "/"
+        VERSION 1.0
+        RESOURCE_PREFIX "/qt/qml"
         QML_FILES
             ${QMLFILES}
         RESOURCES
             ${IMAGE_FILES}
 )
+
+if(WIN32)
+    find_package(Qt6 COMPONENTS QuickControls2 REQUIRED)
+    target_link_libraries(recorderApp PRIVATE Qt6::QuickControls2)
+    set_target_properties(recorderApp PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
+endif()
 
 target_include_directories(recorderApp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include

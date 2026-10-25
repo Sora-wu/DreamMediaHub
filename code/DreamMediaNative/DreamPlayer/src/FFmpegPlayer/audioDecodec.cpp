@@ -27,7 +27,7 @@ namespace {
     void updateAudioFrameSize(AudioFrame* audioFrame, int buffSize) {
         memset(audioFrame->data, 0, audioFrame->capacity);
 
-        if (audioFrame->capacity >= buffSize) {
+        if (audioFrame->capacity >= static_cast<uint32_t>(buffSize)) {
             return;
         }
 
@@ -259,8 +259,8 @@ bool AudioDecodec::adjustSamples(AVFrame* frame) {
         }
 
         if (wantedNbSamples != frame->nb_samples) {
-            const int sampleDelta = av_rescale_rnd(nbSamples - frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP);
-            const  int compensationDistance = av_rescale_rnd(nbSamples, frame->sample_rate, SAMPLE_RATE, AV_ROUND_UP);
+            const int32_t sampleDelta = static_cast<int32_t>(av_rescale_rnd(nbSamples - frame->nb_samples, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP));
+            const int32_t compensationDistance = static_cast<int32_t>(av_rescale_rnd(nbSamples, frame->sample_rate, SAMPLE_RATE, AV_ROUND_UP));
             if (swr_set_compensation(swrCtx_, sampleDelta, compensationDistance) < 0) {
                 av_log(nullptr, AV_LOG_ERROR, "swr_set_compensation() failed\n");
                 return false;
@@ -342,7 +342,7 @@ AVFrame* AudioDecodec::convertFrame(AVFrame* frame) {
     }
 
     const int64_t delay = swr_get_delay(swrCtx_, frame->sample_rate);
-    const int outSampleCount = av_rescale_rnd(frame->nb_samples + delay, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP);
+    const int32_t outSampleCount = static_cast<int32_t>(av_rescale_rnd(frame->nb_samples + delay, SAMPLE_RATE, frame->sample_rate, AV_ROUND_UP));
     AVFrame* dst = framePool_.get();
     if (!dst) {
         return nullptr;

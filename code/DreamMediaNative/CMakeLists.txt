@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(PLATFORM_NAME "linux")
     file(GLOB_RECURSE COPY_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFORM_NAME}/lib/*.so*)

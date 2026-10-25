@@ -26,12 +26,21 @@ qt_add_executable(playerApp ${SRC})
 
 qt_add_qml_module(playerApp
         URI Dream.play
-        RESOURCE_PREFIX "/"
+        VERSION 1.0
+        RESOURCE_PREFIX "/qt/qml"
         QML_FILES
             ${QMLFILES}
         RESOURCES
             ${IMAGE_FILES}
+            resource/shader/video.vert
+            resource/shader/video.frag
 )
+
+if(WIN32)
+    find_package(Qt6 COMPONENTS QuickControls2 REQUIRED)
+    target_link_libraries(playerApp PRIVATE Qt6::QuickControls2)
+    set_target_properties(playerApp PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
+endif()
 
 target_include_directories(playerApp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include

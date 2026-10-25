@@ -44,7 +44,7 @@ public:
     }
 
     [[nodiscard]] uint64_t getTimer() const {
-        return decodecTimer_;
+        return static_cast<uint64_t>(decodecTimer_);
     }
 
     void handle(void* data) override;

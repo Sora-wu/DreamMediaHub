@@ -121,7 +121,7 @@ void OpenGLRender::synchronize(QQuickFramebufferObject* item) {
 bool OpenGLRender::compileShader() {
     // 顶点着色器
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    std::string vertexShaderStr = readShaderFile("shader/video.vert");
+    std::string vertexShaderStr = readShaderFile(":/qt/qml/Dream/play/resource/shader/video.vert");
     const char* vertexShaderSource = vertexShaderStr.c_str();
     glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
     glCompileShader(vertexShader);
@@ -137,7 +137,7 @@ bool OpenGLRender::compileShader() {
 
     // 片段着色器
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    std::string fragmentShaderStr = readShaderFile("shader/video.frag");
+    std::string fragmentShaderStr = readShaderFile(":/qt/qml/Dream/play/resource/shader/video.frag");
     const char* fragmentShaderSource = fragmentShaderStr.c_str();
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
     glCompileShader(fragmentShader);
@@ -212,7 +212,7 @@ void OpenGLRender::initialize() {
         -1.0f,  1.0f, 0.0f,  0.0f, 1.0f   // 左上
     };
 
-    const unsigned int indices[] = {
+    const uint32_t indices[] = {
         0, 1, 2,  // 第一个三角形
         2, 3, 0   // 第二个三角形
     };

@@ -8,12 +8,12 @@
 #include <DreamRecorder/define.h>
 
 namespace Dream {
-    enum class DREAM_RECORDER_API PixelFormat {
+    enum class PixelFormat {
         RGB = 2,
         BGR = 3,
     };
 
-    enum class DREAM_RECORDER_API SampleFormat {
+    enum class SampleFormat {
         NONE,
         U8 = 0,
         S16 = 1,

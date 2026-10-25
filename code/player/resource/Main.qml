@@ -71,8 +71,8 @@ Window {
 
                     Button {
                         id: btnPlayPause
-                        icon.source: playerCtrl.isPlaying ? "qrc:/Dream/play/resource/image/pause.png"
-                                                              : "qrc:/Dream/play/resource/image/play.png"
+                        icon.source: playerCtrl.isPlaying ? "qrc:/qt/qml/Dream/play/resource/image/pause.png"
+                                                              : "qrc:/qt/qml/Dream/play/resource/image/play.png"
                         flat: true
                         onClicked: {
                             playerCtrl.togglePlay();
@@ -81,13 +81,13 @@ Window {
 
                     Button {
                         id: btnPrevious
-                        icon.source: "qrc:/Dream/play/resource/image/previous.png"
+                        icon.source: "qrc:/qt/qml/Dream/play/resource/image/previous.png"
                         flat: true
                     }
 
                     Button {
                         id: btnNext
-                        icon.source: "qrc:/Dream/play/resource/image/next.png"
+                        icon.source: "qrc:/qt/qml/Dream/play/resource/image/next.png"
                         flat: true
                     }
 
@@ -125,7 +125,7 @@ Window {
 
                     Button {
                         id: btnVolume
-                        icon.source: "qrc:/Dream/play/resource/image/volume.png"
+                        icon.source: "qrc:/qt/qml/Dream/play/resource/image/volume.png"
                         flat: true
                     }
 

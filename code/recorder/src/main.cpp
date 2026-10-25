@@ -8,6 +8,9 @@
 
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
+#ifdef PLATFORM_WINDOWS
+#include <QQuickStyle>
+#endif
 #include <QMetaType>
 
 int main(int argc, char *argv[])
@@ -23,6 +26,9 @@ int main(int argc, char *argv[])
     QSurfaceFormat::setDefaultFormat(format);
 
     QGuiApplication app(argc, argv);
+#ifdef PLATFORM_WINDOWS
+    QQuickStyle::setStyle("Basic");
+#endif
     QGuiApplication::setOrganizationName("config");
     QGuiApplication::setApplicationName("recorder");
 

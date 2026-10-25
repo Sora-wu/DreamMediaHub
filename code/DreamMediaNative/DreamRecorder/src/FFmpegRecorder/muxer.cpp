@@ -70,7 +70,9 @@ void Muxer::cleanup() {
 void Muxer::run(std::stop_token st) {
     int res = avformat_write_header(fmtCtx_, nullptr);
     if (res < 0) {
-        av_log(nullptr, AV_LOG_ERROR, "avformat_write_header failed error: %s\n", av_err2str(res));
+        char error[AV_ERROR_MAX_STRING_SIZE]{};
+        av_strerror(res, error, sizeof(error));
+        av_log(nullptr, AV_LOG_ERROR, "avformat_write_header failed error: %s\n", error);
         ::exit(1);
     }
 
@@ -83,7 +85,9 @@ void Muxer::run(std::stop_token st) {
 
         int res = av_interleaved_write_frame(fmtCtx_, pkt);
         if (res < 0) {
-            av_log(nullptr, AV_LOG_ERROR, "av_interleaved_write_frame failed error: %s\n", av_err2str(res));
+            char error[AV_ERROR_MAX_STRING_SIZE]{};
+            av_strerror(res, error, sizeof(error));
+            av_log(nullptr, AV_LOG_ERROR, "av_interleaved_write_frame failed error: %s\n", error);
             break;
         }
 
