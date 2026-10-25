@@ -1,66 +1,87 @@
 import QtQuick
 
-Rectangle {
+Item {
     id: root
-    width: 1280
-    height: 50
 
-    property real progress: 0
-    property real maxValue: 300         // 做为音量条表示最大音量，作为视频条表示视频时长
+    implicitWidth: 125
+    implicitHeight: 26
+
+    property real maxValue: 100
     property real currentVal: 0
     property bool showCurrentValue: false
-    property alias isDragging: mouseArea.pressed
+    property real trackHeight: height
+    property color backgroundColor: PlayerTheme.volumeBackgroundColor
+    property color progressColor: PlayerTheme.volumeFillColor
+    property string accessibleName: ""
+
+    readonly property bool isDragging: mouseArea.pressed
+    readonly property bool hovered: mouseArea.containsMouse
+    readonly property real displayedValue: Math.max(0, Math.min(maxValue,
+                                          isDragging ? dragValue : currentVal))
+    readonly property real progress: maxValue > 0 ? displayedValue / maxValue : 0
+    property real dragValue: 0
 
     signal sliderRelease(real value)
 
-    // 设置进度条进度，范围【0 - maxValue】
-    function setProgress(value) {
-        root.currentVal = value
-        root.progress = value / maxValue
+    Accessible.role: Accessible.Slider
+    Accessible.name: accessibleName
+
+    function valueAt(position) {
+        return width > 0 && maxValue > 0
+                ? Math.max(0, Math.min(1, position / width)) * maxValue : 0
     }
 
     Rectangle {
-        id: background
-        color: "#2f343f"
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        height: root.trackHeight
+        color: root.backgroundColor
 
         Rectangle {
-            id: frontground
-            color: "#46595c"
-            anchors.left: parent.left
-            anchors.leftMargin: 0
-            height: parent.height
             width: root.progress * parent.width
+            height: parent.height
+            color: root.progressColor
         }
+    }
 
-        MouseArea {
-            id: mouseArea
-            anchors.fill: parent
-            onPositionChanged: function(mouse) {
-                var progress = mouse.x / parent.width
-                root.progress = Math.max(0, Math.min(1, progress))
-                root.currentVal = root.progress * maxValue;
-            }
-            onReleased: function(mouse) {
-                var currentProgress = mouse.x / parent.width
-                root.progress = Math.max(0, Math.min(1, currentProgress))
-                root.currentVal = root.progress * maxValue;
+    Text {
+        visible: root.showCurrentValue
+        anchors.fill: parent
+        text: Math.round(root.displayedValue).toString()
+        color: PlayerTheme.textColor
+        font: PlayerTheme.textFont
+        renderType: Text.QtRendering
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+    }
 
-                root.sliderRelease(root.currentVal)
-            }
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.LeftButton
+        cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+
+        onPressed: function(mouse) {
+            root.dragValue = root.valueAt(mouse.x)
         }
-
-        Text {
-            id: txtNum
-            color: "#ffffff"
-            text: currentVal.toFixed()
-            visible: showCurrentValue
-            anchors.fill: parent
-            font.pixelSize: 20
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            fontSizeMode: Text.HorizontalFit
-            style: Text.Outline
+        onPositionChanged: function(mouse) {
+            if (pressed)
+                root.dragValue = root.valueAt(mouse.x)
+        }
+        onReleased: function(mouse) {
+            root.dragValue = root.valueAt(mouse.x)
+            root.sliderRelease(root.dragValue)
+        }
+        onWheel: function(wheel) {
+            if (root.showCurrentValue && wheel.angleDelta.y !== 0) {
+                root.sliderRelease(Math.max(0, Math.min(root.maxValue,
+                                       root.currentVal + (wheel.angleDelta.y > 0 ? 5 : -5))))
+                wheel.accepted = true
+            } else {
+                wheel.accepted = false
+            }
         }
     }
 }

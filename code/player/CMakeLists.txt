@@ -1,4 +1,4 @@
-find_package(Qt6 COMPONENTS OpenGL Core Multimedia Quick Gui REQUIRED)
+find_package(Qt6 COMPONENTS OpenGL Core Multimedia Quick QuickControls2 Gui REQUIRED)
 qt_standard_project_setup(REQUIRES 6.8)
 
 find_package(Dream COMPONENTS Player REQUIRED)
@@ -18,6 +18,8 @@ file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
 )
 get_resource_paths(QMLFILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/*.qml)
 get_resource_paths(IMAGE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/image/*)
+get_resource_paths(FONT_FILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/fonts/*)
+set_source_files_properties(resource/PlayerTheme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 file(COPY resource/shader DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${COPY_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -32,13 +34,12 @@ qt_add_qml_module(playerApp
             ${QMLFILES}
         RESOURCES
             ${IMAGE_FILES}
+            ${FONT_FILES}
             resource/shader/video.vert
             resource/shader/video.frag
 )
 
 if(WIN32)
-    find_package(Qt6 COMPONENTS QuickControls2 REQUIRED)
-    target_link_libraries(playerApp PRIVATE Qt6::QuickControls2)
     set_target_properties(playerApp PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
 endif()
 
@@ -48,7 +49,7 @@ target_include_directories(playerApp
 
 target_link_libraries(playerApp
         PRIVATE Dream::Player
-        PRIVATE Qt6::OpenGL Qt6::Quick Qt6::Multimedia Qt6::Gui Qt6::Core
+        PRIVATE Qt6::OpenGL Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Gui Qt6::Core
 )
 
 install(TARGETS playerApp

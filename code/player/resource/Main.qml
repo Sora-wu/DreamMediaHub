@@ -1,194 +1,48 @@
 import QtQuick
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 2.15
+import QtQuick.Layouts
+import Dream.play
 
 Window {
+    id: root
+
     width: 1280
     height: 720
+    minimumWidth: 640
+    minimumHeight: 360
     visible: true
-    color: "#262626"
-    minimumHeight: 720
-    minimumWidth: 1280
-    title: qsTr("DreamPlayer")
+    color: "#000000"
+    title: playerCtrl.mediaName.length > 0
+           ? playerCtrl.mediaName + " — DreamPlayer" : qsTr("DreamPlayer")
+
+    property int volumeBeforeMute: 100
 
     PlayerController {
         id: playerCtrl
     }
 
-    Rectangle {
-        id: buttomBar
-        height: 60
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        color: "#3b4252"
-        focus: true
+    Shortcut {
+        sequence: "Left"
+        onActivated: playerCtrl.seek(-5)
+    }
 
-        Keys.onPressed: (event)=> {
-            if (event.key === Qt.Key_Left) {
-                playerCtrl.seek(-5)
-                event.accepted = true
-            }
-            else if (event.key === Qt.Key_Right) {
-                playerCtrl.seek(5)
-                event.accepted = true
-            }
-            else if (event.key === Qt.Key_Space) {
-                playerCtrl.togglePlay();
-                event.accepted = true
-            }
-            else if (event.key === Qt.Key_BracketLeft) {
-                playerCtrl.speed = Math.max(playerCtrl.speed - 0.1, 0.5);
-                event.accepted = true
-            }
-            else if (event.key === Qt.Key_BracketRight) {
-                playerCtrl.speed = Math.min(playerCtrl.speed + 0.1, 2.0);
-                event.accepted = true
-            }
-        }
+    Shortcut {
+        sequence: "Right"
+        onActivated: playerCtrl.seek(5)
+    }
 
-        Column {
-            id: columnLayout
-            anchors.fill: parent
-            anchors.topMargin: 5
-            spacing: 5
+    Shortcut {
+        sequence: "Space"
+        onActivated: playerCtrl.togglePlay()
+    }
 
-            RowLayout {
-                id: controlLayout
-                height: 25
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.leftMargin: 0
-                anchors.rightMargin: 0
-                spacing: 15
+    Shortcut {
+        sequence: "["
+        onActivated: playerCtrl.speed = Math.max(playerCtrl.speed - 0.1, 0.5)
+    }
 
-                RowLayout {
-                    id: playLayout
-                    height: 25
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    spacing: 15
-
-                    Button {
-                        id: btnPlayPause
-                        icon.source: playerCtrl.isPlaying ? "qrc:/qt/qml/Dream/play/resource/image/pause.png"
-                                                              : "qrc:/qt/qml/Dream/play/resource/image/play.png"
-                        flat: true
-                        onClicked: {
-                            playerCtrl.togglePlay();
-                        }
-                    }
-
-                    Button {
-                        id: btnPrevious
-                        icon.source: "qrc:/qt/qml/Dream/play/resource/image/previous.png"
-                        flat: true
-                    }
-
-                    Button {
-                        id: btnNext
-                        icon.source: "qrc:/qt/qml/Dream/play/resource/image/next.png"
-                        flat: true
-                    }
-
-                    ProcessBar {
-                        id: videoBar
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        currentVal: playerCtrl.currentProgress
-                        maxValue: playerCtrl.duration
-
-                        onSliderRelease: function(value) {
-                            playerCtrl.seek(value, false)
-                        }
-                    }
-
-                    Connections {
-                        target: playerCtrl
-                        function onCurrentProgressChanged() {
-                            if (!videoBar.isDragging) {
-                                videoBar.currentVal = playerCtrl.currentProgress
-                                // 实时同步进度条比例
-                                videoBar.progress = videoBar.maxValue > 0 ? (videoBar.currentVal / videoBar.maxValue) : 0
-                            }
-                        }
-                    }
-                }
-
-
-                RowLayout {
-                    id: volumeLayout
-                    height: 25
-                    Layout.fillHeight: true
-                    spacing: 8
-                    Layout.fillWidth: true
-
-                    Button {
-                        id: btnVolume
-                        icon.source: "qrc:/qt/qml/Dream/play/resource/image/volume.png"
-                        flat: true
-                    }
-
-                    ProcessBar {
-                        id: volumeBar
-                        currentVal: playerCtrl.volume
-                        progress: playerCtrl.volume / maxValue
-                        maxValue: 100
-                        Layout.preferredWidth: 150
-                        showCurrentValue: true
-                        Layout.fillHeight: true
-                        Layout.fillWidth: true
-
-                        onSliderRelease: function(value) {
-                            playerCtrl.setVolume(value);
-                        }
-
-                        Connections {
-                            target: playerCtrl
-                            function onVolumeChanged() {
-                                if (!volumeBar.isDragging) {
-                                    volumeBar.currentVal = playerCtrl.volume
-                                    volumeBar.progress = volumeBar.maxValue > 0 ? (volumeBar.currentVal / volumeBar.maxValue) : 0
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            RowLayout {
-                id: rowLayout
-                y: 25
-                height: 25
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.leftMargin: 0
-                anchors.rightMargin: 0
-
-                Text {
-                    id: txtFilename
-                    color: "#ffffff"
-                    text: playerCtrl.mediaName
-                    font.pixelSize: 20
-                    verticalAlignment: Text.AlignVCenter
-                    Layout.fillWidth: true
-                    style: Text.Outline
-                    Layout.leftMargin: 0
-                }
-
-                Text {
-                    id: txtProgress
-                    color: "#ffffff"
-                    text: playerCtrl.progressText
-                    font.pixelSize: 20
-                    horizontalAlignment: Text.AlignRight
-                    verticalAlignment: Text.AlignVCenter
-                    Layout.rightMargin: 0
-                    Layout.fillWidth: true
-                    style: Text.Outline
-                }
-            }
-        }
+    Shortcut {
+        sequence: "]"
+        onActivated: playerCtrl.speed = Math.min(playerCtrl.speed + 0.1, 2.0)
     }
 
     VideoArea {
@@ -197,18 +51,152 @@ Window {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: buttomBar.top
-
+        anchors.bottom: bottomBar.top
         controller: playerCtrl
     }
 
-    onClosing: function(close) {
-        videoArea.controller = null;
-        videoArea.visible = false;
-        close.accepted = true;
+    Rectangle {
+        id: bottomBar
+        objectName: "bottomBar"
+        height: 76
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        color: PlayerTheme.panelColor
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 28
+            color: PlayerTheme.statusColor
+        }
+
+        RowLayout {
+            id: controlRow
+            anchors.top: parent.top
+            anchors.topMargin: 8
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.rightMargin: 4
+            height: 38
+            spacing: 4
+
+            PlaybackButton {
+                objectName: "playPauseButton"
+                symbol: playerCtrl.isPlaying ? "pause" : "play"
+                description: playerCtrl.isPlaying ? qsTr("暂停（空格）") : qsTr("播放（空格）")
+                onClicked: playerCtrl.togglePlay()
+            }
+
+            // Playlist navigation remains a placeholder, as in the original UI.
+            PlaybackButton {
+                objectName: "previousButton"
+                symbol: "previous"
+                description: qsTr("上一个")
+            }
+
+            PlaybackButton {
+                objectName: "nextButton"
+                symbol: "next"
+                description: qsTr("下一个")
+            }
+
+            ProcessBar {
+                id: videoBar
+                objectName: "videoBar"
+                Layout.fillWidth: true
+                Layout.minimumWidth: 80
+                Layout.preferredHeight: 26
+                Layout.rightMargin: 8
+                Layout.alignment: Qt.AlignVCenter
+                enabled: maxValue > 0
+                currentVal: playerCtrl.currentProgress
+                maxValue: playerCtrl.duration
+                backgroundColor: PlayerTheme.seekBackgroundColor
+                progressColor: PlayerTheme.seekFillColor
+                accessibleName: qsTr("播放进度")
+
+                onSliderRelease: function(value) {
+                    playerCtrl.seek(Math.round(value), false)
+                }
+            }
+
+            PlaybackButton {
+                objectName: "muteButton"
+                Layout.preferredWidth: 36
+                symbolSize: 24
+                symbol: playerCtrl.volume === 0 ? "mute" : "volume"
+                description: playerCtrl.volume === 0 ? qsTr("取消静音") : qsTr("静音")
+                onClicked: {
+                    if (playerCtrl.volume > 0) {
+                        root.volumeBeforeMute = playerCtrl.volume
+                        playerCtrl.setVolume(0)
+                    } else {
+                        playerCtrl.setVolume(root.volumeBeforeMute)
+                    }
+                }
+            }
+
+            ProcessBar {
+                id: volumeBar
+                objectName: "volumeBar"
+                Layout.preferredWidth: 125
+                Layout.preferredHeight: 26
+                Layout.alignment: Qt.AlignVCenter
+                currentVal: playerCtrl.volume
+                maxValue: 100
+                trackHeight: height
+                showCurrentValue: true
+                accessibleName: qsTr("音量")
+
+                onSliderRelease: function(value) {
+                    playerCtrl.setVolume(Math.round(value))
+                }
+            }
+        }
+
+        RowLayout {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.rightMargin: 12
+            anchors.bottomMargin: 4
+            height: 22
+            spacing: 16
+
+            Text {
+                objectName: "filenameLabel"
+                Layout.fillWidth: true
+                Layout.minimumWidth: 0
+                color: PlayerTheme.textColor
+                text: playerCtrl.mediaName
+                font: PlayerTheme.textFont
+                renderType: Text.QtRendering
+                textFormat: Text.PlainText
+                elide: Text.ElideMiddle
+                maximumLineCount: 1
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            Text {
+                objectName: "progressLabel"
+                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                color: PlayerTheme.textColor
+                text: playerCtrl.progressText.replace("/", " / ")
+                font: PlayerTheme.textFont
+                renderType: Text.QtRendering
+                textFormat: Text.PlainText
+                horizontalAlignment: Text.AlignRight
+            }
+        }
     }
 
-    Component.onDestruction: {
-        playerCtrl.cleanup();
+    onClosing: function(close) {
+        videoArea.controller = null
+        videoArea.visible = false
+        close.accepted = true
     }
+
+    Component.onDestruction: playerCtrl.cleanup()
 }

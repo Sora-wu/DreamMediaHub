@@ -9,9 +9,7 @@
 
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
-#ifdef PLATFORM_WINDOWS
 #include <QQuickStyle>
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -19,7 +17,7 @@ int main(int argc, char *argv[])
         qCritical() << "Usage: playerApp <video_file>";
     }
 
-    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Floor);
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
 
     QSurfaceFormat format;
@@ -33,9 +31,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<PlayerController>("Dream.play", 1, 0, "PlayerController");
 
     QGuiApplication app(argc, argv);
-#ifdef PLATFORM_WINDOWS
     QQuickStyle::setStyle("Basic");
-#endif
 
     QQmlApplicationEngine engine;
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,
