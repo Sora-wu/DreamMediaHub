@@ -10,7 +10,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_compile_definitions(PLATFORM_LINUX)
 elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(PLATFORM_NAME "win")
-    file(GLOB_RECURSE COPY_FILES ${CMAKE_CURRENT_SOURCE_DIR}/code/third/build/${PLATFORM_NAME}/*.dll)
+    file(GLOB_RECURSE COPY_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFORM_NAME}/*.dll")
     add_compile_definitions(PLATFORM_WINDOWS)
     set(QT_SKIP_AUTO_QML_PLUGIN_INCLUSION ON)
 endif()
@@ -19,10 +19,7 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/code/third/build/${PLATFORM_NAME})
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFORM_NAME}")
 
-add_subdirectory(code/player)
-add_subdirectory(code/recorder)
-
-# 供调试用，后续删除
-add_subdirectory(code/DreamMediaNative)
+add_subdirectory(player)
+add_subdirectory(recorder)
