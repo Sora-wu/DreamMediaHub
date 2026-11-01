@@ -9,7 +9,8 @@ DreamMediaHub/
   player/                     # Qt Quick 播放器
   recorder/                   # Qt Quick 录制器
   third/
-    DreamMediaHubNative/      # native Git 子模块，内含 FFmpeg 子模块
+    src/
+      DreamMediaHubNative/    # native Git 子模块，内含 FFmpeg 子模块
     build/<平台>/            # native 安装产物，不提交到仓库
 ```
 
@@ -19,7 +20,7 @@ git clone --recurse-submodules git@github.com:Sora-wu/DreamMediaHub.git
 git submodule update --init --recursive
 ```
 
-native 源码和自身的 FFmpeg 开发包位于 `third/DreamMediaHubNative`，可在独立仓库中单独构建；前端通过已安装的 `Dream` CMake 包使用它。调整目录后请重新运行依赖构建脚本，并重新配置前端构建目录。
+native 源码和自身的 FFmpeg 开发包位于 `third/src/DreamMediaHubNative`，可在独立仓库中单独构建；前端通过已安装的 `Dream` CMake 包使用它。调整目录后请重新运行依赖构建脚本，并重新配置前端构建目录。
 
 ## Windows 编译与运行
 
@@ -28,7 +29,7 @@ native 源码和自身的 FFmpeg 开发包位于 `third/DreamMediaHubNative`，�
 FFmpeg 使用 4.x 的共享库开发包，头文件、导入库与 DLL 必须来自同一套 x64 构建，目录如下：
 
 ```text
-third/DreamMediaHubNative/third/build/win/
+third/src/DreamMediaHubNative/third/build/win/
   include/libavcodec/avcodec.h
   include/libavformat/avformat.h
   ...
@@ -87,10 +88,10 @@ Qt Creator 中选择 MSVC x64 Kit，Qt 路径使用上述安装目录，打开�
 
 ## Linux 编译
 
-先安装支持 C++23 的编译器、CMake、Qt 6.8+ 和 FFmpeg 所需的开发依赖。FFmpeg 可使用 `third/DreamMediaHubNative/build_dep.sh` 构建到该子模块内的 `third/build/linux`，也可以将兼容的 FFmpeg 开发包放到该目录。
+先安装支持 C++23 的编译器、CMake、Qt 6.8+ 和 FFmpeg 所需的开发依赖。FFmpeg 可使用 `third/src/DreamMediaHubNative/build_dep.sh` 构建到该子模块内的 `third/build/linux`，也可以将兼容的 FFmpeg 开发包放到该目录。
 
 ```bash
-./third/DreamMediaHubNative/build_dep.sh
+./third/src/DreamMediaHubNative/build_dep.sh
 ./build_dep.sh Debug
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=/path/to/Qt/gcc_64
 cmake --build build --parallel
@@ -100,4 +101,4 @@ cmake --build build --parallel
 
 根 CMake 向全部子目录定义 `PLATFORM_WINDOWS` 或 `PLATFORM_LINUX`。后端的依赖路径、链接方式和安装规则保留项目原始实现。
 
-本次拆分仅调整目录、构建入口和文档，不修改业务代码逻辑。当前机器未配置 Linux 发行版，Linux 构建尚未实测。
+本次拆分仅调整目录、构建入口和文档，不修改业务代码逻辑。Linux 下已验证 FFmpeg、native 库和两个前端程序的 Debug 构建。
