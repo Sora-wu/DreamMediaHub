@@ -12,6 +12,7 @@
 #include <QSize>
 #include <QDebug>
 #include <QThread>
+#include <QUrl>
 
 using namespace Dream;
 
@@ -48,7 +49,9 @@ void RecorderController::start(const QString& path) {
     audioParam.sampleFormat = toDreamSampleFormat(audioForamt.sampleFormat());
 
     recorder_ = DreamRecorderContext::createDreamRecorder();
-    recorder_->start(path.toLocal8Bit(), videoParam, audioParam);
+    const QUrl url(path);
+    const QString outputPath = url.isLocalFile() ? url.toLocalFile() : path;
+    recorder_->start(outputPath.toUtf8(), videoParam, audioParam);
 
     videoThread_ = new QThread(this);
     videoWorker_ = new VideoWorker(recorder_, FPS);

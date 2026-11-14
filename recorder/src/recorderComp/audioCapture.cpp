@@ -44,20 +44,23 @@ AudioCapture::~AudioCapture() {
 }
 
 void AudioCapture::onReadyRead() {
+    static QByteArray audioBuffer;
+
     if (!audioDevice_) {
         return;
     }
 
     QByteArray data = audioDevice_->read(DreamRecorderContext::AUDIO_BUFFER_SIZE);
-    if (data.isEmpty()) {
+    if (data.isEmpty() && audioBuffer.isEmpty()) {
         return;
     }
-    audioBuffer_.append(data);
+    audioBuffer.append(data);
     const uint32_t frameSize = format_.bytesPerFrame() / format_.channelCount();
-    const uint32_t validBytes = (audioBuffer_.size() / frameSize) * frameSize;       // 取出采样的完整数据帧，避免杂音、噪音
+    const uint32_t validBytes = audioBuffer.size() / frameSize * frameSize;       // 取出采样的完整数据帧，避免杂音、噪音
     if (validBytes > 0) {
-        qint64 now = elapsedTimer_.nsecsElapsed() / 1000;
-        emit audioDataCaptured(audioBuffer_.constData(), validBytes, now);
-        audioBuffer_.remove(0, validBytes);
+        const qint64 now = elapsedTimer_.nsecsElapsed() / 1000;
+        const QByteArray sendBuffer{ audioBuffer.constData(), validBytes };
+        emit audioDataCaptured(sendBuffer, now);                                   // 避免数据失效，因为是QueuedConnection，非线性在此期间会修改缓冲区,emit会考一份
+        audioBuffer.remove(0, validBytes);
     }
 }

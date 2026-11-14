@@ -13,23 +13,12 @@ Window {
 
     property bool isRecording: false
 
-    function urlToLocalPath(url) {
-        let path = url.toString();
-        if (path.startsWith("file://")) {
-            path = path.substring(7);
-        }
-
-        // 兼容 Windows 系统
-        if (path.length > 2 && path.charAt(0) === '/' && path.charAt(2) === ':') {
-            path = path.substring(1);
-        }
-        return path;
-    }
-
     function isLocalPath(path) {
         if (!path || typeof path !== "string") return false
 
         var p = path.replace(/\\/g, "/")
+        if (/^[a-z]:\//i.test(p)) return true
+
         var match = p.match(/^([a-zA-Z][a-zA-Z0-9+\-.]*):/)
         var scheme = match ? match[1].toLowerCase() : ""
 
@@ -51,8 +40,7 @@ Window {
             return folderStr;
         }
 
-        // 如果是本地文件，则加上文件名
-        folderStr = urlToLocalPath(folderStr);
+        // 本地路径和文件 URL 都先追加文件名，文件 URL 由控制器转换。
         if (!folderStr.endsWith("/")) {
             folderStr += "/";
         }

@@ -19,7 +19,7 @@ public:
     ~VideoWorker() override;
 
 public slots:
-    void onImageCaptured(const QImage &image, qint64 pts);
+    void onImageCaptured(const QImage &image, qint64 pts) const;
     void stopRecording();
 
 private:
@@ -37,7 +37,7 @@ public:
     ~AudioWorker() override;
 
 public slots:
-    void onAudioDataCaptured(const char* data, uint32_t size, uint64_t pts) const;
+    void onAudioDataCaptured(const QByteArray& audioData, uint64_t pts) const;
     void stopRecording();
 
 private:

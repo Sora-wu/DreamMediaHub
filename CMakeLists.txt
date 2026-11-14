@@ -23,3 +23,6 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third/build/${PLATFOR
 
 add_subdirectory(player)
 add_subdirectory(recorder)
+
+# 为了调试，后续删除
+add_subdirectory(third/src/DreamMediaHubNative)

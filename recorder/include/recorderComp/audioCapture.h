@@ -23,7 +23,7 @@ public:
     }
 
 signals:
-    void audioDataCaptured(const char* data, uint32_t size, uint64_t pts);
+    void audioDataCaptured(const QByteArray& audioData, uint64_t pts);
 
 private slots:
     void onReadyRead();
@@ -33,5 +33,4 @@ private:
     QIODevice* audioDevice_ = nullptr;
     QElapsedTimer elapsedTimer_;
     QAudioFormat format_{};
-    QByteArray audioBuffer_;
 };

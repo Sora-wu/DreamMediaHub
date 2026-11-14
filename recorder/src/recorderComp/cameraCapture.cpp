@@ -57,7 +57,7 @@ QSize CameraCapture::getCameraResolution() const {
 }
 
 void CameraCapture::onFrameChanged(const QVideoFrame& frame) {
-    const qint64 interval = 1000 / fps_;
+    const qint64 interval = 1000 / fps_ * 1000;
     qint64 now = elapsedTimer_.nsecsElapsed() / 1000;
 
     if (lastEmitTime_ && now - lastEmitTime_ < interval) {

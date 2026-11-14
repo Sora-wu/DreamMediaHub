@@ -13,9 +13,7 @@
 #include <deque>
 #include <vector>
 
-namespace Dream {
-    class DreamPlayer;
-}
+#include <DreamPlayer/DreamPlayer.h>
 
 class AudioBufferDevice final : public QIODevice {
     struct AudioSegment {
@@ -51,17 +49,21 @@ public:
     [[nodiscard]] bool waitForBuffered(std::chrono::milliseconds prebufferMs, std::stop_token st = {});
 
     void clear();
-    void clearQueue();
+    void onSeek();
+
+    qint64 bytesAvailable() const override;
+    bool isSequential() const override {
+        return true;
+    }
 
 protected:
     qint64 readData(char* data, qint64 maxlen) override;
     // 禁用 writeData，数据由外部写入
     qint64 writeData(const char *data, qint64 len) override;
 
-    qint64 bytesAvailable() const override;
-
 private:
     void scaleData(char* data, qint64 len) const;
+    void postReadyRead();
 
 private:    
     std::deque<AudioSegment> segQue_{};
@@ -69,10 +71,12 @@ private:
 
     mutable std::mutex mtx_{};
     std::jthread thread_{};
-    std::condition_variable cv_{};
+    std::condition_variable cvBuffer_{};
+    std::condition_variable cvPause_{};
     bool isClose_ = false;
     bool isPause_ = false;          // 因为native层仅负责编解码，因为音频有缓冲，所以暂停操作需要由上层配合
     float volume_ = 1.0f;
 
     Dream::DreamPlayer* player_ = nullptr;
+    Dream::AudioFrame* audioFrame_ = nullptr;
 };

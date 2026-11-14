@@ -4,7 +4,7 @@
 //
 
 #include <videoComp/videoArea.h>
-#include <videoComp/audioBufferPlayer.h>
+#include <videoComp/audioBufferDevice.h>
 #include <videoComp/playerController.h>
 
 #include <QQmlApplicationEngine>
@@ -14,7 +14,7 @@
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
-        qCritical() << "Usage: playerApp <video_file>";
+        qFatal() << "Usage: playerApp <video_file>";
     }
 
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);

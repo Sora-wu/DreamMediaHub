@@ -14,7 +14,7 @@ VideoWorker::~VideoWorker() {
     stopRecording();
 }
 
-void VideoWorker::onImageCaptured(const QImage& image, qint64 pts) {
+void VideoWorker::onImageCaptured(const QImage& image, qint64 pts) const {
     if (!isRecording_) {
         return;
     }
@@ -50,8 +50,8 @@ AudioWorker::~AudioWorker() {
     stopRecording();
 }
 
-void AudioWorker::onAudioDataCaptured(const char* data, uint32_t size, uint64_t pts) const {
-    recorder_->pushAudioData(data, size, pts);
+void AudioWorker::onAudioDataCaptured(const QByteArray& audioData, uint64_t pts) const {
+    recorder_->pushAudioData(audioData.constData(), audioData.size(), pts);
 }
 
 void AudioWorker::stopRecording() {
