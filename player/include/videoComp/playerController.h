@@ -52,7 +52,7 @@ public:
     Q_INVOKABLE void seek(int deltaSeconds, bool isRelative = true);
     Q_INVOKABLE void setVolume(uint32_t newVolume);
 
-    Q_INVOKABLE void cleanup();
+    Q_INVOKABLE void stop();
 
 signals:
     void mediaNameChanged();

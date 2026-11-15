@@ -198,5 +198,5 @@ Window {
         close.accepted = true
     }
 
-    Component.onDestruction: playerCtrl.cleanup()
+    Component.onDestruction: playerCtrl.stop()
 }

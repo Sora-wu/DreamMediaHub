@@ -35,7 +35,7 @@ public:
 
     void startPull();
     void stopPull();
-    void pull(std::stop_token);
+    void pull(std::stop_token st);
 
     // 暂停播放音频
     void pause();
@@ -49,7 +49,7 @@ public:
     [[nodiscard]] bool waitForBuffered(std::chrono::milliseconds prebufferMs, std::stop_token st = {});
 
     void clear();
-    void onSeek();
+    void onSeek(uint32_t serial);
 
     qint64 bytesAvailable() const override;
     bool isSequential() const override {
@@ -71,12 +71,11 @@ private:
 
     mutable std::mutex mtx_{};
     std::jthread thread_{};
-    std::condition_variable cvBuffer_{};
-    std::condition_variable cvPause_{};
+    std::condition_variable cv_{};
     bool isClose_ = false;
     bool isPause_ = false;          // 因为native层仅负责编解码，因为音频有缓冲，所以暂停操作需要由上层配合
     float volume_ = 1.0f;
 
     Dream::DreamPlayer* player_ = nullptr;
-    Dream::AudioFrame* audioFrame_ = nullptr;
+    uint32_t currentAudioSerial_ = 0;
 };

@@ -23,6 +23,7 @@ cmake-build-*
 *.exe
 *.out
 
+docs/*
 build/
 bin/
 obj/

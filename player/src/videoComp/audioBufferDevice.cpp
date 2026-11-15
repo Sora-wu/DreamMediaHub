@@ -29,13 +29,13 @@ AudioBufferDevice::~AudioBufferDevice() {
     }
 
     stopPull();
-    cvBuffer_.notify_all();
+    cv_.notify_all();
 }
 
 void AudioBufferDevice::setPlayer(Dream::DreamPlayer* player) {
     player_ = player;
 
-    player_->setOnAudioSeekCallback([this]{ onSeek(); });
+    player_->setOnAudioSeekCallback([this](uint32_t serial){ onSeek(serial); });
 }
 
 void AudioBufferDevice::startPull() {
@@ -45,45 +45,75 @@ void AudioBufferDevice::startPull() {
 }
 
 void AudioBufferDevice::stopPull() {
+    {
+        std::lock_guard lock(mtx_);
+        isClose_ = true;
+    }
+
     thread_.request_stop();
+    cv_.notify_all();
+    if (thread_.joinable()) {
+        thread_.join();
+    }
 }
 
 void AudioBufferDevice::pull(std::stop_token st) {
     assert(player_);
 
-    while (!st.stop_requested()) {
-        // 如果audioFrame为空或者frame的数据已经被消耗完，取新frame
-        if (!audioFrame_ || audioFrame_->len == 0) {
-            audioFrame_ = player_->getAudioFrame();
-        }
+    Dream::AudioFrame* audioFrame = nullptr;
+    constexpr uint32_t bytesPerSample = CHANNEL_COUNT * SAMPLE_SIZE;
+    uint32_t offset = 0;
 
-        if (!audioFrame_->isUpdated) {
-            audioFrame_ = nullptr;
+    std::unique_lock lock(mtx_);
+    while (!st.stop_requested()) {
+        cv_.wait(lock, [&] {
+            return isClose_ || (audioFrame && audioFrame->serial != currentAudioSerial_)
+                    || (!isPause_ && MAX_BUFFER_SIZE - dataLen_ >= bytesPerSample);
+        });
+
+        if (st.stop_requested() || isClose_) {
+            return;
+        }
+        if (audioFrame && audioFrame->serial != currentAudioSerial_) {
+            audioFrame = nullptr;
+            offset = 0;
             continue;
         }
 
-        {
-            std::unique_lock lock(mtx_);
-            cvPause_.wait(lock, [&] { return !isPause_; });
-            cvBuffer_.wait(lock, [&]{ return dataLen_ < MAX_BUFFER_SIZE || st.stop_requested() || isClose_; });
+        if (!audioFrame) {
+            lock.unlock();
+            audioFrame = player_->getAudioFrame();
+            lock.lock();
 
-            uint32_t consumedBytes = audioFrame_->len;
-            consumedBytes = std::min(consumedBytes, MAX_BUFFER_SIZE - dataLen_);
+            offset = 0;
 
-            AudioSegment segment{};
-            segment.pts = audioFrame_->pts;      // TODO: PTS更新放一放
-            segment.serial = audioFrame_->serial;
-            segment.data.assign(audioFrame_->data, audioFrame_->data + consumedBytes);
-            segQue_.push_back(std::move(segment));
-            dataLen_ += consumedBytes;
+            if (!audioFrame->isUpdated) {
+                audioFrame = nullptr;
+                continue;
+            }
+        }
 
-            memcpy(audioFrame_->data, audioFrame_->data + consumedBytes, audioFrame_->len - consumedBytes);
-            audioFrame_->len -= static_cast<int>(consumedBytes);
+        const uint32_t freeBytes = MAX_BUFFER_SIZE - dataLen_;
+        uint32_t frameLen = audioFrame->len - offset;
+        const uint32_t consumedBytes = std::min(frameLen, freeBytes - freeBytes % bytesPerSample);
+
+        AudioSegment segment{};
+        segment.pts = audioFrame->pts;      // TODO: PTS更新放一放
+        segment.serial = audioFrame->serial;
+        segment.data.assign(audioFrame->data + offset, audioFrame->data + offset + consumedBytes);
+        segQue_.push_back(std::move(segment));
+        dataLen_ += consumedBytes;
+        offset += consumedBytes;
+
+        if (audioFrame->len == offset) {
+            audioFrame = nullptr;
         }
 
         // 有数据唤醒消费者
-        cvBuffer_.notify_all();
+        lock.unlock();
+        cv_.notify_all();
         postReadyRead();
+        lock.lock();
     }
 
     qInfo() << "audio buffer end";
@@ -95,12 +125,12 @@ void AudioBufferDevice::pause() {
 }
 
 void AudioBufferDevice::play() {
-    std::lock_guard lock(mtx_);
-    if (!isPause_) {
-        return;
+    {
+        std::lock_guard lock(mtx_);
+        isPause_ = false;
     }
-    isPause_ = false;
-    cvPause_.notify_all();
+
+    cv_.notify_all();
     postReadyRead();
 }
 
@@ -119,7 +149,7 @@ bool AudioBufferDevice::waitForBuffered(std::chrono::milliseconds prebufferMs, s
     const uint64_t targetBytes = bytesPerSec * static_cast<uint64_t>(prebufferMs.count()) / 1000;
 
     std::unique_lock lock(mtx_);
-    return cvBuffer_.wait_for(lock, prebufferMs, [&] {
+    return cv_.wait_for(lock, prebufferMs, [&] {
         return dataLen_ >= targetBytes || st.stop_requested() || isClose_;
     }) && dataLen_ >= targetBytes && !isClose_;
 }
@@ -130,13 +160,15 @@ void AudioBufferDevice::clear() {
     dataLen_ = 0;
 }
 
-void AudioBufferDevice::onSeek() {
-    std::lock_guard lock(mtx_);
-    segQue_.clear();
-    dataLen_ = 0;
-    cvBuffer_.notify_all();
+void AudioBufferDevice::onSeek(uint32_t serial) {
+    {
+        std::lock_guard lock(mtx_);
+        segQue_.clear();
+        dataLen_ = 0;
+        currentAudioSerial_ = serial;
+    }
 
-    audioFrame_ = nullptr;          // seek时，清一下audioFrame_，避免旧数据放入队列
+    cv_.notify_all();
 }
 
 qint64 AudioBufferDevice::bytesAvailable() const {
@@ -190,7 +222,7 @@ qint64 AudioBufferDevice::readData(char *data, qint64 maxlen) {
     scaleData(out, readLen);
 
     // 数据减少，唤醒生产者
-    cvBuffer_.notify_all();
+    cv_.notify_all();
     return readLen;
 }
 
@@ -205,7 +237,7 @@ void AudioBufferDevice::scaleData(char* data, qint64 len) const {
     const uint32_t size = static_cast<uint32_t>(len / sizeof(int16_t));
     for (uint32_t i = 0; i < size; ++i) {
         int32_t sample = pcmData[i] * volume_;
-        pcmData[i] = std::clamp(sample, (int32_t)INT16_MIN, (int32_t)INT16_MAX);
+        pcmData[i] = std::clamp(sample, INT16_MIN, INT16_MAX);
     }
 }
 

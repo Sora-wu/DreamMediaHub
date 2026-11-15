@@ -177,9 +177,6 @@ void PlayerController::seek(int second, bool isRelative) {
     seekTarget_ = isRelative ? std::clamp(seekTarget_ + second, 0.0, static_cast<double>(duration_)) : second;
 
     play();
-    if (audioBufferDevice_) {
-        audioBufferDevice_->onSeek();
-    }
     player_->seek(seekTarget_, second);
 
     const uint32_t targetProgress = static_cast<uint32_t>(seekTarget_);
@@ -212,13 +209,11 @@ void PlayerController::setVolume(uint32_t newVolume) {
     emit volumeChanged();
 }
 
-void PlayerController::cleanup() {
-    player_->stop();
-
-    if (timer_) {
-        timer_->stop();
-        delete timer_;
-        timer_ = nullptr;
+void PlayerController::stop() {
+    if (audioSink_) {
+        audioSink_->stop();
+        delete audioSink_;
+        audioSink_ = nullptr;
     }
 
     if (audioBufferDevice_) {
@@ -226,12 +221,13 @@ void PlayerController::cleanup() {
         audioBufferDevice_ = nullptr;
     }
 
-    if (audioSink_) {
-        audioSink_->stop();
-        delete audioSink_;
-        audioSink_ = nullptr;
+    if (timer_) {
+        timer_->stop();
+        delete timer_;
+        timer_ = nullptr;
     }
 
+    player_->stop();
     DreamPlayerContext::destroyDreamPlayer(&player_);
 }
 
