@@ -51,7 +51,10 @@ AudioWorker::~AudioWorker() {
 }
 
 void AudioWorker::onAudioDataCaptured(const QByteArray& audioData, uint64_t pts) const {
-    recorder_->pushAudioData(audioData.constData(), audioData.size(), pts);
+    AudioFrameBuffer buffer{};
+    buffer.planes[0] = (uint8_t*)audioData.constData();
+    buffer.planeBytes[0] = audioData.size();
+    recorder_->pushAudioData(buffer, pts);
 }
 
 void AudioWorker::stopRecording() {

@@ -18,7 +18,7 @@ public:
     explicit AudioCapture(QObject* parent = nullptr);
     ~AudioCapture() override;
 
-    QAudioFormat getAudioFormat() const {
+    [[nodiscard]] QAudioFormat getAudioFormat() const {
         return format_;
     }
 

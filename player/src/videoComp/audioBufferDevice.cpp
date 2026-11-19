@@ -81,16 +81,19 @@ void AudioBufferDevice::pull(std::stop_token st) {
         }
 
         if (!audioFrame) {
-            lock.unlock();
             audioFrame = player_->getAudioFrame();
-            lock.lock();
 
             offset = 0;
 
-            if (!audioFrame->isUpdated) {
+            if (!audioFrame || !audioFrame->isUpdated) {
                 audioFrame = nullptr;
-                continue;
+                const uint32_t currentSerial = currentAudioSerial_;
+                // 避免cpu空转，也防止旧帧进入队列
+                cv_.wait_for(lock, 5ms, [&] {
+                    return isClose_ || st.stop_requested() || currentSerial != currentAudioSerial_;
+                });
             }
+            continue;
         }
 
         const uint32_t freeBytes = MAX_BUFFER_SIZE - dataLen_;
