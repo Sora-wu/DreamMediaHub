@@ -1,9 +1,6 @@
 find_package(Qt6 COMPONENTS Core Multimedia Quick Gui REQUIRED)
 qt_standard_project_setup(REQUIRES 6.8)
 
-message(STATUS ${CMAKE_PREFIX_PATH})
-find_package(Dream COMPONENTS Recorder REQUIRED)
-
 function(get_resource_paths out_var base_path)
     file(GLOB ABS_ASSETS ${base_path})
     foreach(ABS_ASSET ${ABS_ASSETS})
@@ -19,8 +16,6 @@ file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
 )
 get_resource_paths(QMLFILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/*.qml)
 get_resource_paths(IMAGE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/image/*)
-
-file(COPY ${COPY_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 qt_add_executable(recorderApp ${SRC})
 

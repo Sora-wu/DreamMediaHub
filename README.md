@@ -20,7 +20,7 @@ git clone --recurse-submodules git@github.com:Sora-wu/DreamMediaHub.git
 git submodule update --init --recursive
 ```
 
-native 源码和自身的 FFmpeg 开发包位于 `third/src/DreamMediaHubNative`，可在独立仓库中单独构建；前端通过已安装的 `Dream` CMake 包使用它。调整目录后请重新运行依赖构建脚本，并重新配置前端构建目录。
+Native 源码和 FFmpeg 开发包位于 `third/src/DreamMediaHubNative`。根工程默认从当前工作树构建 Native 库，播放器和录制器直接链接对应的构建目标。需要使用单独安装的 `Dream` CMake 包时，先用根目录的 `build_dep.sh` 或 `build_dep.bat` 安装 Native，再在配置前端时传入 `-DDREAM_USE_PREINSTALLED_NATIVE=ON`。
 
 ## Windows 编译与运行
 
@@ -41,12 +41,9 @@ third/src/DreamMediaHubNative/third/build/win/
   ...（包含 FFmpeg 依赖的其他 DLL）
 ```
 
-先构建、安装后端到 `third/build/win`，前端再通过 `find_package(Dream)` 使用已安装的库。FFmpeg 路径和库名沿用原有 CMake 配置。
-
 在项目根目录执行 PowerShell 命令：
 
 ```powershell
-.\build_dep.bat Debug
 cmake -S . -B build/windows-msvc -G "Visual Studio 18 2026" -A x64 -T v143 -DCMAKE_PREFIX_PATH="D:/Qt/6.11.1/msvc2022_64"
 cmake --build build/windows-msvc --config Debug --parallel
 ```
@@ -60,22 +57,18 @@ cmake --build build/windows-msvc --config Debug --parallel
 # 录制器界面；开始录制需要可用的摄像头和麦克风
 .\build\windows-msvc\recorder\Debug\recorderApp.exe
 
-# 切换构建配置时，先安装相同配置的后端，再重新配置前端
-.\build_dep.bat Release
-cmake -S . -B build/windows-msvc
+# 切换构建配置
 cmake --build build/windows-msvc --config Release --parallel
 ```
 
 输出沿用 CMake 默认目录。上述 Visual Studio 构建的两个程序分别位于 `build/windows-msvc/player/Debug` 和 `build/windows-msvc/recorder/Debug`；Release 配置使用对应的 `Release` 子目录。着色器嵌入 Qt 资源。
 
-Qt 和 FFmpeg 的运行依赖由你手动部署，CMake 不再自动调用部署工具。以下是 Debug 版本的部署命令：
+构建会将对应的 Native DLL 复制到每个程序的输出目录。默认源码模式也会复制子模块中的 FFmpeg DLL，预装模式需将所选安装包中的 FFmpeg DLL 部署到程序目录。以下命令用 `windeployqt` 部署 Debug 版本的 Qt 运行依赖。
 
 ```powershell
 $qtBin = "D:/Qt/6.11.1/msvc2022_64/bin"
 $playerBin = "build/windows-msvc/player/Debug"
 $recorderBin = "build/windows-msvc/recorder/Debug"
-Copy-Item "third/build/win/bin/*.dll" $playerBin
-Copy-Item "third/build/win/bin/*.dll" $recorderBin
 & "$qtBin/windeployqt.exe" --debug --qmldir player/resource "$playerBin/playerApp.exe"
 & "$qtBin/windeployqt.exe" --debug --qmldir recorder/resource "$recorderBin/recorderApp.exe"
 ```
@@ -93,14 +86,13 @@ Qt Creator 中选择 MSVC x64 Kit，Qt 路径使用上述安装目录，打开�
 ```bash
 brew install cmake qt pkg-config fdk-aac x264 x265
 ./third/src/DreamMediaHubNative/build_dep.sh
-./build_dep.sh Debug
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build --parallel 8
 ```
 
 Homebrew 的 `fdk-aac` 已被标记为弃用；本机使用可安装的 2.0.3 版本验证通过。
 
-FFmpeg 安装到 `third/src/DreamMediaHubNative/third/build/macos`，后端安装到 `third/build/macos`。两个程序为 `build/player/playerApp` 和 `build/recorder/recorderApp`；播放器需要传入媒体文件路径。构建脚本会自动识别 Homebrew 的 pkg-config 路径。
+FFmpeg 安装到 `third/src/DreamMediaHubNative/third/build/macos`。两个程序为 `build/player/playerApp` 和 `build/recorder/recorderApp`，播放器需要传入媒体文件路径。构建脚本会自动识别 Homebrew 的 pkg-config 路径。
 
 ## Linux 编译
 
@@ -108,7 +100,6 @@ FFmpeg 安装到 `third/src/DreamMediaHubNative/third/build/macos`，后端安�
 
 ```bash
 ./third/src/DreamMediaHubNative/build_dep.sh
-./build_dep.sh Debug
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=/path/to/Qt/gcc_64
 cmake --build build --parallel
 ./build/player/playerApp /path/to/video.mp4

@@ -1,8 +1,6 @@
 find_package(Qt6 COMPONENTS OpenGL Core Multimedia Quick QuickControls2 Gui REQUIRED)
 qt_standard_project_setup(REQUIRES 6.8)
 
-find_package(Dream COMPONENTS Player REQUIRED)
-
 function(get_resource_paths out_var base_path)
     file(GLOB ABS_ASSETS ${base_path})
     foreach(ABS_ASSET ${ABS_ASSETS})
@@ -22,7 +20,6 @@ get_resource_paths(FONT_FILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/fonts/*)
 set_source_files_properties(resource/PlayerTheme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 file(COPY resource/shader DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${COPY_FILES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 qt_add_executable(playerApp ${SRC})
 
