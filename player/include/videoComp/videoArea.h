@@ -5,10 +5,10 @@
 
 #pragma once
 
+#include <common/define.h>
 #include <videoComp/playerController.h>
 
 #include <QQuickFramebufferObject>
-#include <QOpenGLFunctions_4_5_Core>
 
 namespace Dream {
     class DreamPlayer;
@@ -36,7 +36,7 @@ private:
 
 class QOpenGLDebugLogger;
 
-class OpenGLRender : public QQuickFramebufferObject::Renderer, protected QOpenGLFunctions_4_5_Core {
+class OpenGLRender : public QQuickFramebufferObject::Renderer, protected PLAYER_OPENGL_FUNCTIONS {
 public:
     OpenGLRender();
     ~OpenGLRender() override;

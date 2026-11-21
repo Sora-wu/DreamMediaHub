@@ -1,5 +1,3 @@
-#version 460 core
-
 uniform sampler2D textureY;
 uniform sampler2D textureU;
 uniform sampler2D textureV;

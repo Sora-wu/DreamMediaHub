@@ -86,6 +86,22 @@ Qt Creator 中选择 MSVC x64 Kit，Qt 路径使用上述安装目录，打开�
 
 `build_dep.bat Debug` / `build_dep.bat Release` 负责后端构建和安装，脚本支持从其他工作目录调用，并在失败时立即退出。
 
+## macOS 编译（Apple Silicon）
+
+先通过 Homebrew 安装构建工具、Qt 和 FFmpeg 编码依赖。项目使用子模块中的 FFmpeg 4.x，不需要安装 Homebrew 的 FFmpeg。
+
+```bash
+brew install cmake qt pkg-config fdk-aac x264 x265
+./third/src/DreamMediaHubNative/build_dep.sh
+./build_dep.sh Debug
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel 8
+```
+
+Homebrew 的 `fdk-aac` 已被标记为弃用；本机使用可安装的 2.0.3 版本验证通过。
+
+FFmpeg 安装到 `third/src/DreamMediaHubNative/third/build/macos`，后端安装到 `third/build/macos`。两个程序为 `build/player/playerApp` 和 `build/recorder/recorderApp`；播放器需要传入媒体文件路径。构建脚本会自动识别 Homebrew 的 pkg-config 路径。
+
 ## Linux 编译
 
 先安装支持 C++23 的编译器、CMake、Qt 6.8+ 和 FFmpeg 所需的开发依赖。FFmpeg 可使用 `third/src/DreamMediaHubNative/build_dep.sh` 构建到该子模块内的 `third/build/linux`，也可以将兼容的 FFmpeg 开发包放到该目录。

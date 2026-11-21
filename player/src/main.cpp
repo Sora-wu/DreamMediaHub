@@ -3,6 +3,7 @@
 // Mail: sora-wu@foxmail.com
 //
 
+#include <common/define.h>
 #include <videoComp/videoArea.h>
 #include <videoComp/audioBufferDevice.h>
 #include <videoComp/playerController.h>
@@ -22,7 +23,7 @@ int main(int argc, char *argv[])
 
     QSurfaceFormat format;
     format.setRenderableType(QSurfaceFormat::OpenGL);
-    format.setVersion(4, 5);
+    format.setVersion(PLAYER_OPENGL_VERSION_MAJOR, PLAYER_OPENGL_VERSION_MINOR);
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setOption(QSurfaceFormat::DebugContext);
     QSurfaceFormat::setDefaultFormat(format);

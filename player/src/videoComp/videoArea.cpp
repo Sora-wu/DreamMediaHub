@@ -29,7 +29,8 @@ namespace {
         const QString content = in.readAll();
         file.close();
 
-        return content.toStdString();
+        // GLSL 版本由公共平台定义提供，资源文件只保留着色器主体。
+        return std::string(PLAYER_GLSL_VERSION) + content.toStdString();
     }
 }
 
