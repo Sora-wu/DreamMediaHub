@@ -316,8 +316,8 @@ void OpenGLRender::updateTexture(GLuint textureHandle, uint32_t textureIndex, ui
         return;
     }
 
-    const int width = (textureIndex == 0) ? (int)frameWidth : (int)(frameWidth / 2);
-    const int height = (textureIndex == 0) ? (int)frameHeight : (int)(frameHeight / 2);
+    const int width = (textureIndex == 0) ? static_cast<int>(frameWidth) : static_cast<int>((frameWidth + 1) / 2);
+    const int height = (textureIndex == 0) ? static_cast<int>(frameHeight) : static_cast<int>((frameHeight + 1) / 2);
     if (width <= 0 || height <= 0) {
         return;
     }
