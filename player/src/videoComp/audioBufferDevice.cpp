@@ -50,6 +50,7 @@ void AudioBufferDevice::stopPull() {
         isClose_ = true;
     }
 
+    player_->setOnAudioSeekCallback(nullptr);
     thread_.request_stop();
     cv_.notify_all();
     if (thread_.joinable()) {
