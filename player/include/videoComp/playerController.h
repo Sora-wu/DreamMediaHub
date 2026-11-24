@@ -6,6 +6,7 @@
 #pragma once
 
 #include <QObject>
+#include <memory>
 
 namespace Dream {
     class DreamPlayer;
@@ -14,6 +15,7 @@ namespace Dream {
 class AudioBufferDevice;
 class QAudioSink;
 class QTimer;
+class VideoRenderAccess;
 
 class PlayerController : public QObject {
     Q_OBJECT
@@ -28,10 +30,11 @@ class PlayerController : public QObject {
 
 public:
     explicit PlayerController(QObject* parent = nullptr);
-    ~PlayerController() override = default;
+    ~PlayerController() override;
 
-    [[nodiscard]] Dream::DreamPlayer* getPlayer() const {
-        return player_;
+    // Read by the renderer during synchronize(), while the GUI thread is blocked.
+    [[nodiscard]] std::shared_ptr<VideoRenderAccess> renderAccess() const {
+        return renderAccess_;
     }
 
     QString mediaName() const;
@@ -62,6 +65,7 @@ signals:
     void durationChanged();
     void speedChanged();
     void currentProgressChanged();
+    void videoSourceChanged();
 
 private slots:
     void onTimerUpdate();
@@ -74,6 +78,7 @@ private:
     bool isPlaying_ = false;
 
     Dream::DreamPlayer* player_ = nullptr;
+    std::shared_ptr<VideoRenderAccess> renderAccess_;
     AudioBufferDevice* audioBufferDevice_ = nullptr;
     QAudioSink* audioSink_ = nullptr;
     double speed_ = 1.0f;

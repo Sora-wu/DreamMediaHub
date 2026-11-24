@@ -23,19 +23,13 @@ AudioBufferDevice::AudioBufferDevice(QObject *parent) : QIODevice(parent) {
 }
 
 AudioBufferDevice::~AudioBufferDevice() {
-    {
-        std::lock_guard lock(mtx_);
-        isClose_ = true;
-    }
-
     stopPull();
-    cv_.notify_all();
 }
 
 void AudioBufferDevice::setPlayer(Dream::DreamPlayer* player) {
     player_ = player;
 
-    player_->setOnAudioSeekCallback([this](uint32_t serial){ onSeek(serial); });
+    player_->setOnSeekCallback([this](uint32_t serial){ onSeek(serial); });
 }
 
 void AudioBufferDevice::startPull() {
@@ -50,7 +44,6 @@ void AudioBufferDevice::stopPull() {
         isClose_ = true;
     }
 
-    player_->setOnAudioSeekCallback(nullptr);
     thread_.request_stop();
     cv_.notify_all();
     if (thread_.joinable()) {

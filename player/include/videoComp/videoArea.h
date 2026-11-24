@@ -8,10 +8,11 @@
 #include <common/define.h>
 #include <videoComp/playerController.h>
 
+#include <QPointer>
 #include <QQuickFramebufferObject>
+#include <memory>
 
 namespace Dream {
-    class DreamPlayer;
     struct VideoFrame;
 }
 
@@ -31,7 +32,9 @@ signals:
     void controllerChanged();
 
 private:
-    PlayerController *controller_ = nullptr;
+    QPointer<PlayerController> controller_;
+    QMetaObject::Connection videoSourceConnection_;
+    QMetaObject::Connection controllerDestroyedConnection_;
 };
 
 class QOpenGLDebugLogger;
@@ -73,5 +76,5 @@ private:
 
     QOpenGLDebugLogger* logger_ = nullptr;
 
-    Dream::DreamPlayer* player_ = nullptr;
+    std::shared_ptr<VideoRenderAccess> renderAccess_;
 };

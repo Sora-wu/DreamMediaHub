@@ -6,6 +6,7 @@
 
 #include <videoComp/playerController.h>
 #include <videoComp/audioBufferDevice.h>
+#include <videoComp/videoRenderAccess.h>
 #include <DreamPlayer/DreamPlayerContext.h>
 
 #include <QAudioSink>
@@ -40,7 +41,7 @@ namespace {
     }
 }
 
-PlayerController::PlayerController(QObject* parent) {
+PlayerController::PlayerController(QObject* parent) : QObject(parent) {
     player_ = DreamPlayerContext::createDreamPlayer();
     if (!player_) {
         qFatal() << "DreamPlayerContext::createDreamPlayer failed";
@@ -49,6 +50,7 @@ PlayerController::PlayerController(QObject* parent) {
     const QStringList argsList = QCoreApplication::arguments();
     const QString& url = argsList[1];
     open(url);
+    renderAccess_ = std::make_shared<VideoRenderAccess>(player_);
     isPlaying_ = true;
 
     QAudioFormat format;
@@ -64,8 +66,8 @@ PlayerController::PlayerController(QObject* parent) {
         player_->setMasterMode(SyncType::VideoMaster);
     }
     else {
-        audioBufferDevice_ = new AudioBufferDevice(parent);
-        audioSink_ = new QAudioSink(audioDevice, format, parent);
+        audioBufferDevice_ = new AudioBufferDevice(this);
+        audioSink_ = new QAudioSink(audioDevice, format, this);
         audioBufferDevice_->setPlayer(player_);
         audioBufferDevice_->startPull();
         // 预缓存,这里的预缓存的等待时间需要和音频缓冲区大小适配，不能给出永远达不到的数据，否则必然打印prebuffer timeout
@@ -86,6 +88,10 @@ PlayerController::PlayerController(QObject* parent) {
     player_->setOnPlaybackCompletedCallback([this] {
         QMetaObject::invokeMethod(this, &PlayerController::onPlaybackCompleted, Qt::QueuedConnection);
     });
+}
+
+PlayerController::~PlayerController() {
+    stop();
 }
 
 QString PlayerController::mediaName() const {
@@ -113,6 +119,9 @@ double PlayerController::speed() const {
 }
 
 void PlayerController::setSpeed(double speed) {
+    if (!player_) {
+        return;
+    }
     if (speed_ != speed) {
         speed_ = roundToOneDecimal(speed);
         qInfo() << "speed:" << speed_;
@@ -136,6 +145,9 @@ void PlayerController::setCurrentProgress(uint32_t newCurrentProgress) {
 }
 
 void PlayerController::open(const QString& path) {
+    if (!player_) {
+        return;
+    }
     if (!player_->open(path.toLocal8Bit().constData())) {
         qFatal() << "open file failed, path:" << path;
     }
@@ -147,6 +159,9 @@ void PlayerController::open(const QString& path) {
 }
 
 void PlayerController::play() {
+    if (!player_) {
+        return;
+    }
     player_->play();
     if (audioBufferDevice_) {
         audioBufferDevice_->play();
@@ -156,6 +171,9 @@ void PlayerController::play() {
 }
 
 void PlayerController::pause() {
+    if (!player_) {
+        return;
+    }
     player_->pause();
     if (audioBufferDevice_) {
         audioBufferDevice_->pause();
@@ -169,6 +187,9 @@ void PlayerController::togglePlay() {
 }
 
 void PlayerController::seek(int second, bool isRelative) {
+    if (!player_) {
+        return;
+    }
     if (!seekActive_) {
         seekTarget_ = player_->getCurrentTime();
     }
@@ -177,6 +198,9 @@ void PlayerController::seek(int second, bool isRelative) {
     seekTarget_ = isRelative ? std::clamp(seekTarget_ + second, 0.0, static_cast<double>(duration_)) : second;
 
     play();
+    if (!player_) {
+        return;
+    }
     player_->seek(seekTarget_, second);
 
     const uint32_t targetProgress = static_cast<uint32_t>(seekTarget_);
@@ -185,6 +209,9 @@ void PlayerController::seek(int second, bool isRelative) {
         emit currentProgressChanged();
     }
 
+    if (!player_) {
+        return;
+    }
     if (!seekTimer_) {
         seekTimer_ = new QTimer(this);
         seekTimer_->setSingleShot(true);
@@ -210,6 +237,29 @@ void PlayerController::setVolume(uint32_t newVolume) {
 }
 
 void PlayerController::stop() {
+    if (!player_) {
+        return;
+    }
+
+    auto* player = player_;
+    player_ = nullptr;
+
+    renderAccess_->closeAndWait();
+    renderAccess_.reset();
+    emit videoSourceChanged();
+
+    if (timer_) {
+        timer_->stop();
+        delete timer_;
+        timer_ = nullptr;
+    }
+    if (seekTimer_) {
+        seekTimer_->stop();
+        delete seekTimer_;
+        seekTimer_ = nullptr;
+    }
+    seekActive_ = false;
+
     if (audioSink_) {
         audioSink_->stop();
         delete audioSink_;
@@ -217,21 +267,26 @@ void PlayerController::stop() {
     }
 
     if (audioBufferDevice_) {
-        delete audioBufferDevice_;
-        audioBufferDevice_ = nullptr;
+        audioBufferDevice_->stopPull();
     }
 
-    if (timer_) {
-        timer_->stop();
-        delete timer_;
-        timer_ = nullptr;
-    }
+    player->stop();
 
-    player_->stop();
-    DreamPlayerContext::destroyDreamPlayer(&player_);
+    delete audioBufferDevice_;
+    audioBufferDevice_ = nullptr;
+
+    DreamPlayerContext::destroyDreamPlayer(&player);
+
+    if (isPlaying_) {
+        isPlaying_ = false;
+        emit isPlayingChanged();
+    }
 }
 
 void PlayerController::onTimerUpdate() {
+    if (!player_) {
+        return;
+    }
     const uint32_t cur = seekActive_ ? static_cast<uint32_t>(seekTarget_) : static_cast<uint32_t>(player_->getCurrentTime());
     QString newText = QString("%1/%2").arg(formatTimeFromSeconds(cur), formatTimeFromSeconds(duration_));
 
@@ -240,13 +295,18 @@ void PlayerController::onTimerUpdate() {
         emit progressTextChanged();
     }
 
-    if (!seekActive_ && currentProgress_ != cur) {
+    if (player_ && !seekActive_ && currentProgress_ != cur) {
         currentProgress_ = cur;
         emit currentProgressChanged();
     }
 }
 
 void PlayerController::onPlaybackCompleted() {
+    // 避免player_被销毁之后还调用onPlaybackCompleted // TODO: 后续去掉native监控线程
+    if (!player_) {
+        return;
+    }
+
     if (!isPlaying_) {
         onTimerUpdate();
         return;

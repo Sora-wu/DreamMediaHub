@@ -4,13 +4,14 @@
 //
 
 #include <videoComp/videoArea.h>
+#include <videoComp/videoRenderAccess.h>
 
 #include <QMatrix4x4>
 #include <QFile>
 #include <QQuickOpenGLUtils>
 #include <QOpenGLDebugLogger>
 
-#include <DreamPlayer/DreamPlayerContext.h>
+#include <DreamPlayer/DreamPlayer.h>
 
 namespace {
     const double EPSILON = 1e-8;
@@ -44,14 +45,26 @@ QQuickFramebufferObject::Renderer* VideoArea::createRenderer() const {
 
 PlayerController *VideoArea::controller() const
 {
-    return controller_;
+    return controller_.data();
 }
 
 void VideoArea::setController(PlayerController *newController)
 {
-    if (controller_ == newController)
+    if (controller_.data() == newController)
         return;
+
+    QObject::disconnect(videoSourceConnection_);
+    QObject::disconnect(controllerDestroyedConnection_);
     controller_ = newController;
+    if (newController) {
+        videoSourceConnection_ = connect(newController, &PlayerController::videoSourceChanged,
+                                         this, [this] { update(); });
+        controllerDestroyedConnection_ = connect(newController, &QObject::destroyed, this, [this] {
+            update();
+            emit controllerChanged();
+        });
+    }
+    update();
     emit controllerChanged();
 }
 
@@ -68,55 +81,48 @@ void OpenGLRender::render() {
         initialized_ = true;
     }
 
-    if (!player_) {
-        update();
-        return;
-    }
-
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
+    glDisable(GL_SCISSOR_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-    glClearColor(0.0f, 0.0f, 0.0f,1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(program_);
+    const bool active = renderAccess_ && renderAccess_->withPlayer([this](DreamPlayer& player) {
+        auto* videoFrame = player.getVideoFrame();
+        if (!videoFrame || !videoFrame->data[0] || !videoFrame->frameWidth || !videoFrame->frameHeight) {
+            return;
+        }
 
-    VideoFrame* videoFrame = player_->getVideoFrame();
-    updateMVP(videoFrame);
+        glUseProgram(program_);
+        updateMVP(videoFrame);
 
-    if (!videoFrame->data[0]) {
+        for (uint32_t i = 0; i < 3; ++i) {
+            updateTexture(texture_[i], i, videoFrame->frameWidth, videoFrame->frameHeight,
+                          videoFrame->stride[i], videoFrame->data[i]);
+        }
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
         glBindVertexArray(0);
         glUseProgram(0);
-        QQuickOpenGLUtils::resetOpenGLState();
-        update();
-        return;
-    }
-
-    for (uint32_t i = 0; i < 3; ++i) {
-        uint32_t textureHandle = texture_[i];
-        updateTexture(textureHandle, i, videoFrame->frameWidth, videoFrame->frameHeight, videoFrame->stride[i], videoFrame->data[i]);
-    }
-
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-
-    glBindVertexArray(0);
-    glUseProgram(0);
+    });
 
     QQuickOpenGLUtils::resetOpenGLState();
-    update();
+    if (active) {
+        update();
+    }
 }
 
 void OpenGLRender::synchronize(QQuickFramebufferObject* item) {
-    VideoArea* area = (VideoArea*)item;
+    auto* area = static_cast<VideoArea*>(item);
 
     itemWidth = area->width();
     itemHeight = area->height();
 
-    player_ = nullptr;
-    if (area->controller()) {
-        player_ = area->controller()->getPlayer();
-    }
+    auto* controller = area->controller();
+    renderAccess_ = controller ? controller->renderAccess() : nullptr;
 }
 
 bool OpenGLRender::compileShader() {
@@ -259,8 +265,8 @@ void OpenGLRender::initTexture(GLuint textureHandle, const char* uniformName, ui
 }
 
 QRect OpenGLRender::updateItemRect(VideoFrame* videoFrame) const {
-    const uint32_t height = player_->getHeight();
-    const uint32_t width = player_->getWidth();
+    const uint32_t height = videoFrame->frameHeight;
+    const uint32_t width = videoFrame->frameWidth;
 
     double aspectRatio = (double)width / height;
     if (videoFrame->picWidthHeightRatio > EPSILON) {
