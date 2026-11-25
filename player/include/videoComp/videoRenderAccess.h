@@ -1,3 +1,8 @@
+//
+// Author: sora
+// Mail: sora-wu@foxmail.com
+//
+
 #pragma once
 
 #include <atomic>
@@ -8,6 +13,7 @@ namespace Dream {
     class DreamPlayer;
 }
 
+// 中间层
 class VideoRenderAccess {
 public:
     explicit VideoRenderAccess(Dream::DreamPlayer* player) : player_(player) {}
@@ -16,7 +22,7 @@ public:
     bool withPlayer(Draw&& draw) {
         std::lock_guard lock(mutex_);
         // stop() 可能在前一次检查与拿到锁之间发生
-        if (closed_.load()) {
+        if (closed_) {
             return false;
         }
 
@@ -25,13 +31,13 @@ public:
     }
 
     void closeAndWait() {
-        closed_.store(true);
+        closed_ = true;
         std::lock_guard lock(mutex_);
         player_ = nullptr;
     }
 
 private:
-    std::atomic<bool> closed_{false};
+    std::atomic<bool> closed_ = false;
     std::mutex mutex_;
     Dream::DreamPlayer* player_;
 };

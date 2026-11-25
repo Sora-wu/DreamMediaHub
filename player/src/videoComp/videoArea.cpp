@@ -57,8 +57,10 @@ void VideoArea::setController(PlayerController *newController)
     QObject::disconnect(controllerDestroyedConnection_);
     controller_ = newController;
     if (newController) {
-        videoSourceConnection_ = connect(newController, &PlayerController::videoSourceChanged,
-                                         this, [this] { update(); });
+        videoSourceConnection_ = connect(newController, &PlayerController::videoSourceChanged, this, [this] {
+            update();
+        });
+
         controllerDestroyedConnection_ = connect(newController, &QObject::destroyed, this, [this] {
             update();
             emit controllerChanged();
@@ -91,7 +93,7 @@ void OpenGLRender::render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const bool active = renderAccess_ && renderAccess_->withPlayer([this](DreamPlayer& player) {
-        auto* videoFrame = player.getVideoFrame();
+        VideoFrame* videoFrame = player.getVideoFrame();
         if (!videoFrame || !videoFrame->data[0] || !videoFrame->frameWidth || !videoFrame->frameHeight) {
             return;
         }
@@ -116,12 +118,12 @@ void OpenGLRender::render() {
 }
 
 void OpenGLRender::synchronize(QQuickFramebufferObject* item) {
-    auto* area = static_cast<VideoArea*>(item);
+    VideoArea* area = static_cast<VideoArea*>(item);
 
     itemWidth = area->width();
     itemHeight = area->height();
 
-    auto* controller = area->controller();
+    PlayerController* controller = area->controller();
     renderAccess_ = controller ? controller->renderAccess() : nullptr;
 }
 

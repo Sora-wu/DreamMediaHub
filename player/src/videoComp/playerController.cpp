@@ -241,7 +241,8 @@ void PlayerController::stop() {
         return;
     }
 
-    auto* player = player_;
+    // 替身
+    DreamPlayer* player = player_;
     player_ = nullptr;
 
     renderAccess_->closeAndWait();

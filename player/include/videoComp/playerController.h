@@ -65,6 +65,7 @@ signals:
     void durationChanged();
     void speedChanged();
     void currentProgressChanged();
+
     void videoSourceChanged();
 
 private slots:
