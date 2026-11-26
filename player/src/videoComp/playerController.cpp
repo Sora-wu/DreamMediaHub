@@ -51,7 +51,6 @@ PlayerController::PlayerController(QObject* parent) : QObject(parent) {
     const QString& url = argsList[1];
     open(url);
     renderAccess_ = std::make_shared<VideoRenderAccess>(player_);
-    isPlaying_ = true;
 
     QAudioFormat format;
     format.setSampleRate(AudioBufferDevice::SAMPLE_RATE);
@@ -103,7 +102,7 @@ QString PlayerController::progressText() const {
 }
 
 bool PlayerController::isPlaying() const {
-    return isPlaying_;
+    return player_->isPlaying();
 }
 
 uint32_t PlayerController::volume() const {
@@ -154,8 +153,6 @@ void PlayerController::open(const QString& path) {
 
     const QFileInfo fileInfo(path);
     mediaName_ = fileInfo.fileName();
-
-    isPlaying_ = false;
 }
 
 void PlayerController::play() {
@@ -166,7 +163,6 @@ void PlayerController::play() {
     if (audioBufferDevice_) {
         audioBufferDevice_->play();
     }
-    isPlaying_ = true;
     emit isPlayingChanged();
 }
 
@@ -178,12 +174,12 @@ void PlayerController::pause() {
     if (audioBufferDevice_) {
         audioBufferDevice_->pause();
     }
-    isPlaying_ = false;
+
     emit isPlayingChanged();
 }
 
 void PlayerController::togglePlay() {
-    isPlaying_ ? pause() : play();
+    player_->isPlaying() ? pause() : play();
 }
 
 void PlayerController::seek(int second, bool isRelative) {
@@ -276,12 +272,11 @@ void PlayerController::stop() {
     delete audioBufferDevice_;
     audioBufferDevice_ = nullptr;
 
-    DreamPlayerContext::destroyDreamPlayer(&player);
-
-    if (isPlaying_) {
-        isPlaying_ = false;
+    if (player->isPlaying()) {
         emit isPlayingChanged();
     }
+
+    DreamPlayerContext::destroyDreamPlayer(&player);
 }
 
 void PlayerController::onTimerUpdate() {
@@ -303,17 +298,11 @@ void PlayerController::onTimerUpdate() {
 }
 
 void PlayerController::onPlaybackCompleted() {
-    // 避免player_被销毁之后还调用onPlaybackCompleted // TODO: 后续去掉native监控线程
-    if (!player_) {
-        return;
-    }
-
-    if (!isPlaying_) {
+    if (!player_->isPlaying()) {
         onTimerUpdate();
         return;
     }
 
-    isPlaying_ = false;
     emit isPlayingChanged();
     onTimerUpdate();
 }

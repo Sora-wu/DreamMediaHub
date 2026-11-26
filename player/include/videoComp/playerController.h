@@ -76,7 +76,6 @@ private:
     QString mediaName_{};
     QString progressText_{};
     uint32_t volume_ = 100;
-    bool isPlaying_ = false;
 
     Dream::DreamPlayer* player_ = nullptr;
     std::shared_ptr<VideoRenderAccess> renderAccess_;
