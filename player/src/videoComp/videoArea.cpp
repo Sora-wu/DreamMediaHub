@@ -193,21 +193,8 @@ void OpenGLRender::cleanup() {
     glDeleteTextures(3, texture_);
 }
 
-void OpenGLRender::initDebugMessage() {
-    logger_ = new QOpenGLDebugLogger;
-    if (logger_->initialize()) {
-        logger_->disableMessages(QOpenGLDebugMessage::AnySource, QOpenGLDebugMessage::AnyType,QOpenGLDebugMessage::NotificationSeverity);
-        QObject::connect(logger_, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage& msg){
-            qWarning() << msg;
-        });
-        logger_->startLogging();
-    }
-}
-
 void OpenGLRender::initialize() {
     initializeOpenGLFunctions();
-
-    initDebugMessage();
 
     if (!compileShader()) {
         return;

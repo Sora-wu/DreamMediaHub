@@ -46,6 +46,9 @@ PlayerController::PlayerController(QObject* parent) : QObject(parent) {
     if (!player_) {
         qFatal() << "DreamPlayerContext::createDreamPlayer failed";
     }
+    player_->setOnPlaybackCompletedCallback([this] {
+        QMetaObject::invokeMethod(this, &PlayerController::onPlaybackCompleted, Qt::QueuedConnection);
+    });
 
     const QStringList argsList = QCoreApplication::arguments();
     const QString& url = argsList[1];
@@ -83,10 +86,6 @@ PlayerController::PlayerController(QObject* parent) : QObject(parent) {
 
     duration_ = player_->getDuration();
     progressText_ = QString("%1/%2").arg(formatTimeFromSeconds(0), formatTimeFromSeconds(duration_));
-
-    player_->setOnPlaybackCompletedCallback([this] {
-        QMetaObject::invokeMethod(this, &PlayerController::onPlaybackCompleted, Qt::QueuedConnection);
-    });
 }
 
 PlayerController::~PlayerController() {
@@ -102,7 +101,8 @@ QString PlayerController::progressText() const {
 }
 
 bool PlayerController::isPlaying() const {
-    return player_->isPlaying();
+    // 在完成回调里，QML机制会调用到这，这时候player_可能被销毁
+    return player_ && player_->isPlaying();
 }
 
 uint32_t PlayerController::volume() const {
@@ -179,6 +179,10 @@ void PlayerController::pause() {
 }
 
 void PlayerController::togglePlay() {
+    if (player_) {
+        return;
+    }
+
     player_->isPlaying() ? pause() : play();
 }
 
@@ -283,6 +287,7 @@ void PlayerController::onTimerUpdate() {
     if (!player_) {
         return;
     }
+
     const uint32_t cur = seekActive_ ? static_cast<uint32_t>(seekTarget_) : static_cast<uint32_t>(player_->getCurrentTime());
     QString newText = QString("%1/%2").arg(formatTimeFromSeconds(cur), formatTimeFromSeconds(duration_));
 
@@ -297,12 +302,13 @@ void PlayerController::onTimerUpdate() {
     }
 }
 
+// 因为是QueuedConnection回调，不能保证player_还存在，所以需要特判
 void PlayerController::onPlaybackCompleted() {
-    if (!player_->isPlaying()) {
-        onTimerUpdate();
+    if (!player_) {
+        emit isPlayingChanged();
         return;
     }
 
-    emit isPlayingChanged();
     onTimerUpdate();
+    emit isPlayingChanged();
 }

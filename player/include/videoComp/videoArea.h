@@ -74,7 +74,5 @@ private:
     float itemWidth = 0;
     float itemHeight = 0;
 
-    QOpenGLDebugLogger* logger_ = nullptr;
-
     std::shared_ptr<VideoRenderAccess> renderAccess_;
 };
